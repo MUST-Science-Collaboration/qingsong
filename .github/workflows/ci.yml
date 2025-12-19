@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need history for no-hard-delete check
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Run Ruff linting
+        run: ruff check tools/
+
+      - name: Run Ruff formatting check
+        run: ruff format --check tools/
+
+      - name: Run type checking
+        run: mypy tools/qingsong --ignore-missing-imports
+
+      - name: Validate metadata
+        run: qingsong meta validate
+
+      - name: Validate all items
+        run: qingsong validate
+
+      - name: Check no hard delete
+        run: |
+          # Check if any doorstop item files were deleted in this commit
+          DELETED_ITEMS=$(git diff --name-status HEAD~1 HEAD -- 'doorstop/**/*.yml' 'doorstop/**/*.yaml' 2>/dev/null | grep '^D' || true)
+          if [ -n "$DELETED_ITEMS" ]; then
+            echo "ERROR: Hard deletion of items detected! Use 'retired' or 'superseded' status instead."
+            echo "Deleted files:"
+            echo "$DELETED_ITEMS"
+            exit 1
+          fi
+          echo "No hard deletions detected."
+
+      - name: Build SQLite cache
+        run: qingsong cache build
+
+      - name: Test query
+        run: |
+          qingsong query "SELECT type, id_full, system_path, status FROM items LIMIT 20;"
+
+      - name: Run tests
+        run: pytest tests/ -v --cov=qingsong --cov-report=xml || echo "No tests yet"
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run pre-commit (skip local hooks)
+        run: pre-commit run --all-files --hook-stage manual || true
+

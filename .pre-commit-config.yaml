@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: qingsong-meta-validate
+        name: Qingsong Meta Validation
+        entry: qingsong meta validate
+        language: system
+        pass_filenames: false
+        files: ^meta/.*\.yaml$
+
+      - id: qingsong-validate
+        name: Qingsong Full Validation
+        entry: qingsong validate
+        language: system
+        pass_filenames: false
+        files: ^doorstop/.*\.ya?ml$
+
+      - id: no-hard-delete
+        name: No Hard Delete Check
+        entry: python -c "import sys; sys.exit(0)"  # Placeholder - actual check in CI
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
