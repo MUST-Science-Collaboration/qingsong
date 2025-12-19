@@ -23,6 +23,11 @@ Qingsong (青松) is a lightweight, file-based requirements/risk/interface manag
 - 🕸️ **Graph Visualization**: Visualize item relationships
 - 🖥️ **Web UI**: Streamlit-based browser interface
 
+## Documentation
+
+- **[Beginner's Guide](begin_with_qingsong.md)** - Comprehensive guide for system engineers using Qingsong in real project workflows
+- **[Examples](examples/README.md)** - Code examples and usage patterns
+
 ## Quick Start
 
 ### Installation
