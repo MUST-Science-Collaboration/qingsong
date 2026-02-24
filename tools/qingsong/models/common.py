@@ -116,8 +116,8 @@ class BaseItem(BaseModel):
     type: ItemType = Field(..., description="Item type code")
     id_full: str = Field(
         ...,
-        description="Full item ID following pattern MUST-<L1>-<L2>-<TYPE>-NNN",
-        pattern=r"^MUST-[A-Z]+-[A-Z]+-[A-Z]+-\d{3}$",
+        description="Full item ID following pattern MUST-<L1>-<L2>[-L3]-<TYPE>-NNN",
+        pattern=r"^MUST(-[A-Z0-9]+)+-\d{3}$",
     )
     title: str = Field(
         ...,
@@ -228,7 +228,8 @@ class BaseItem(BaseModel):
         """Ensure the ID type code matches the item type."""
         parts = self.id_full.split("-")
         if len(parts) >= 4:
-            id_type = parts[3]
+            # Type code is the second to last segment (e.g., MUST-L1-L2-[L3]-TYPE-NNN)
+            id_type = parts[-2]
             if id_type != self.type.value:
                 raise ValueError(
                     f"ID type '{id_type}' does not match item type '{self.type.value}'"

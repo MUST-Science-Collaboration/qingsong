@@ -16,7 +16,7 @@ To deliver a robust, production-grade requirements management system for MUST th
 - **Objective**: Ensure data integrity and support hierarchical complexity.
 - **Milestone**: L3 sub-assembly support and circular dependency validation.
 - **Tasks**:
-  - [ ] Support `L1/L2/L3` folder structures.
+  - [x] Support `L1/L2/L3` folder structures.
   - [ ] Implement Link Graph validation.
   - [ ] Add unit tests for the validator.
 

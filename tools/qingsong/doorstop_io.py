@@ -118,17 +118,17 @@ def _infer_item_type(data: dict[str, Any], doc_config: dict[str, Any]) -> ItemTy
     return ItemType.REQ
 
 
-def _infer_system_path(doc_path: Path) -> str:
+def _infer_hierarchy_context(doc_path: Path) -> tuple[str, str | None]:
     """
-    Infer system path from document directory structure.
+    Infer system path and optional L3 code from document directory structure.
 
     Args:
         doc_path: Path to Doorstop document directory.
 
     Returns:
-        System path string (e.g., "FPS/FID").
+        Tuple of (system_path, l3_code).
     """
-    # Expected structure: doorstop/TYPE/L1/L2/
+    # Expected structure: doorstop/TYPE/L1/L2/[L3]
     parts = doc_path.parts
     # Find the position after 'doorstop' and type folder
     try:
@@ -136,11 +136,15 @@ def _infer_system_path(doc_path: Path) -> str:
         if len(parts) > doorstop_idx + 3:
             l1 = parts[doorstop_idx + 2]  # Skip type folder
             l2 = parts[doorstop_idx + 3]
-            return f"{l1}/{l2}"
+            system_path = f"{l1}/{l2}"
+            l3 = None
+            if len(parts) > doorstop_idx + 4:
+                l3 = parts[doorstop_idx + 4]
+            return system_path, l3
     except (ValueError, IndexError):
         pass
 
-    return "UNKNOWN/UNKNOWN"
+    return "UNKNOWN/UNKNOWN", None
 
 
 def load_item(file_path: Path, doc_config: dict[str, Any] | None = None) -> BaseItem:
@@ -181,8 +185,14 @@ def load_item(file_path: Path, doc_config: dict[str, Any] | None = None) -> Base
             except ValueError:
                 data["id_full"] = f"{prefix}-{uid}"
 
+    # Infer hierarchy context from directory structure
+    system_path, l3 = _infer_hierarchy_context(file_path.parent)
+
     if "system_path" not in data:
-        data["system_path"] = _infer_system_path(file_path.parent)
+        data["system_path"] = system_path
+
+    if "l3" not in data:
+        data["l3"] = l3
 
     if "title" not in data:
         data["title"] = data.get("header", "Untitled")
@@ -317,6 +327,7 @@ def create_doorstop_document(
     type_code: str,
     l1: str,
     l2: str,
+    l3: str | None = None,
     base_dir: Path | None = None,
 ) -> Path:
     """
@@ -326,6 +337,7 @@ def create_doorstop_document(
         type_code: Item type code (REQ, RSK, IFC, DOC, DAT, NOTE).
         l1: L1 system code.
         l2: L2 subsystem code.
+        l3: Optional L3 task code for nested document.
         base_dir: Base directory. Defaults to DOORSTOP_DIR.
 
     Returns:
@@ -335,10 +347,13 @@ def create_doorstop_document(
         base_dir = DOORSTOP_DIR
 
     doc_dir = base_dir / type_code / l1 / l2
+    if l3:
+        doc_dir = doc_dir / l3
     doc_dir.mkdir(parents=True, exist_ok=True)
 
     # Create .doorstop.yml configuration
-    prefix = f"MUST-{l1}-{l2}-{type_code}"
+    # Use L3 code if provided, otherwise L2
+    prefix = f"MUST-{l1}-{l3 or l2}-{type_code}"
     config = {
         "settings": {
             "digits": 3,
@@ -415,14 +430,14 @@ def create_new_item(
         raise ValueError(f"Invalid system_path format: {system_path}")
     l1, l2 = parts
 
-    # Ensure document exists
-    doc_dir = create_doorstop_document(item_type.value, l1, l2, base_dir)
+    # Ensure document exists (use L3 folder if l3 is provided)
+    doc_dir = create_doorstop_document(item_type.value, l1, l2, l3=l3, base_dir=base_dir)
 
     # Get next item number
     next_num = get_next_item_number(doc_dir)
 
-    # Construct full ID
-    id_full = f"MUST-{l1}-{l2}-{item_type.value}-{next_num:03d}"
+    # Construct full ID (use L3 if provided)
+    id_full = f"MUST-{l1}-{l3 or l2}-{item_type.value}-{next_num:03d}"
 
     # Build item data
     now = datetime.now(timezone.utc)
@@ -522,12 +537,14 @@ def list_documents(base_dir: Path | None = None) -> list[dict[str, Any]]:
     for doc_path in _find_doorstop_documents(base_dir):
         config = _parse_doorstop_config(doc_path)
         item_count = len(_find_item_files(doc_path))
+        system_path, l3 = _infer_hierarchy_context(doc_path)
 
         docs.append({
             "path": str(doc_path),
             "prefix": config.get("settings", {}).get("prefix", "UNKNOWN"),
             "item_count": item_count,
-            "system_path": _infer_system_path(doc_path),
+            "system_path": system_path,
+            "l3": l3,
         })
 
     return docs

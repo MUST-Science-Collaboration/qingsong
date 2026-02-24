@@ -10,7 +10,7 @@
 
 ## Week 2: Robustness & Validation
 - [ ] Implement circular dependency detection.
-- [ ] Add support for flexible L3 folder structures.
+- [x] Add support for flexible L3 folder structures.
 - [ ] Refactor `doorstop_io` for more resilient I/O.
 
 ## Week 3: CLI & Search
