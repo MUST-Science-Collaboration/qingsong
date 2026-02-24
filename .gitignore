@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.gemini/
+qingsong-doorstop.skill
 
 # C extensions
 *.so
