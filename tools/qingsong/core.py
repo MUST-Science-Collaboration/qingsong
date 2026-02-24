@@ -144,7 +144,7 @@ class QingsongCore:
             ValidationResult for the item.
         """
         if item_id not in self.items:
-            from .validate import ValidationError, ValidationResult
+            from .validate import ValidationError
             return ValidationResult(
                 valid=False,
                 errors=[ValidationError(item_id, "id_full", f"Item not found: {item_id}")],
@@ -229,10 +229,12 @@ class QingsongCore:
         title: str,
         text: str,
         owner: str,
+        category_path: str | None = None,
+        l3: str | None = None,
         **kwargs: Any,
     ) -> BaseItem:
         """
-        Create a new item (staged, not written to disk).
+        Create a new item (staged, not written to disk until flush).
 
         Args:
             item_type: Type of item to create.
@@ -240,6 +242,8 @@ class QingsongCore:
             title: Item title.
             text: Item text.
             owner: Owner person ID.
+            category_path: Optional category path.
+            l3: Optional L3 task code.
             **kwargs: Additional fields.
 
         Returns:
@@ -248,24 +252,66 @@ class QingsongCore:
         if isinstance(item_type, str):
             item_type = ItemType(item_type)
 
-        # Create item using doorstop_io (writes to disk immediately)
-        # For true staging, we'd need to modify this
-        item = create_new_item(
-            item_type=item_type,
-            system_path=system_path,
-            title=title,
-            text=text,
-            owner=owner,
-            base_dir=self.doorstop_dir,
-            **kwargs,
-        )
+        # Get the appropriate model class
+        from .models import ITEM_TYPE_MODELS
+        model_class = ITEM_TYPE_MODELS[item_type]
 
-        # Add to items and staged changes
-        self.items[item.id_full] = item
+        # Determine next ID (requires reading current files for sequence)
+        parts = system_path.split("/")
+        l1, l2 = parts
+        
+        # Determine doc_dir with optional L3
+        doc_dir = self.doorstop_dir / item_type.value / l1 / l2
+        if l3:
+            doc_dir = doc_dir / l3
+        
+        # Use l3 for prefix if provided
+        id_prefix = f"MUST-{l1}-{l3 or l2}-{item_type.value}"
+        
+        # We need to consider staged items when calculating next number
+        existing_nums = []
+        if doc_dir.exists():
+            from .doorstop_io import _find_item_files
+            existing_nums = [int(f.stem) for f in _find_item_files(doc_dir) if f.stem.isdigit()]
+        
+        # Add staged numbers for this doc_dir/prefix
+        for staged_id in self.staged_changes:
+            if staged_id.startswith(f"{id_prefix}-"):
+                try:
+                    existing_nums.append(int(staged_id.split("-")[-1]))
+                except ValueError:
+                    pass
+        
+        next_num = max(existing_nums, default=0) + 1
+        id_full = f"{id_prefix}-{next_num:03d}"
+
+        # Build initial data
+        now = datetime.now(timezone.utc)
+        data = {
+            "type": item_type,
+            "id_full": id_full,
+            "title": title,
+            "text": text,
+            "system_path": system_path,
+            "owner": owner,
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+            "category_path": category_path,
+            "l3": l3,
+            **kwargs,
+        }
+
+        # Create instance
+        item = model_class.model_validate(data)
+
+        # Stage change
         self.staged_changes[item.id_full] = StagedChange(
             item=item,
             action="create",
         )
+        # Add to current items for immediate visibility
+        self.items[item.id_full] = item
 
         return item
 
@@ -347,16 +393,21 @@ class QingsongCore:
         count = 0
 
         for item_id, change in self.staged_changes.items():
+            item = change.item
+            
             # Determine document directory
-            parts = item_id.split("-")
-            if len(parts) >= 4:
-                type_code = parts[3]
-                l1 = parts[1]
-                l2 = parts[2]
-                doc_dir = self.doorstop_dir / type_code / l1 / l2
+            parts = item.system_path.split("/")
+            if len(parts) == 2:
+                l1, l2 = parts
+                type_code = item.type.value
+                l3 = item.l3
+                
+                # Ensure document exists (creates .doorstop.yml if missing)
+                from .doorstop_io import create_doorstop_document
+                doc_dir = create_doorstop_document(type_code, l1, l2, l3=l3, base_dir=self.doorstop_dir)
 
                 if doc_dir.exists():
-                    save_item(change.item, doc_dir)
+                    save_item(item, doc_dir)
                     count += 1
 
         self.staged_changes = {}

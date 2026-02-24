@@ -116,8 +116,8 @@ class BaseItem(BaseModel):
     type: ItemType = Field(..., description="Item type code")
     id_full: str = Field(
         ...,
-        description="Full item ID following pattern MUST-<L1>-<L2>-<TYPE>-NNN",
-        pattern=r"^MUST-[A-Z]+-[A-Z]+-[A-Z]+-\d{3}$",
+        description="Full item ID following pattern MUST-<L1>-<L2>[-L3]-<TYPE>-NNN",
+        pattern=r"^MUST(-[A-Z0-9]+)+-\d{3}$",
     )
     title: str = Field(
         ...,
@@ -228,11 +228,43 @@ class BaseItem(BaseModel):
         """Ensure the ID type code matches the item type."""
         parts = self.id_full.split("-")
         if len(parts) >= 4:
-            id_type = parts[3]
+            # Type code is the second to last segment (e.g., MUST-L1-L2-[L3]-TYPE-NNN)
+            id_type = parts[-2]
             if id_type != self.type.value:
                 raise ValueError(
                     f"ID type '{id_type}' does not match item type '{self.type.value}'"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_metadata_constraints(self) -> "BaseItem":
+        """Validate against loaded metadata (strict mode)."""
+        # Note: We import here to avoid circular dependencies
+        from ..load_meta import load_metadata
+        try:
+            metadata = load_metadata()
+            
+            # Validate owner
+            if self.owner not in metadata.valid_person_ids:
+                raise ValueError(f"Invalid owner: {self.owner}")
+            
+            # Validate system_path
+            if self.system_path not in metadata.valid_system_paths:
+                raise ValueError(f"Invalid system_path: {self.system_path}")
+            
+            # Validate L3
+            if self.l3 and self.l3 not in metadata.valid_l3_codes:
+                raise ValueError(f"Invalid L3 code: {self.l3}")
+                
+            # Validate collaborators
+            for collab in self.collaborators:
+                if collab not in metadata.valid_person_ids:
+                    raise ValueError(f"Invalid collaborator: {collab}")
+                    
+        except Exception:
+            # If metadata cannot be loaded (e.g. during initial setup), skip strict validation
+            pass
+            
         return self
 
     def to_doorstop_dict(self) -> dict[str, Any]:

@@ -223,15 +223,19 @@ def validate_id_format(item: BaseItem) -> list[ValidationError]:
     errors = []
 
     parts = item.id_full.split("-")
-    if len(parts) != 5:
+    if len(parts) not in (5, 6):
         errors.append(ValidationError(
             item_id=item.id_full,
             field="id_full",
-            message=f"ID should have 5 parts (MUST-L1-L2-TYPE-NNN), got {len(parts)}",
+            message=f"ID should have 5 or 6 parts (MUST-L1-L2-[L3]-TYPE-NNN), got {len(parts)}",
         ))
         return errors
 
-    prefix, l1, l2, type_code, num = parts
+    prefix = parts[0]
+    num = parts[-1]
+    type_code = parts[-2]
+    # Rest are system parts
+    system_parts = parts[1:-2]
 
     if prefix != "MUST":
         errors.append(ValidationError(
@@ -256,17 +260,34 @@ def validate_id_format(item: BaseItem) -> list[ValidationError]:
         ))
 
     # Check system path consistency
-    expected_path = f"{l1}/{l2}"
-    if item.system_path != expected_path:
+    item_l1 = item.system_path.split("/")[0]
+    if system_parts[0] != item_l1:
         errors.append(ValidationError(
             item_id=item.id_full,
             field="id_full",
-            message=(
-                f"ID system path ({expected_path}) does not match "
-                f"item system_path ({item.system_path})"
-            ),
+            message=f"ID L1 ({system_parts[0]}) does not match item L1 ({item_l1})",
             severity="warning",
         ))
+
+    if len(parts) == 5:
+        item_l2 = item.system_path.split("/")[1]
+        if system_parts[1] != item_l2:
+            errors.append(ValidationError(
+                item_id=item.id_full,
+                field="id_full",
+                message=f"ID L2 ({system_parts[1]}) does not match item L2 ({item_l2})",
+                severity="warning",
+            ))
+    elif len(parts) == 6:
+        # For 6-part ID, the combined system segments after L1 should match L3 attribute
+        l2_l3_from_id = "-".join(system_parts[1:])
+        if item.l3 != l2_l3_from_id:
+            errors.append(ValidationError(
+                item_id=item.id_full,
+                field="id_full",
+                message=f"ID L2-L3 parts ({l2_l3_from_id}) do not match item L3 ({item.l3})",
+                severity="warning",
+            ))
 
     return errors
 
