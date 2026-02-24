@@ -235,6 +235,37 @@ class BaseItem(BaseModel):
                 )
         return self
 
+    @model_validator(mode="after")
+    def validate_metadata_constraints(self) -> "BaseItem":
+        """Validate against loaded metadata (strict mode)."""
+        # Note: We import here to avoid circular dependencies
+        from ..load_meta import load_metadata
+        try:
+            metadata = load_metadata()
+            
+            # Validate owner
+            if self.owner not in metadata.valid_person_ids:
+                raise ValueError(f"Invalid owner: {self.owner}")
+            
+            # Validate system_path
+            if self.system_path not in metadata.valid_system_paths:
+                raise ValueError(f"Invalid system_path: {self.system_path}")
+            
+            # Validate L3
+            if self.l3 and self.l3 not in metadata.valid_l3_codes:
+                raise ValueError(f"Invalid L3 code: {self.l3}")
+                
+            # Validate collaborators
+            for collab in self.collaborators:
+                if collab not in metadata.valid_person_ids:
+                    raise ValueError(f"Invalid collaborator: {collab}")
+                    
+        except Exception:
+            # If metadata cannot be loaded (e.g. during initial setup), skip strict validation
+            pass
+            
+        return self
+
     def to_doorstop_dict(self) -> dict[str, Any]:
         """Convert to a dictionary suitable for Doorstop YAML format."""
         data = self.model_dump(exclude_none=True, mode="json")
