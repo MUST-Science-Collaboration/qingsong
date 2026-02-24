@@ -9,8 +9,8 @@ To deliver a robust, production-grade requirements management system for MUST th
 - **Tasks**:
   - [x] Environment cleanup.
   - [x] SPEC definition.
-  - [ ] Metadata strict mode implementation.
-  - [ ] Core API refactor.
+  - [x] Metadata strict mode implementation.
+  - [x] Core API refactor.
 
 ## Week 2: Robustness
 - **Objective**: Ensure data integrity and support hierarchical complexity.
