@@ -1,0 +1,17 @@
+version: '1.0'
+description: Project team
+people:
+  pm001:
+    name: Project Manager
+    role: PM
+    active: true
+    systems: []
+  eng001:
+    name: Lead Engineer
+    role: Engineer
+    active: true
+    systems:
+    - SYS/SUB
+valid_person_ids:
+- pm001
+- eng001

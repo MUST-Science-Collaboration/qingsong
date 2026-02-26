@@ -1,0 +1,20 @@
+active: true
+derived: false
+normative: true
+type: REQ
+id_full: MUST-SYS-SUB-REQ-002
+title: Low Bean Alert
+text: The system shall notify the manager when coffee bean levels drop below 1kg.
+system_path: SYS/SUB
+owner: eng001
+collaborators: []
+status: draft
+links: []
+created_at: '2026-02-26T15:25:14.048903Z'
+updated_at: '2026-02-26T15:25:14.048903Z'
+tags: []
+references: []
+category_path: functional
+priority: must
+verified: false
+allocated_to: []

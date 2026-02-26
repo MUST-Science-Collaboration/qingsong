@@ -1,0 +1,28 @@
+version: '1.0'
+link_types:
+  related_to:
+    label: Related To
+    allowed_source_types:
+    - REQ
+    - RSK
+    - IFC
+    - DOC
+    - DAT
+    - NOTE
+    allowed_target_types:
+    - REQ
+    - RSK
+    - IFC
+    - DOC
+    - DAT
+    - NOTE
+  derives_from:
+    label: Derives From
+    allowed_source_types:
+    - REQ
+    allowed_target_types:
+    - REQ
+valid_link_types:
+- related_to
+- derives_from
+external_prefix: 'EXT:'

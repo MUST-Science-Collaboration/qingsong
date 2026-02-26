@@ -37,15 +37,24 @@
 | P5-002 | Path Context Refactor | agent | [x] Done | Refactor Core to eliminate hardcoded globals. |
 | P5-003 | Project Scaffolding | agent | [x] Done | Build `qingsong init` command. |
 
-## Current Session Slice Plan (Project Portability)
+## Implementation Backlog (Phase 6 Current)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P6-001 | UI Architecture Refactor | agent | [x] Done | Multi-page layout and `QINGSONG_ROOT` support. |
+| P6-002 | Verification & Traceability | agent | [x] Done | UI views for `get_verification_summary` and `get_traceability_matrix`. |
+| P6-003 | Advanced Search & Graph | agent | [x] Done | FTS5 integration and HTML graph embedding. |
+| P6-004 | Interactive Editor (Draft) | agent | [x] Done | Web forms for `create_item` and `flush`. |
+
+## Current Session Slice Plan (UI Architecture Refactor)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Update `cli.py` to accept a global `--root` option. |
-| [x] S2 | Done | Refactor `QingsongCore.load()` and `__init__.py` to use relative vault paths. |
-| [x] S3 | Done | Create default template strings for metadata scaffolding. |
-| [x] S4 | Done | Implement `qingsong init` in `cli.py`. |
-| [x] S5 | Done | Write integration tests for multi-vault behavior. |
+| [x] S1 | Done | Restructure `tools/qingsong/ui/` to support Streamlit multi-page (`pages/`). |
+| [x] S2 | Done | Ensure `load_core()` in UI respects the `QINGSONG_ROOT` environment variable. |
+| [x] S3 | Done | Create the main Dashboard landing page (`app_streamlit.py`). |
+| [x] S4 | Done | Create the Items Explorer page (`pages/1_Items.py`). |
+| [x] S5 | Done | Verify UI launches successfully with new structure. |
 
 ## Review Notes
 

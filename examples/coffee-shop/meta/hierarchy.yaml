@@ -1,0 +1,15 @@
+version: '1.0'
+description: Hierarchy for Mustard Coffee
+systems:
+  SYS:
+    name: Main System
+    owner: pm001
+    subsystems:
+      SUB:
+        name: Subsystem 1
+        owner: eng001
+valid_system_paths:
+- SYS/SUB
+valid_l3_codes:
+- TASK-A
+- TASK-B
