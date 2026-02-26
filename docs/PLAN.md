@@ -107,3 +107,13 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P11-002 | Coverage Analytics | Calculate traceability and verification coverage percentages (Done). |
 | P11-003 | Reporting CLI | Add a `qingsong report` suite for automated gap analysis (Done). |
 | P11-004 | UI Insights Page | Build a dedicated dashboard view for system maturity and coverage metrics (Done). |
+
+## Phase 12: UI Polish & Enhanced Editing (Completed)
+**Objective**: Transition the WebUI into a comprehensive authoring environment with in-place editing and linking.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P12-001 | Direct Item Editing | Implement browser-based editing for all item fields (Done). |
+| P12-002 | In-Place Linking | Build a UI tool for managing relationships between items (Done). |
+| P12-003 | Interactive Migrations | Support item renames and system moves directly from the WebUI (Done). |
+| P12-004 | UX Polish | Standardize styling, tooltips, and dashboard quick-actions (Done). |
