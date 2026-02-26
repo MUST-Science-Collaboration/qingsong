@@ -145,8 +145,18 @@ qingsong --root ./coffee-shop export all --format csv -o data.csv
 
 ## 4. Advanced Concepts
 
+### Manual YAML Editing
+Since Qingsong is a "Requirements as Code" tool, you are free to edit the YAML files in the `doorstop/` folder directly using your favorite text editor (VS Code, Vim, etc.). 
+
+**Crucial Note**: If you edit files manually, you bypass the tool's immediate safety checks. Always run the validation command after manual edits to ensure you haven't introduced any broken links or invalid metadata:
+
+```bash
+uv run qingsong --root ./coffee-shop validate
+```
+
 ### Traceability
-Qingsong can show you how items are linked. For example, if you link a "Test Record" to a "Requirement", Qingsong can generate a **Traceability Matrix** to show which requirements are verified.
+Qingsong can show you how items are linked.
+ For example, if you link a "Test Record" to a "Requirement", Qingsong can generate a **Traceability Matrix** to show which requirements are verified.
 
 ```bash
 qingsong --root ./coffee-shop trace --direction upward

@@ -171,9 +171,9 @@ def main():
             q = query.lower()
             items = [i for i in items if q in i.title.lower() or q in i.text.lower() or q in i.id_full.lower()]
     
-        # Layout
-        col_list, col_detail = st.columns([2, 3])
-    
+            # Layout
+            col_list, col_detail = st.columns([2, 3])
+        
             with col_list:
                 st.subheader(f"Results ({len(items)})")
                 
@@ -201,13 +201,12 @@ def main():
                             st.caption(f"...{fts_results[i.id_full]}...")
                         
                         st.write("") # Spacer
-        
-        with col_detail:
-        sel_id = st.session_state.get("selected_item")
-        if sel_id:
-            render_item_detail(core, sel_id)
-        else:
-            st.info("Select an item to view details.")
-
-if __name__ == "__main__":
+                    
+            with col_detail:
+                sel_id = st.session_state.get("selected_item")
+                if sel_id:
+                    render_item_detail(core, sel_id)
+                else:
+                    st.info("Select an item to view details.")
+        if __name__ == "__main__":
     main()
