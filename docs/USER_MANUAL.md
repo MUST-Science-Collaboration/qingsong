@@ -72,27 +72,35 @@ Let's define what our coffee shop needs.
 
 **Requirement 1: Order Processing**
 ```bash
-qingsong --root ./coffee-shop new req 
-  --title "Online Ordering" 
-  --text "The system shall allow customers to place orders via a mobile app." 
-  --system SYS/SUB 
-  --owner pm001 
+qingsong --root ./coffee-shop new req \
+  --title "Online Ordering" \
+  --text "The system shall allow customers to place orders via a mobile app." \
+  --system SYS/SUB \
+  --owner pm001 \
   --category functional
 ```
 
 **Requirement 2: Inventory Alert**
 ```bash
-qingsong --root ./coffee-shop new req 
-  --title "Low Bean Alert" 
-  --text "The system shall notify the manager when coffee bean levels drop below 1kg." 
-  --system SYS/SUB 
-  --owner eng001 
+qingsong --root ./coffee-shop new req \
+  --title "Low Bean Alert" \
+  --text "The system shall notify the manager when coffee bean levels drop below 1kg." \
+  --system SYS/SUB \
+  --owner eng001 \
   --category functional
 ```
 
 ### Step 4: List and Search
 Now that we have items, let's look at them.
 
+**First, build the search index:**
+Qingsong uses a high-performance index for searching. You should run this command after adding or changing items.
+
+```bash
+qingsong --root ./coffee-shop cache build
+```
+
+**Now you can list and search:**
 ```bash
 # List all items
 qingsong --root ./coffee-shop list
@@ -108,10 +116,10 @@ qingsong --root ./coffee-shop show MUST-SYS-SUB-REQ-002
 Every project has risks. Let's add one.
 
 ```bash
-qingsong --root ./coffee-shop new rsk 
-  --title "Internet Outage" 
-  --text "If the shop loses internet, online orders cannot be received." 
-  --system SYS/SUB 
+qingsong --root ./coffee-shop new rsk \
+  --title "Internet Outage" \
+  --text "If the shop loses internet, online orders cannot be received." \
+  --system SYS/SUB \
   --owner pm001
 ```
 
