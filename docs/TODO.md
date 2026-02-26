@@ -46,15 +46,23 @@
 | P6-003 | Advanced Search & Graph | agent | [x] Done | FTS5 integration and HTML graph embedding. |
 | P6-004 | Interactive Editor (Draft) | agent | [x] Done | Web forms for `create_item` and `flush`. |
 
-## Current Session Slice Plan (UI Architecture Refactor)
+## Implementation Backlog (Phase 7 Current)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P7-001 | Placeholder Detection | agent | [x] Done | `has_placeholders` property in BaseItem. |
+| P7-002 | CLI TBD Filter | agent | [x] Done | `qingsong find --tbd` filter. |
+| P7-003 | UI Stability Dashboard | agent | [x] Done | "Stability Watchlist" on main dashboard. |
+| P7-004 | UI Visual Highlighting | agent | [x] Done | Warning icons and TBD filter in Explorer. |
+
+## Current Session Slice Plan (Stability Tracking)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Restructure `tools/qingsong/ui/` to support Streamlit multi-page (`pages/`). |
-| [x] S2 | Done | Ensure `load_core()` in UI respects the `QINGSONG_ROOT` environment variable. |
-| [x] S3 | Done | Create the main Dashboard landing page (`app_streamlit.py`). |
-| [x] S4 | Done | Create the Items Explorer page (`pages/1_Items.py`). |
-| [x] S5 | Done | Verify UI launches successfully with new structure. |
+| [x] S1 | Done | Implement detection logic in `BaseItem`. |
+| [x] S2 | Done | Add `--tbd` filter to CLI. |
+| [x] S3 | Done | Update Dashboard with watchlist panel. |
+| [x] S4 | Done | Add visual indicators to Items Explorer. |
 
 ## Review Notes
 
@@ -67,3 +75,4 @@
 - 2026-02-26: Completed Phase 4 (P4-001, P4-002, P4-003). Implemented traceability matrices, verification tracking, and achieved 83% non-UI test coverage.
 - 2026-02-26: Completed Phase 5 (P5-001, P5-002, P5-003). Refactored core to support dynamic project roots and implemented `qingsong init` for multi-vault support.
 - 2026-02-26: Completed Phase 6 (P6-001, P6-002, P6-003, P6-004). Redesigned WebUI into a multi-page dashboard with advanced insights and interactive item creation.
+- 2026-02-27: Completed Phase 7 (P7-001, P7-002, P7-003, P7-004). Implemented TBD/TBC placeholder tracking and integrated it into the CLI and WebUI.

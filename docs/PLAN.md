@@ -59,3 +59,13 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P6-002 | Verification & Traceability | Build dedicated views for the Verification Dashboard and Traceability Matrices (Upward/Downward) (Done). |
 | P6-003 | Advanced Search & Graph | Integrate SQLite FTS5 search into the UI and embed interactive NetworkX graphs for visual dependency tracking (Done). |
 | P6-004 | Interactive Editor (Draft) | Implement form components to create, update, and migrate items directly from the browser using the staging API (Done). |
+
+## Phase 7: Stability Tracking (Current)
+**Objective**: Explicitly manage items with "TBD" or "TBC" placeholders to track project maturity.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P7-001 | Placeholder Detection | Implement automatic `has_placeholders` detection in the item model (Done). |
+| P7-002 | CLI TBD Filter | Add `--tbd` filter to the `find` command for rapid isolation (Done). |
+| P7-003 | UI Stability Dashboard | Create a "Stability Watchlist" panel on the UI Dashboard (Done). |
+| P7-004 | UI Visual Highlighting | Add visual warnings and filters for unstable items in the Items Explorer (Done). |

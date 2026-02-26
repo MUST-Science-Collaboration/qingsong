@@ -474,6 +474,7 @@ def find(
     system: Optional[str] = typer.Option(None, "--system", "-s", help="Filter by system"),
     status: Optional[str] = typer.Option(None, "--status", help="Filter by status"),
     owner: Optional[str] = typer.Option(None, "--owner", "-o", help="Filter by owner"),
+    tbd: bool = typer.Option(False, "--tbd", help="Show only items with TBD/TBC placeholders"),
     limit: int = typer.Option(50, "--limit", "-n", help="Maximum items to show"),
     format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
 ):
@@ -486,7 +487,7 @@ def find(
             # Use FTS5 search
             results = core.search(query)
         else:
-            # Load all and filter manually (or we could use core.query but this is safer for staged items)
+            # Load all and filter manually
             results = [item.model_dump(mode="json") for item in core.items.values()]
 
         # Apply metadata filters
@@ -503,6 +504,13 @@ def find(
 
         if owner:
             results = [r for r in results if r["owner"] == owner]
+
+        if tbd:
+            # Check for TBD/TBC in title or text
+            def _check_tbd(r):
+                content = f"{r.get('title', '')} {r.get('text', '')}".upper()
+                return "TBD" in content or "TBC" in content
+            results = [r for r in results if _check_tbd(r)]
 
         # Sort by rank (if search) or ID
         if not query:

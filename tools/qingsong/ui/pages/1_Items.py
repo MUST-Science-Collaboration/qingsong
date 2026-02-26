@@ -26,6 +26,9 @@ def render_item_detail(core, item_id):
 
     st.subheader(f"📄 {item.id_full}")
     
+    if item.has_placeholders:
+        st.warning("⚠️ This item contains **TBD** or **TBC** placeholders and is considered unstable.")
+
     col1, col2, col3 = st.columns(3)
     with col1: st.metric("Type", item.type.value)
     with col2: st.metric("Status", item.status.value)
@@ -101,37 +104,42 @@ def main():
     with tab_create:
         render_new_item_form(core)
 
-    with tab_view:
         # Filters
         with st.expander("Filter & Search", expanded=False):
-            col1, col2, col3 = st.columns(3)
-        with col1:
-            sel_type = st.selectbox("Type", ["All"] + [t.value for t in ItemType])
-        with col2:
-            sel_system = st.selectbox("System", ["All"] + (core.metadata.valid_system_paths if core.metadata else []))
-        with col3:
-            query = st.text_input("Search", placeholder="Keywords...")
-
-    # Filter items
-    items = list(core.items.values())
-    if sel_type != "All":
-        items = [i for i in items if i.type.value == sel_type]
-    if sel_system != "All":
-        items = [i for i in items if i.system_path == sel_system]
-    if query:
-        q = query.lower()
-        items = [i for i in items if q in i.title.lower() or q in i.text.lower() or q in i.id_full.lower()]
-
-    # Layout
-    col_list, col_detail = st.columns([2, 3])
-
-    with col_list:
-        st.subheader(f"Results ({len(items)})")
-        for i in sorted(items, key=lambda x: x.id_full):
-            if st.button(f"{i.id_full}: {i.title[:40]}...", key=f"btn_{i.id_full}", width="stretch"):
-                st.session_state.selected_item = i.id_full
-            
-    with col_detail:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                sel_type = st.selectbox("Type", ["All"] + [t.value for t in ItemType])
+            with col2:
+                sel_system = st.selectbox("System", ["All"] + (core.metadata.valid_system_paths if core.metadata else []))
+            with col3:
+                query = st.text_input("Search", placeholder="Keywords...")
+            with col4:
+                tbd_only = st.checkbox("TBD/TBC Only")
+    
+        # Filter items
+        items = list(core.items.values())
+        if sel_type != "All":
+            items = [i for i in items if i.type.value == sel_type]
+        if sel_system != "All":
+            items = [i for i in items if i.system_path == sel_system]
+        if tbd_only:
+            items = [i for i in items if i.has_placeholders]
+        if query:
+            q = query.lower()
+            items = [i for i in items if q in i.title.lower() or q in i.text.lower() or q in i.id_full.lower()]
+    
+        # Layout
+        col_list, col_detail = st.columns([2, 3])
+    
+        with col_list:
+            st.subheader(f"Results ({len(items)})")
+            for i in sorted(items, key=lambda x: x.id_full):
+                label = f"{i.id_full}: {i.title[:40]}..."
+                if i.has_placeholders:
+                    label = "⚠️ " + label
+                if st.button(label, key=f"btn_{i.id_full}", width="stretch"):
+                    st.session_state.selected_item = i.id_full
+        with col_detail:
         sel_id = st.session_state.get("selected_item")
         if sel_id:
             render_item_detail(core, sel_id)

@@ -73,5 +73,26 @@ def main():
         ])
         st.dataframe(sys_df, width="stretch", hide_index=True)
 
+    # TBD/TBC Watchlist
+    st.divider()
+    st.subheader("⚠️ Stability Watchlist (TBD/TBC)")
+    tbd_items = [i for i in core.items.values() if i.has_placeholders]
+    
+    if tbd_items:
+        st.warning(f"Found {len(tbd_items)} items with TBD/TBC placeholders.")
+        tbd_df = pd.DataFrame([
+            {
+                "ID": i.id_full,
+                "Type": i.type.value,
+                "Title": i.title,
+                "Status": i.status.value,
+                "Owner": i.owner
+            }
+            for i in sorted(tbd_items, key=lambda x: x.id_full)
+        ])
+        st.dataframe(tbd_df, width="stretch", hide_index=True)
+    else:
+        st.success("No items with TBD/TBC placeholders found.")
+
 if __name__ == "__main__":
     main()

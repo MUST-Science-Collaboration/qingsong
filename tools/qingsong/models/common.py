@@ -185,6 +185,12 @@ class BaseItem(BaseModel):
         description="External references (URLs, document numbers)",
     )
 
+    @property
+    def has_placeholders(self) -> bool:
+        """Check if the item contains 'TBD' or 'TBC' placeholders."""
+        content = f"{self.title} {self.text}".upper()
+        return "TBD" in content or "TBC" in content
+
     model_config = {
         "extra": "allow",  # Allow extra fields for flexibility
         "validate_assignment": True,
