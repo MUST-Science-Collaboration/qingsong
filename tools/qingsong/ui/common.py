@@ -75,3 +75,8 @@ def render_sidebar():
     if st.sidebar.button("Reload Data"):
         st.cache_resource.clear()
         st.rerun()
+
+    st.sidebar.divider()
+    st.sidebar.caption("Advanced Insights")
+    if st.sidebar.button("💡 View System Insights", width="stretch"):
+        st.switch_page("pages/6_Insights.py")

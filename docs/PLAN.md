@@ -97,3 +97,13 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P10-001 | Impact Logic | Implement recursive transitive dependency analysis in the core engine (Done). |
 | P10-002 | Impact CLI | Add a CLI command to visualize the impact tree of a specific item (Done). |
 | P10-003 | Impact UI | Build an interactive Impact Explorer in the browser dashboard (Done). |
+
+## Phase 11: Orphan & Coverage Reporting (Completed)
+**Objective**: Identify design gaps and track verification completeness across the system.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P11-001 | Gap Detection Logic | Implement recursive identification of orphans (root/leaf) and unverified items (Done). |
+| P11-002 | Coverage Analytics | Calculate traceability and verification coverage percentages (Done). |
+| P11-003 | Reporting CLI | Add a `qingsong report` suite for automated gap analysis (Done). |
+| P11-004 | UI Insights Page | Build a dedicated dashboard view for system maturity and coverage metrics (Done). |

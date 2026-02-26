@@ -887,6 +887,76 @@ class QingsongCore:
             "items": {tid: self.items[tid] for tid in results}
         }
 
+    def get_orphan_report(self) -> dict[str, list[str]]:
+        """
+        Identify items with design gaps (missing links).
+
+        Returns:
+            Dictionary with orphan categories and item IDs.
+        """
+        root_orphans = []  # No parents (outgoing links to higher level requirements)
+        leaf_orphans = []  # No children (incoming links from implementation/verification)
+        unverified = []    # Requirements without 'verifies' incoming links
+
+        trace_links = ["derives_from", "implements", "verifies"]
+
+        for item_id, item in self.items.items():
+            linked = self.get_linked_items(item_id)
+            
+            # Root Orphan: A requirement that doesn't derive from anything
+            if item.type == ItemType.REQ and not any(l.link_type == "derives_from" for l in item.links):
+                root_orphans.append(item_id)
+            
+            # Leaf Orphan: An item that has no incoming dependencies
+            if not linked["incoming"]:
+                leaf_orphans.append(item_id)
+                
+            # Unverified Requirement
+            if item.type == ItemType.REQ and not any(l.link_type == "verifies" for l in item.links):
+                # Check incoming links for verification
+                has_verification = any(l.link_type == "verifies" for other in self.items.values() for l in other.links if l.target_id == item_id)
+                if not has_verification:
+                    unverified.append(item_id)
+
+        return {
+            "root_orphans": sorted(root_orphans),
+            "leaf_orphans": sorted(leaf_orphans),
+            "unverified_requirements": sorted(unverified),
+        }
+
+    def get_coverage_stats(self) -> dict[str, Any]:
+        """
+        Calculate system-wide coverage metrics.
+
+        Returns:
+            Dictionary with coverage percentages.
+        """
+        reqs = self.get_items_by_type(ItemType.REQ)
+        total_reqs = len(reqs)
+        
+        if total_reqs == 0:
+            return {"traceability": 0, "verification": 0}
+
+        # Traceability: Reqs that have a parent (derives_from)
+        traced_count = len([r for r in reqs if any(l.link_type == "derives_from" for l in r.links)])
+        
+        # Verification: Reqs that have at least one incoming 'verifies' link
+        verified_ids = set()
+        for item in self.items.values():
+            for link in item.links:
+                if link.link_type == "verifies":
+                    verified_ids.add(link.target_id)
+        
+        verified_req_count = len([r for r in reqs if r.id_full in verified_ids])
+
+        return {
+            "total_requirements": total_reqs,
+            "traceability_count": traced_count,
+            "traceability_percent": (traced_count / total_reqs) * 100,
+            "verification_count": verified_req_count,
+            "verification_percent": (verified_req_count / total_reqs) * 100,
+        }
+
     def summary(self) -> dict[str, Any]:
         """
         Get a summary of the repository state.
