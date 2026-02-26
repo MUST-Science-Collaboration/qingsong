@@ -831,6 +831,62 @@ class QingsongCore:
             "by_system": systems,
         }
 
+    def get_impact_analysis(
+        self,
+        item_id: str,
+        direction: str = "both",
+        max_depth: int = 5,
+    ) -> dict[str, Any]:
+        """
+        Analyze the transitive impact of changing an item.
+
+        Args:
+            item_id: ID of the item to analyze.
+            direction: "upward", "downward", or "both".
+            max_depth: Maximum recursion depth.
+
+        Returns:
+            Dictionary with impact analysis results.
+        """
+        if item_id not in self.items:
+            raise KeyError(f"Item not found: {item_id}")
+
+        impacted_items = {item_id}
+        
+        def _trace(current_id: str, current_dir: str, depth: int):
+            if depth >= max_depth:
+                return
+            
+            linked = self.get_linked_items(current_id)
+            targets = []
+            if current_dir == "downward":
+                # Downward impact: items that depend on/link to the current item
+                targets = [i.id_full for i in linked["incoming"]]
+            else:
+                # Upward impact: items that the current item depends on/links to
+                targets = [i.id_full for i in linked["outgoing"]]
+                
+            for target_id in targets:
+                if target_id not in impacted_items:
+                    impacted_items.add(target_id)
+                    _trace(target_id, current_dir, depth + 1)
+
+        if direction in ("downward", "both"):
+            _trace(item_id, "downward", 0)
+        if direction in ("upward", "both"):
+            _trace(item_id, "upward", 0)
+
+        # Remove the starting item from the impacted list for the final count
+        results = list(impacted_items)
+        results.remove(item_id)
+        
+        return {
+            "root_id": item_id,
+            "impacted_count": len(results),
+            "impacted_ids": sorted(results),
+            "items": {tid: self.items[tid] for tid in results}
+        }
+
     def summary(self) -> dict[str, Any]:
         """
         Get a summary of the repository state.

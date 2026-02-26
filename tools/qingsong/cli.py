@@ -991,6 +991,55 @@ def ui():
 
 
 # =============================================================================
+# Impact command
+# =============================================================================
+
+@app.command("impact")
+def impact(
+    item_id: str = typer.Argument(..., help="Item ID to analyze"),
+    direction: str = typer.Option("both", "--direction", "-d", help="Direction: upward, downward, both"),
+    depth: int = typer.Option(5, "--depth", help="Maximum recursion depth"),
+):
+    """Analyze the ripple effect of changing a specific item."""
+    try:
+        core = get_core()
+        report = core.get_impact_analysis(item_id, direction=direction, max_depth=depth)
+
+        console.print(Panel.fit(
+            f"[bold]Root Item:[/bold] {item_id}\n"
+            f"[bold]Impacted Count:[/bold] {report['impacted_count']}",
+            title="Impact Analysis Report"
+        ))
+
+        if report["impacted_count"] == 0:
+            console.print("[green]No transitive dependencies found.[/green]")
+            return
+
+        table = Table(title="Impacted Items")
+        table.add_column("ID", style="cyan")
+        table.add_column("Type")
+        table.add_column("Title")
+        table.add_column("System", style="green")
+        table.add_column("Status")
+
+        for tid in report["impacted_ids"]:
+            item = report["items"][tid]
+            table.add_row(
+                tid,
+                item.type.value,
+                item.title[:50],
+                item.system_path,
+                item.status.value
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
 # Summary command
 # =============================================================================
 
