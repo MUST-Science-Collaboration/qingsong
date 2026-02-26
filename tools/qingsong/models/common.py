@@ -89,6 +89,17 @@ class RetirementInfo(BaseModel):
     )
 
 
+class Comment(BaseModel):
+    """A comment in a design discussion."""
+
+    author: str = Field(..., description="Person ID of the commenter")
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When the comment was made",
+    )
+    text: str = Field(..., description="Content of the comment")
+
+
 class BaseItem(BaseModel):
     """
     Base model for all Qingsong items.
@@ -163,6 +174,12 @@ class BaseItem(BaseModel):
     links: list[Link] = Field(
         default_factory=list,
         description="Typed links to other items",
+    )
+
+    # Discussions
+    discussions: list[Comment] = Field(
+        default_factory=list,
+        description="List of comments/discussion points",
     )
 
     # Timestamps

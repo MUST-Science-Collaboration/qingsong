@@ -37,6 +37,21 @@ def render_item_detail(core, item_id):
     st.markdown(f"**Title:** {item.title}")
     st.markdown(f"**System:** {item.system_path}")
     
+    # Collaborators
+    if item.collaborators:
+        st.write(f"**Collaborators:** {', '.join(item.collaborators)}")
+    
+    with st.expander("👥 Manage Collaborators"):
+        all_people = core.metadata.valid_person_ids if core.metadata else []
+        new_collabs = st.multiselect("Update Collaborators", all_people, default=item.collaborators)
+        if st.button("Save Collaborators"):
+            try:
+                core.update_item(item_id, collaborators=new_collabs)
+                st.success("Collaborators updated!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Update failed: {e}")
+
     st.markdown("**Description:**")
     st.info(item.text)
 
@@ -54,6 +69,34 @@ def render_item_detail(core, item_id):
         st.write("**Incoming (Source):**")
         for other in linked["incoming"]:
             st.markdown(f"← **{other.id_full}**")
+
+    # Discussions
+    st.divider()
+    st.subheader("💬 Discussions")
+    
+    if item.discussions:
+        for comment in item.discussions:
+            with st.chat_message("user", avatar="👤"):
+                st.write(f"**{comment.author}** ({comment.timestamp.strftime('%Y-%m-%d %H:%M')})")
+                st.write(comment.text)
+    else:
+        st.info("No discussions yet.")
+
+    # Add comment form
+    with st.expander("➕ Add Comment"):
+        with st.form(f"comment_form_{item_id}", clear_on_submit=True):
+            author = st.selectbox("Commenter", core.metadata.valid_person_ids if core.metadata else [], key=f"auth_{item_id}")
+            comment_text = st.text_area("Your comment", key=f"text_{item_id}")
+            if st.form_submit_button("Post Comment"):
+                if comment_text:
+                    try:
+                        core.add_comment(item_id, author, comment_text)
+                        st.success("Comment staged!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to add comment: {e}")
+                else:
+                    st.error("Comment cannot be empty.")
 
 def render_new_item_form(core):
     """Render a form to create a new item."""
@@ -131,14 +174,34 @@ def main():
         # Layout
         col_list, col_detail = st.columns([2, 3])
     
-        with col_list:
-            st.subheader(f"Results ({len(items)})")
-            for i in sorted(items, key=lambda x: x.id_full):
-                label = f"{i.id_full}: {i.title[:40]}..."
-                if i.has_placeholders:
-                    label = "⚠️ " + label
-                if st.button(label, key=f"btn_{i.id_full}", width="stretch"):
-                    st.session_state.selected_item = i.id_full
+            with col_list:
+                st.subheader(f"Results ({len(items)})")
+                
+                # If search was performed via FTS5, we might have snippets
+                fts_results = {}
+                if query:
+                    try:
+                        # Use the core search which returns dicts with snippets
+                        search_data = core.search(query)
+                        fts_results = {r["id_full"]: r.get("snippet") for r in search_data}
+                    except:
+                        pass
+        
+                for i in sorted(items, key=lambda x: x.id_full):
+                    label = f"{i.id_full}: {i.title[:40]}..."
+                    if i.has_placeholders:
+                        label = "⚠️ " + label
+                    
+                    with st.container():
+                        if st.button(label, key=f"btn_{i.id_full}", width="stretch"):
+                            st.session_state.selected_item = i.id_full
+                        
+                        # Show snippet if this was a search result
+                        if i.id_full in fts_results and fts_results[i.id_full]:
+                            st.caption(f"...{fts_results[i.id_full]}...")
+                        
+                        st.write("") # Spacer
+        
         with col_detail:
         sel_id = st.session_state.get("selected_item")
         if sel_id:

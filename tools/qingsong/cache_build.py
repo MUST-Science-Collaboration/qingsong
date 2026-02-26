@@ -51,6 +51,7 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             tags TEXT,  -- JSON array
             references_json TEXT,  -- JSON array (renamed to avoid SQLite keyword)
             collaborators TEXT,  -- JSON array
+            discussions TEXT,  -- JSON array
             extra_data TEXT  -- JSON for type-specific fields
         )
     """)
@@ -119,6 +120,7 @@ def _create_schema(conn: sqlite3.Connection) -> None:
             title,
             text,
             tags,
+            discussions,
             content='items',
             content_rowid='rowid'
         )
@@ -127,24 +129,24 @@ def _create_schema(conn: sqlite3.Connection) -> None:
     # Triggers to keep FTS in sync
     cursor.execute("""
         CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
-            INSERT INTO items_fts(rowid, id_full, title, text, tags)
-            VALUES (NEW.rowid, NEW.id_full, NEW.title, NEW.text, NEW.tags);
+            INSERT INTO items_fts(rowid, id_full, title, text, tags, discussions)
+            VALUES (NEW.rowid, NEW.id_full, NEW.title, NEW.text, NEW.tags, NEW.discussions);
         END
     """)
 
     cursor.execute("""
         CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
-            INSERT INTO items_fts(items_fts, rowid, id_full, title, text, tags)
-            VALUES('delete', OLD.rowid, OLD.id_full, OLD.title, OLD.text, OLD.tags);
+            INSERT INTO items_fts(items_fts, rowid, id_full, title, text, tags, discussions)
+            VALUES('delete', OLD.rowid, OLD.id_full, OLD.title, OLD.text, OLD.tags, OLD.discussions);
         END
     """)
 
     cursor.execute("""
         CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE ON items BEGIN
-            INSERT INTO items_fts(items_fts, rowid, id_full, title, text, tags)
-            VALUES('delete', OLD.rowid, OLD.id_full, OLD.title, OLD.text, OLD.tags);
-            INSERT INTO items_fts(rowid, id_full, title, text, tags)
-            VALUES (NEW.rowid, NEW.id_full, NEW.title, NEW.text, NEW.tags);
+            INSERT INTO items_fts(items_fts, rowid, id_full, title, text, tags, discussions)
+            VALUES('delete', OLD.rowid, OLD.id_full, OLD.title, OLD.text, OLD.tags, OLD.discussions);
+            INSERT INTO items_fts(rowid, id_full, title, text, tags, discussions)
+            VALUES (NEW.rowid, NEW.id_full, NEW.title, NEW.text, NEW.tags, NEW.discussions);
         END
     """)
 
@@ -183,8 +185,8 @@ def _insert_item(cursor: sqlite3.Cursor, item: BaseItem) -> None:
         INSERT OR REPLACE INTO items (
             id_full, type, title, text, system_path, l3, category_path,
             owner, status, priority, likelihood, consequence, risk_score,
-            created_at, updated_at, tags, references_json, collaborators, extra_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            created_at, updated_at, tags, references_json, collaborators, discussions, extra_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         item.id_full,
         item.type.value,
@@ -204,6 +206,7 @@ def _insert_item(cursor: sqlite3.Cursor, item: BaseItem) -> None:
         json.dumps(item.tags),
         json.dumps(item.references),
         json.dumps(item.collaborators),
+        json.dumps([c.model_dump(mode="json") for c in item.discussions]),
         json.dumps(extra_data),
     ))
 
@@ -406,14 +409,14 @@ def search_items(
     cache_path: Path | None = None,
 ) -> list[dict[str, Any]]:
     """
-    Full-text search items.
+    Full-text search items with snippet generation.
 
     Args:
         query: Search query (FTS5 syntax supported).
         cache_path: Path to cache database.
 
     Returns:
-        List of matching items.
+        List of matching items with 'snippet' field.
     """
     if cache_path is None:
         cache_path = get_cache_path()
@@ -428,8 +431,9 @@ def search_items(
 
     try:
         cursor = conn.cursor()
+        # Use snippet() to get relevant context
         cursor.execute("""
-            SELECT items.*
+            SELECT items.*, snippet(items_fts, 2, '...', '...', '...', 20) as snippet
             FROM items_fts
             JOIN items ON items_fts.id_full = items.id_full
             WHERE items_fts MATCH ?
