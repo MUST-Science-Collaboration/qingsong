@@ -16,9 +16,8 @@ Qingsong (青松) is a lightweight, file-based requirements/risk/interface manag
 - 📋 **Requirements Management**: Track and trace requirements with verification status
 - ⚠️ **Risk Management**: Identify, assess, and mitigate project risks
 - 🔗 **Interface Control**: Define and manage system interfaces
-- 📄 **Document Tracking**: Reference project documents
-- 📊 **Data Records**: Track test data and results
-- 📝 **Technical Notes**: Capture decisions and analyses
+- 🏠 **Multi-Vault Support**: Point to any project directory using the `--root` flag
+- ✨ **Project Scaffolding**: Bootstrap new projects instantly with `qingsong init`
 - 🔍 **Full-text Search**: SQLite FTS5 for fast searching
 - 🕸️ **Graph Visualization**: Visualize item relationships
 - 🖥️ **Web UI**: Streamlit-based browser interface
@@ -51,20 +50,17 @@ pip install -e ".[dev]"
 ### Verify Installation
 
 ```bash
-# Validate metadata
-qingsong meta validate
+# Initialize a demo project
+qingsong init ./demo --name "Demo Project"
+
+# Validate metadata in the demo project
+qingsong --root ./demo meta validate
 
 # Validate all items
-qingsong validate
+qingsong --root ./demo validate
 
 # Build SQLite cache
-qingsong cache build
-
-# Query the cache
-qingsong query "SELECT type, id_full, system_path, status FROM items LIMIT 20;"
-
-# Launch web UI
-qingsong ui
+qingsong --root ./demo cache build
 ```
 
 ## Project Structure

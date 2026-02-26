@@ -15,9 +15,14 @@ Qingsong (青松) is a requirements management system for the MUST telescope pro
 - **SQLite Cache**: A derived SQLite database (including FTS5) for high-performance querying and reporting.
 
 ### 2.3 Interface Layer
-- **CLI**: Primary interface for engineers and automated checks.
+- **CLI**: Primary interface for engineers and automated checks. Supports a global `--root` flag for multi-vault management.
 - **Python API**: For advanced scripting and data analysis.
 - **Web UI**: Streamlit-based viewer/editor (Stage 2).
+
+### 2.4 Vault Portability
+- Qingsong is a portable engine. Any directory with a `meta/` and `doorstop/` structure is a valid **Vault**.
+- The `qingsong init` command scaffolds a new vault with default metadata templates.
+- The `QINGSONG_ROOT` environment variable (set via `--root`) ensures all validation layers use the correct project context.
 
 ## 3. Data Model
 ### 3.1 Item Types
