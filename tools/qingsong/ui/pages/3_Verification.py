@@ -57,7 +57,7 @@ def main():
                 "Total": stats["total"],
                 "Percent": (stats["verified"] / stats["total"]) * 100
             })
-        st.dataframe(pd.DataFrame(s_data), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(s_data), hide_index=True, width="stretch")
 
 if __name__ == "__main__":
     main()

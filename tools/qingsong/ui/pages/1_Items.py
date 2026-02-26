@@ -128,7 +128,7 @@ def main():
     with col_list:
         st.subheader(f"Results ({len(items)})")
         for i in sorted(items, key=lambda x: x.id_full):
-            if st.button(f"{i.id_full}: {i.title[:40]}...", key=f"btn_{i.id_full}", use_container_width=True):
+            if st.button(f"{i.id_full}: {i.title[:40]}...", key=f"btn_{i.id_full}", width="stretch"):
                 st.session_state.selected_item = i.id_full
             
     with col_detail:
