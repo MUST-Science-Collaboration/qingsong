@@ -18,11 +18,25 @@ Qingsong is a tool that helps you keep your project data (like requirements) in 
 
 ## 2. Installation & Setup
 
-Before we start, ensure you have the `qingsong` command available in your terminal. 
+Since you are likely already in the Qingsong development directory, you don't need to "install" anything globally. You have two excellent options for testing:
 
-If you are in the Qingsong developer environment:
+### Option A: Direct Testing (Recommended)
+Use `uv run` to execute the command within the project's environment. This is the cleanest way to test without affecting your system.
+
 ```bash
 # Verify the tool is working
+uv run qingsong --version
+```
+*Note: In all examples below, replace `qingsong` with `uv run qingsong`.*
+
+### Option B: The "Real User" Experience
+If you want to use the `qingsong` command from anywhere (like a real user), you can install it into an isolated tool environment:
+
+```bash
+# Install qingsong as a standalone tool
+uv tool install .
+
+# Now you can use it anywhere!
 qingsong --version
 ```
 
