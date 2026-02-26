@@ -18,7 +18,7 @@ from typing import Any
 
 from ruamel.yaml import YAML
 
-from . import META_DIR
+from . import get_project_root
 
 
 @dataclass
@@ -270,7 +270,7 @@ def load_metadata(meta_dir: Path | None = None, force_reload: bool = False) -> M
     Load all metadata from YAML files.
 
     Args:
-        meta_dir: Path to metadata directory. Defaults to project META_DIR.
+        meta_dir: Path to metadata directory. Defaults to project meta dir.
         force_reload: Force reload even if cached.
 
     Returns:
@@ -282,7 +282,7 @@ def load_metadata(meta_dir: Path | None = None, force_reload: bool = False) -> M
         return _metadata_cache
 
     if meta_dir is None:
-        meta_dir = META_DIR
+        meta_dir = get_project_root() / "meta"
 
     # Load hierarchy
     hierarchy_data = _load_yaml(meta_dir / "hierarchy.yaml")
@@ -408,7 +408,7 @@ def validate_metadata(meta_dir: Path | None = None) -> list[str]:
     errors: list[str] = []
 
     if meta_dir is None:
-        meta_dir = META_DIR
+        meta_dir = get_project_root() / "meta"
 
     # Check required files exist
     required_files = [

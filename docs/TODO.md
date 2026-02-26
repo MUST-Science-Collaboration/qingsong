@@ -29,13 +29,23 @@
 | P4-002 | Verification Tracking | agent | [x] Done | Implement verification status roll-ups. |
 | P4-003 | Production Hardening | agent | [x] Done | Final docs and >80% test coverage. |
 
-## Current Session Slice Plan (Production Hardening)
+## Implementation Backlog (Phase 5 Completed)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P5-001 | CLI Root Parameter | agent | [x] Done | Allow `--root` argument for Vault selection. |
+| P5-002 | Path Context Refactor | agent | [x] Done | Refactor Core to eliminate hardcoded globals. |
+| P5-003 | Project Scaffolding | agent | [x] Done | Build `qingsong init` command. |
+
+## Current Session Slice Plan (Project Portability)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Implement CLI tests for all major commands. |
-| [x] S2 | Done | Achieve >80% test coverage for non-UI components. |
-| [x] S3 | Done | Final documentation and SPEC verification. |
+| [x] S1 | Done | Update `cli.py` to accept a global `--root` option. |
+| [x] S2 | Done | Refactor `QingsongCore.load()` and `__init__.py` to use relative vault paths. |
+| [x] S3 | Done | Create default template strings for metadata scaffolding. |
+| [x] S4 | Done | Implement `qingsong init` in `cli.py`. |
+| [x] S5 | Done | Write integration tests for multi-vault behavior. |
 
 ## Review Notes
 
@@ -46,3 +56,4 @@
 - 2026-02-25: Completed Phase 2 (P2-002, P2-003, P2-004). Implemented circular dependency detection, resilient I/O, and achieved 60% test coverage.
 - 2026-02-26: Completed Phase 3 (P3-001, P3-002, P3-003). Implemented `find`, `migrate` commands and enhanced export capabilities.
 - 2026-02-26: Completed Phase 4 (P4-001, P4-002, P4-003). Implemented traceability matrices, verification tracking, and achieved 83% non-UI test coverage.
+- 2026-02-26: Completed Phase 5 (P5-001, P5-002, P5-003). Refactored core to support dynamic project roots and implemented `qingsong init` for multi-vault support.
