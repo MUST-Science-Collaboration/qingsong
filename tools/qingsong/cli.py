@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+from dataclasses import dataclass
 
 import typer
 from rich.console import Console
@@ -16,7 +17,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from . import __version__, PROJECT_ROOT
+from . import __version__, get_project_root
 from .core import QingsongCore
 from .models import ItemType
 
@@ -26,6 +27,13 @@ app = typer.Typer(
     help="Qingsong: Project Management Engine for MUST Telescope",
     add_completion=False,
 )
+
+# Global state for context
+@dataclass
+class GlobalState:
+    root: Optional[Path] = None
+
+state = GlobalState()
 
 # Subcommands
 meta_app = typer.Typer(help="Metadata operations")
@@ -50,10 +58,22 @@ def main(
         None, "--version", "-v", callback=version_callback, is_eager=True,
         help="Show version and exit"
     ),
+    root: Optional[Path] = typer.Option(
+        None, "--root", "-r", help="Path to the Qingsong vault/project root"
+    ),
 ):
     """Qingsong: Project Management Engine for MUST Telescope"""
-    pass
+    import os
+    if root:
+        state.root = root
+        os.environ["QINGSONG_ROOT"] = str(root.resolve())
 
+
+def get_core() -> QingsongCore:
+    """Helper to load core with global root state."""
+    from .load_meta import clear_cache as clear_meta_cache
+    clear_meta_cache()
+    return QingsongCore.load(project_root=state.root)
 
 # =============================================================================
 # Meta commands
@@ -65,9 +85,8 @@ def meta_validate():
     console.print("[bold]Validating metadata...[/bold]")
 
     try:
-        from .load_meta import validate_metadata
-
-        errors = validate_metadata()
+        core = get_core()
+        errors = core.validate_metadata()
 
         if errors:
             console.print("[red]Metadata validation FAILED[/red]")
@@ -86,9 +105,11 @@ def meta_validate():
 def meta_show():
     """Show loaded metadata summary."""
     try:
-        from .load_meta import load_metadata
-
-        metadata = load_metadata()
+        core = get_core()
+        metadata = core.metadata
+        if not metadata:
+            console.print("[red]Metadata not loaded.[/red]")
+            raise typer.Exit(1)
 
         console.print(Panel.fit(
             f"[bold]Project:[/bold] {metadata.project_name}\n"
@@ -128,7 +149,7 @@ def validate():
     console.print("[bold]Validating all items...[/bold]")
 
     try:
-        core = QingsongCore.load()
+        core = get_core()
         result = core.validate()
 
         if result.valid:
@@ -172,7 +193,7 @@ def cache_build():
     console.print("[bold]Building SQLite cache...[/bold]")
 
     try:
-        core = QingsongCore.load()
+        core = get_core()
         cache_path = core.build_cache()
 
         stats = core.get_cache_stats()
@@ -191,7 +212,7 @@ def cache_build():
 def cache_stats():
     """Show cache statistics."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         stats = core.get_cache_stats()
 
         if not stats.get("exists"):
@@ -238,7 +259,7 @@ def query(
 ):
     """Execute SQL query on the cache."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         results = core.query(sql)
 
         if not results:
@@ -274,6 +295,118 @@ def query(
 
 
 # =============================================================================
+# Init command
+# =============================================================================
+
+@app.command("init")
+def init(
+    path: Path = typer.Argument(..., help="Path to initialize the new Qingsong project"),
+    name: str = typer.Option("My Project", "--name", "-n", help="Project name"),
+):
+    """Initialize a new Qingsong project structure in the specified directory."""
+    try:
+        if not path.exists():
+            path.mkdir(parents=True)
+            
+        meta_dir = path / "meta"
+        doorstop_dir = path / "doorstop"
+        index_dir = path / "index"
+        
+        # Create directories
+        meta_dir.mkdir(exist_ok=True)
+        doorstop_dir.mkdir(exist_ok=True)
+        index_dir.mkdir(exist_ok=True)
+        (meta_dir / "vocab").mkdir(exist_ok=True)
+        (meta_dir / "fps").mkdir(exist_ok=True)
+        
+        # Write default metadata files
+        import yaml
+        
+        # hierarchy.yaml
+        hierarchy = {
+            "version": "1.0",
+            "description": f"Hierarchy for {name}",
+            "systems": {
+                "SYS": {
+                    "name": "Main System",
+                    "owner": "pm001",
+                    "subsystems": {
+                        "SUB": {"name": "Subsystem 1", "owner": "eng001"}
+                    }
+                }
+            },
+            "valid_system_paths": ["SYS/SUB"],
+            "valid_l3_codes": ["TASK-A", "TASK-B"]
+        }
+        with open(meta_dir / "hierarchy.yaml", "w") as f:
+            yaml.dump(hierarchy, f, sort_keys=False)
+            
+        # people.yaml
+        people = {
+            "version": "1.0",
+            "description": "Project team",
+            "people": {
+                "pm001": {"name": "Project Manager", "role": "PM", "active": True, "systems": []},
+                "eng001": {"name": "Lead Engineer", "role": "Engineer", "active": True, "systems": ["SYS/SUB"]}
+            },
+            "valid_person_ids": ["pm001", "eng001"]
+        }
+        with open(meta_dir / "people.yaml", "w") as f:
+            yaml.dump(people, f, sort_keys=False)
+            
+        # glossary.yaml
+        glossary = {
+            "version": "1.0",
+            "terms": {
+                "MUST": {
+                    "definition": "MUltiplexed Survey Telescope",
+                    "category": "project"
+                }
+            }
+        }
+        with open(meta_dir / "glossary.yaml", "w") as f:
+            yaml.dump(glossary, f, sort_keys=False)
+            
+        # link_types.yaml (minimal)
+        links = {
+            "version": "1.0",
+            "link_types": {
+                "related_to": {
+                    "label": "Related To",
+                    "allowed_source_types": ["REQ", "RSK", "IFC", "DOC", "DAT", "NOTE"],
+                    "allowed_target_types": ["REQ", "RSK", "IFC", "DOC", "DAT", "NOTE"]
+                },
+                "derives_from": {
+                    "label": "Derives From",
+                    "allowed_source_types": ["REQ"],
+                    "allowed_target_types": ["REQ"]
+                }
+            },
+            "valid_link_types": ["related_to", "derives_from"],
+            "external_prefix": "EXT:"
+        }
+        with open(meta_dir / "vocab" / "link_types.yaml", "w") as f:
+            yaml.dump(links, f, sort_keys=False)
+            
+        # status.yaml, req_category.yaml, etc. (minimal defaults)
+        with open(meta_dir / "vocab" / "status.yaml", "w") as f:
+            yaml.dump({"version": "1.0", "valid_values": ["draft", "active"]}, f)
+        with open(meta_dir / "vocab" / "req_category.yaml", "w") as f:
+            yaml.dump({"version": "1.0", "valid_paths": ["functional"]}, f)
+        with open(meta_dir / "vocab" / "risk_category.yaml", "w") as f:
+            yaml.dump({"version": "1.0", "valid_paths": ["technical"]}, f)
+        with open(meta_dir / "vocab" / "ifc_type.yaml", "w") as f:
+            yaml.dump({"version": "1.0", "valid_paths": ["mechanical"]}, f)
+            
+        console.print(f"[green]✓ Initialized new Qingsong project '{name}' at {path}[/green]")
+        console.print("  [dim]Created meta/, doorstop/, and index/ directories.[/dim]")
+        console.print("  [dim]Run 'qingsong --root <path> new req ...' to create your first item.[/dim]")
+        
+    except Exception as e:
+        console.print(f"[red]Error initializing project: {e}[/red]")
+        raise typer.Exit(1)
+
+# =============================================================================
 # New item command
 # =============================================================================
 
@@ -303,7 +436,7 @@ def new_item(
             console.print(f"[red]Invalid type: {item_type}. Use: req, rsk, ifc, doc, dat, note[/red]")
             raise typer.Exit(1)
 
-        core = QingsongCore.load()
+        core = get_core()
 
         # Create the item
         item = core.create_item(
@@ -315,6 +448,9 @@ def new_item(
             category_path=category,
             l3=l3,
         )
+
+        # Persist to disk immediately for CLI usage
+        core.flush()
 
         console.print(f"[green]✓ Created item: {item.id_full}[/green]")
         console.print(f"  Type: {item.type.value}")
@@ -343,7 +479,7 @@ def find(
 ):
     """Search for items using keywords and filters."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         results = []
 
         if query:
@@ -426,7 +562,7 @@ def list_items(
 ):
     """List items in the repository."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         items = list(core.items.values())
 
         # Apply filters
@@ -484,7 +620,7 @@ def show_item(
 ):
     """Show details of a specific item."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         item = core.get_item(item_id)
 
         if not item:
@@ -539,7 +675,7 @@ def graph_cmd(
     try:
         from .graph import build_graph, get_neighborhood, export_graph_html, get_graph_stats
 
-        core = QingsongCore.load()
+        core = get_core()
 
         if item_id:
             console.print(f"[bold]Building neighborhood graph for {item_id}...[/bold]")
@@ -586,7 +722,7 @@ def export_cmd(
             export_to_csv,
         )
 
-        core = QingsongCore.load()
+        core = get_core()
 
         if format == "csv":
             if export_type == "all":
@@ -644,7 +780,7 @@ def export_cmd(
 def verify_cmd():
     """Show requirement verification status summary."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         summary = core.get_verification_summary()
 
         if summary["total"] == 0:
@@ -697,7 +833,7 @@ def trace(
 ):
     """Generate traceability matrix for requirements."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         matrix = core.get_traceability_matrix(direction=direction)
 
         if format == "json":
@@ -760,7 +896,7 @@ def migrate(
 ):
     """Migrate an item to a new system/folder and update all links."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         
         # Check if item exists
         item = core.get_item(item_id)
@@ -835,7 +971,7 @@ def ui():
 def summary():
     """Show repository summary."""
     try:
-        core = QingsongCore.load()
+        core = get_core()
         summary = core.summary()
 
         console.print(Panel.fit(

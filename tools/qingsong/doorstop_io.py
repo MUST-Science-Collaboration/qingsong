@@ -20,7 +20,7 @@ from typing import Any
 
 from ruamel.yaml import YAML
 
-from . import DOORSTOP_DIR
+from . import get_project_root
 from .load_meta import load_metadata
 from .models import (
     ITEM_TYPE_MODELS,
@@ -258,13 +258,13 @@ def load_all_items(
     Load all Doorstop items from the repository.
 
     Args:
-        base_dir: Base directory to search. Defaults to DOORSTOP_DIR.
+        base_dir: Base directory to search. Defaults to project doorstop dir.
 
     Returns:
         Dictionary mapping item IDs to item objects.
     """
     if base_dir is None:
-        base_dir = DOORSTOP_DIR
+        base_dir = get_project_root() / "doorstop"
 
     items: dict[str, BaseItem] = {}
 
@@ -364,13 +364,13 @@ def create_doorstop_document(
         l1: L1 system code.
         l2: L2 subsystem code.
         l3: Optional L3 task code for nested document.
-        base_dir: Base directory. Defaults to DOORSTOP_DIR.
+        base_dir: Base directory. Defaults to project doorstop dir.
 
     Returns:
         Path to the created document directory.
     """
     if base_dir is None:
-        base_dir = DOORSTOP_DIR
+        base_dir = get_project_root() / "doorstop"
 
     doc_dir = base_dir / type_code / l1 / l2
     if l3:
@@ -441,14 +441,14 @@ def create_new_item(
         owner: Owner person ID.
         category_path: Category path (required for REQ, RSK, IFC).
         l3: Optional L3 task code.
-        base_dir: Base directory. Defaults to DOORSTOP_DIR.
+        base_dir: Base directory. Defaults to project doorstop dir.
         **kwargs: Additional fields for the item.
 
     Returns:
         Created item (also saved to disk).
     """
     if base_dir is None:
-        base_dir = DOORSTOP_DIR
+        base_dir = get_project_root() / "doorstop"
 
     # Parse system path
     parts = system_path.split("/")
@@ -551,13 +551,13 @@ def list_documents(base_dir: Path | None = None) -> list[dict[str, Any]]:
     List all Doorstop documents in the repository.
 
     Args:
-        base_dir: Base directory. Defaults to DOORSTOP_DIR.
+        base_dir: Base directory. Defaults to project doorstop dir.
 
     Returns:
         List of document information dictionaries.
     """
     if base_dir is None:
-        base_dir = DOORSTOP_DIR
+        base_dir = get_project_root() / "doorstop"
 
     docs = []
     for doc_path in _find_doorstop_documents(base_dir):

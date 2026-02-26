@@ -25,7 +25,7 @@ from typing import Any
 
 import pandas as pd
 
-from . import DOORSTOP_DIR, INDEX_DIR, META_DIR
+from . import get_project_root
 from .cache_build import build_cache, get_cache_stats, query_cache, search_items
 from .doorstop_io import (
     create_new_item,
@@ -65,16 +65,22 @@ class QingsongCore:
     - Staging edits and flushing changes
 
     Usage:
-        core = QingsongCore.load()
+        core = QingsongCore.load(project_root="/path/to/vault")
         result = core.validate()
         if result.valid:
             core.build_cache()
     """
 
     # Paths
-    meta_dir: Path = field(default_factory=lambda: META_DIR)
-    doorstop_dir: Path = field(default_factory=lambda: DOORSTOP_DIR)
-    index_dir: Path = field(default_factory=lambda: INDEX_DIR)
+    project_root: Path
+    meta_dir: Path = field(init=False)
+    doorstop_dir: Path = field(init=False)
+    index_dir: Path = field(init=False)
+
+    def __post_init__(self):
+        self.meta_dir = self.project_root / "meta"
+        self.doorstop_dir = self.project_root / "doorstop"
+        self.index_dir = self.project_root / "index"
 
     # Loaded data
     metadata: Metadata | None = None
@@ -86,26 +92,23 @@ class QingsongCore:
     @classmethod
     def load(
         cls,
-        meta_dir: Path | None = None,
-        doorstop_dir: Path | None = None,
-        index_dir: Path | None = None,
+        project_root: Path | str | None = None,
     ) -> "QingsongCore":
         """
         Load Qingsong core with all data.
 
         Args:
-            meta_dir: Metadata directory path.
-            doorstop_dir: Doorstop base directory path.
-            index_dir: Index/cache directory path.
+            project_root: Path to the project/vault root. Defaults to auto-detected root.
 
         Returns:
             Initialized QingsongCore instance.
         """
-        core = cls(
-            meta_dir=meta_dir or META_DIR,
-            doorstop_dir=doorstop_dir or DOORSTOP_DIR,
-            index_dir=index_dir or INDEX_DIR,
-        )
+        if project_root is None:
+            root = get_project_root()
+        else:
+            root = Path(project_root)
+
+        core = cls(project_root=root)
         core.reload()
         return core
 

@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from . import INDEX_DIR
+from . import get_project_root
 from .doorstop_io import load_all_items
 from .load_meta import Metadata, load_metadata
 from .models import BaseItem
@@ -23,7 +23,7 @@ from .models import BaseItem
 
 def get_cache_path() -> Path:
     """Get the default cache database path."""
-    return INDEX_DIR / "qingsong.sqlite"
+    return get_project_root() / "index" / "qingsong.sqlite"
 
 
 def _create_schema(conn: sqlite3.Connection) -> None:

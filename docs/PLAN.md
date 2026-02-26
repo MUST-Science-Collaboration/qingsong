@@ -40,3 +40,12 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P4-001 | Traceability Matrix | Generate automated Upward/Downward Traceability Matrices (UTM/DTM) (Done). |
 | P4-002 | Verification Tracking | Implement verification status roll-ups and compliance dashboard (Done). |
 | P4-003 | Production Hardening | Final documentation pass, performance profiling, and >80% test coverage (non-UI) (Done). |
+
+## Phase 5: Project Portability (Completed)
+**Objective**: Transform Qingsong from a single-project repository into a portable engine capable of managing multiple independent "vaults" (e.g., MUST vs. Demo).
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P5-001 | CLI Root Parameter | Allow `qingsong --root ./my-demo ...` to override the default project directory (Done). |
+| P5-002 | Path Context Refactor | Refactor `QingsongCore` to dynamically resolve paths based on the specified root rather than hardcoded global paths (Done). |
+| P5-003 | Project Scaffolding | Implement `qingsong init` to generate a fresh vault structure (`meta/`, `doorstop/`) with default YAML templates (Done). |
