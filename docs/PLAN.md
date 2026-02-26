@@ -49,3 +49,13 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P5-001 | CLI Root Parameter | Allow `qingsong --root ./my-demo ...` to override the default project directory (Done). |
 | P5-002 | Path Context Refactor | Refactor `QingsongCore` to dynamically resolve paths based on the specified root rather than hardcoded global paths (Done). |
 | P5-003 | Project Scaffolding | Implement `qingsong init` to generate a fresh vault structure (`meta/`, `doorstop/`) with default YAML templates (Done). |
+
+## Phase 6: WebUI Redesign & Integration (Completed)
+**Objective**: Transform the read-only Streamlit UI into a full-featured dashboard that exposes all advanced CLI capabilities and introduces interactive editing.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P6-001 | UI Architecture Refactor | Upgrade to a Streamlit Multi-Page App structure for better navigation and ensure the UI respects the `QINGSONG_ROOT` environment variable (Done). |
+| P6-002 | Verification & Traceability | Build dedicated views for the Verification Dashboard and Traceability Matrices (Upward/Downward) (Done). |
+| P6-003 | Advanced Search & Graph | Integrate SQLite FTS5 search into the UI and embed interactive NetworkX graphs for visual dependency tracking (Done). |
+| P6-004 | Interactive Editor (Draft) | Implement form components to create, update, and migrate items directly from the browser using the staging API (Done). |

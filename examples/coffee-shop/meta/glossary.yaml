@@ -1,0 +1,5 @@
+version: '1.0'
+terms:
+  MUST:
+    definition: MUltiplexed Survey Telescope
+    category: project
