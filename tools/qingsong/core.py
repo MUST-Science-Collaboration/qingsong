@@ -493,6 +493,34 @@ class QingsongCore:
                 
         return migrated
 
+    def add_comment(self, item_id: str, author: str, text: str) -> BaseItem:
+        """
+        Add a comment to an item's discussion (staged).
+
+        Args:
+            item_id: ID of the item.
+            author: Person ID of the commenter.
+            text: Comment text.
+
+        Returns:
+            Updated item.
+        """
+        if item_id not in self.items:
+            raise KeyError(f"Item not found: {item_id}")
+
+        item = self.items[item_id]
+        from .models.common import Comment
+        
+        new_comment = Comment(
+            author=author,
+            timestamp=datetime.now(timezone.utc),
+            text=text
+        )
+        
+        # Add to discussions
+        new_discussions = list(item.discussions) + [new_comment]
+        return self.update_item(item_id, discussions=new_discussions)
+
     def retire_item(
         self,
         item_id: str,

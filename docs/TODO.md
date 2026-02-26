@@ -55,24 +55,24 @@
 | P7-003 | UI Stability Dashboard | agent | [x] Done | "Stability Watchlist" on main dashboard. |
 | P7-004 | UI Visual Highlighting | agent | [x] Done | Warning icons and TBD filter in Explorer. |
 
-## Implementation Backlog (Phase 8 Completed)
+## Implementation Backlog (Phase 9 Completed)
 
 | ID | Task | Owner | Status | Notes |
 | --- | --- | --- | --- | --- |
-| P8-001 | PDF Export Engine | agent | [x] Done | Implemented via `fpdf2`. |
-| P8-002 | Formal Document Templates | agent | [x] Done | Reqs Spec and Maturity Report layouts. |
-| P8-003 | Compliance Reporting | agent | [x] Done | Automated "Project Maturity" PDF. |
-| P8-004 | CI/CD Automation | agent | [x] Done | Pre-commit hooks for validation and cache. |
+| P9-001 | Design Discussions | agent | [x] Done | Add `discussions` field to BaseItem. |
+| P9-002 | Advanced FTS5 Search | agent | [x] Done | Support Boolean operators and ranking. |
+| P9-003 | Collaboration UI | agent | [x] Done | Build comment threads in the WebUI. |
+| P9-004 | Collaborator Management | agent | [x] Done | WebUI for managing item collaborators. |
 
-## Current Session Slice Plan (Automated Export)
+## Current Session Slice Plan (Search & Collaboration)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Add `fpdf2` to project dependencies. |
-| [x] S2 | Done | Implement `PDFGenerator` class in `export.py`. |
-| [x] S3 | Done | Add `qingsong export --format pdf` support. |
-| [x] S4 | Done | Create "Project Maturity" summary report. |
-| [x] S5 | Done | Verify with a sample PDF export. |
+| [x] S1 | Done | Add `Comment` model and `discussions` field to `BaseItem`. |
+| [x] S2 | Done | Update `doorstop_io` to handle discussion persistence. |
+| [x] S3 | Done | Implement `qingsong find --advanced` or refactor search for FTS5. |
+| [x] S4 | Done | Add "Discussions" section to Item detail view in WebUI. |
+| [x] S5 | Done | Add "Collaborators" management to WebUI. |
 
 ## Review Notes
 
@@ -87,3 +87,4 @@
 - 2026-02-26: Completed Phase 6 (P6-001, P6-002, P6-003, P6-004). Redesigned WebUI into a multi-page dashboard with advanced insights and interactive item creation.
 - 2026-02-27: Completed Phase 7 (P7-001, P7-002, P7-003, P7-004). Implemented TBD/TBC placeholder tracking and integrated it into the CLI and WebUI.
 - 2026-02-27: Completed Phase 8 (P8-001, P8-002, P8-003, P8-004). Implemented PDF export engine and formal document templates, and updated pre-commit hooks for CI/CD automation.
+- 2026-02-27: Completed Phase 9 (P9-001, P9-002, P9-003, P9-004). Implemented design discussions, enhanced FTS5 search with snippets, and added collaborator management to the WebUI.

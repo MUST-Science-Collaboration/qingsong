@@ -79,3 +79,12 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P8-002 | Formal Document Templates | Create "Requirements Specification" and "Risk Register" PDF layouts (Done). |
 | P8-003 | Compliance Reporting | Generate a "Project Maturity Report" rolling up verification and stability metrics (Done). |
 | P8-004 | CI/CD Automation | Integrate automated validation and cache building into git hooks (Done). |
+
+## Phase 9: Search & Collaboration (Completed)
+**Objective**: Enhance team coordination by embedding discussions in requirements and providing advanced discovery tools.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P9-001 | Design Discussions | Implement a `discussions` schema for recording comments and rationale in YAML files (Done). |
+| P9-002 | Advanced FTS5 Search | Unlock Boolean search and ranking in the CLI and WebUI (Done). |
+| P9-003 | Collaboration UI | Build interactive comment threads and collaborator management in the browser (Done). |
