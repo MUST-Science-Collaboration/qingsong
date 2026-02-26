@@ -55,14 +55,24 @@
 | P7-003 | UI Stability Dashboard | agent | [x] Done | "Stability Watchlist" on main dashboard. |
 | P7-004 | UI Visual Highlighting | agent | [x] Done | Warning icons and TBD filter in Explorer. |
 
-## Current Session Slice Plan (Stability Tracking)
+## Implementation Backlog (Phase 8 Completed)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P8-001 | PDF Export Engine | agent | [x] Done | Implemented via `fpdf2`. |
+| P8-002 | Formal Document Templates | agent | [x] Done | Reqs Spec and Maturity Report layouts. |
+| P8-003 | Compliance Reporting | agent | [x] Done | Automated "Project Maturity" PDF. |
+| P8-004 | CI/CD Automation | agent | [x] Done | Pre-commit hooks for validation and cache. |
+
+## Current Session Slice Plan (Automated Export)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Implement detection logic in `BaseItem`. |
-| [x] S2 | Done | Add `--tbd` filter to CLI. |
-| [x] S3 | Done | Update Dashboard with watchlist panel. |
-| [x] S4 | Done | Add visual indicators to Items Explorer. |
+| [x] S1 | Done | Add `fpdf2` to project dependencies. |
+| [x] S2 | Done | Implement `PDFGenerator` class in `export.py`. |
+| [x] S3 | Done | Add `qingsong export --format pdf` support. |
+| [x] S4 | Done | Create "Project Maturity" summary report. |
+| [x] S5 | Done | Verify with a sample PDF export. |
 
 ## Review Notes
 
@@ -76,3 +86,4 @@
 - 2026-02-26: Completed Phase 5 (P5-001, P5-002, P5-003). Refactored core to support dynamic project roots and implemented `qingsong init` for multi-vault support.
 - 2026-02-26: Completed Phase 6 (P6-001, P6-002, P6-003, P6-004). Redesigned WebUI into a multi-page dashboard with advanced insights and interactive item creation.
 - 2026-02-27: Completed Phase 7 (P7-001, P7-002, P7-003, P7-004). Implemented TBD/TBC placeholder tracking and integrated it into the CLI and WebUI.
+- 2026-02-27: Completed Phase 8 (P8-001, P8-002, P8-003, P8-004). Implemented PDF export engine and formal document templates, and updated pre-commit hooks for CI/CD automation.
