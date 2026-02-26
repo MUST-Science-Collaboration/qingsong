@@ -157,24 +157,35 @@ def load_item(file_path: Path, doc_config: dict[str, Any] | None = None) -> Base
 
     Returns:
         Parsed item as appropriate Pydantic model.
+
+    Raises:
+        ValueError: If the file is not a valid YAML or doesn't match the model.
     """
     yaml = YAML(typ="safe")
-    with open(file_path) as f:
-        data = yaml.load(f) or {}
+    try:
+        with open(file_path) as f:
+            data = yaml.load(f) or {}
+    except Exception as e:
+        raise ValueError(f"Failed to parse YAML in {file_path}: {e}")
 
     # Get document config if not provided
     if doc_config is None:
         doc_config = _parse_doorstop_config(file_path.parent)
 
     # Infer type
-    item_type = _infer_item_type(data, doc_config)
-    data["type"] = item_type.value
+    try:
+        item_type = _infer_item_type(data, doc_config)
+        data["type"] = item_type.value
+    except Exception as e:
+        # Fallback to REQ if type inference fails
+        data["type"] = ItemType.REQ.value
+        item_type = ItemType.REQ
 
     # Ensure required fields have defaults
     if "id_full" not in data:
         # Try to construct from filename or UID
         uid = data.get("uid", file_path.stem)
-        prefix = doc_config.get("prefix", "MUST-UNK-UNK-UNK")
+        prefix = doc_config.get("settings", {}).get("prefix", "MUST-UNK-UNK-UNK")
         if uid.startswith(prefix):
             data["id_full"] = uid
         else:
@@ -233,8 +244,11 @@ def load_item(file_path: Path, doc_config: dict[str, Any] | None = None) -> Base
         data["links"] = qingsong_links
 
     # Get the appropriate model class
-    model_class = ITEM_TYPE_MODELS[item_type]
-    return model_class.model_validate(data)
+    try:
+        model_class = ITEM_TYPE_MODELS[item_type]
+        return model_class.model_validate(data)
+    except Exception as e:
+        raise ValueError(f"Validation failed for {file_path}: {e}")
 
 
 def load_all_items(
@@ -278,8 +292,17 @@ def save_item(item: BaseItem, doc_dir: Path) -> Path:
 
     Returns:
         Path to the saved file.
+
+    Raises:
+        IOError: If the directory cannot be created or the file cannot be written.
     """
     yaml = _get_yaml()
+
+    # Ensure doc_dir exists
+    try:
+        doc_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        raise IOError(f"Failed to create directory {doc_dir}: {e}")
 
     # Prepare data for YAML
     data = item.to_doorstop_dict()
@@ -316,9 +339,12 @@ def save_item(item: BaseItem, doc_dir: Path) -> Path:
 
     file_path = doc_dir / f"{num}.yml"
 
-    # Write file
-    with open(file_path, "w") as f:
-        yaml.dump(ordered_data, f)
+    # Write file safely using a temporary file if possible, or just open and dump
+    try:
+        with open(file_path, "w") as f:
+            yaml.dump(ordered_data, f)
+    except Exception as e:
+        raise IOError(f"Failed to save item to {file_path}: {e}")
 
     return file_path
 

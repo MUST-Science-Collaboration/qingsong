@@ -1,37 +1,42 @@
-# Qingsong 4-Week Development Plan
+# Qingsong Project Development Plan
 
-## Goal
-To deliver a robust, production-grade requirements management system for MUST that supports a "Requirements as Code" workflow.
+## Strategic Goal
+Deliver a robust, production-grade requirements management system (RMS) for the MUST telescope project, enabling a "Requirements as Code" workflow with strict validation and high-performance traceability.
 
-## Week 1: Foundation (Current)
-- **Objective**: Standardize the environment and stabilize the core API.
-- **Milestone**: 100% `uv` migration and fixed Staging Logic.
-- **Tasks**:
-  - [x] Environment cleanup.
-  - [x] SPEC definition.
-  - [x] Metadata strict mode implementation.
-  - [x] Core API refactor.
+## Phase 1: Foundation & Alignment (Completed)
+**Objective**: Establish a standardized development environment, stabilize the core API, and implement the staging/persistence layer.
 
-## Week 2: Robustness
-- **Objective**: Ensure data integrity and support hierarchical complexity.
-- **Milestone**: L3 sub-assembly support and circular dependency validation.
-- **Tasks**:
-  - [x] Support `L1/L2/L3` folder structures.
-  - [ ] Implement Link Graph validation.
-  - [ ] Add unit tests for the validator.
+| ID | Task | Description |
+| --- | --- | --- |
+| P1-001 | Environment Standardization | Migrate to `uv`, fix broken `.venv`, and sync dependencies. |
+| P1-002 | Architectural Specification | Draft `SPEC.md`, `PLAN.md`, and `TODO.md`. |
+| P1-003 | Core API Refactoring | Implement in-memory staging and explicit `flush()` logic. |
+| P1-004 | Strict Metadata Validation | Expand Pydantic models to enforce referential integrity against `meta/`. |
 
-## Week 3: CLI & Mobility
-- **Objective**: Enable efficient workflows and structural refactoring.
-- **Milestone**: `qingsong find` and `qingsong migrate`.
-- **Tasks**:
-  - [ ] Expand CLI search capabilities.
-  - [ ] Build the "Migrate" tool for ID/Path changes.
-  - [ ] Enhance Markdown exports.
+## Phase 2: Robustness & Validation (Completed)
+**Objective**: Ensure data integrity across hierarchical levels and complex link networks.
 
-## Week 4: Finalization
-- **Objective**: Verification, traceability, and handoff.
-- **Milestone**: Automated Traceability Matrix and high test coverage.
-- **Tasks**:
-  - [ ] Traceability logic.
-  - [ ] PDF export for reviews.
-  - [ ] Complete documentation for engineers.
+| ID | Task | Description |
+| --- | --- | --- |
+| P2-001 | Flexible L3 Hierarchy | Support nested `L1/L2/L3` folder structures as first-class documents. |
+| P2-002 | Link Graph Validation | Implement circular dependency detection for derivation and implementation links. |
+| P2-003 | Resilient I/O Refactor | Improve `doorstop_io` to handle corrupted YAMLs and missing configs gracefully. |
+| P2-004 | Comprehensive Unit Testing | Achieve >60% coverage for core and validation modules. |
+
+## Phase 3: CLI & Search Expansion (Current)
+**Objective**: Enable efficient engineer workflows through advanced CLI tools and refactoring utilities.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P3-001 | Advanced Search CLI | Implement `qingsong find` with metadata filters and FTS5 search. |
+| P3-002 | Migration Utility | Build `qingsong migrate` to handle ID updates and link refactoring during system moves. |
+| P3-003 | Multi-format Export | Enhance Markdown and CSV export capabilities for external reviews. |
+
+## Phase 4: Verification & Traceability
+**Objective**: Finalize the verification loop and deliver automated compliance reporting.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P4-001 | Traceability Matrix | Generate automated Upward/Downward Traceability Matrices (UTM/DTM). |
+| P4-002 | Verification Tracking | Implement verification status roll-ups and compliance dashboard. |
+| P4-003 | Production Hardening | Final documentation pass, performance profiling, and >80% test coverage. |

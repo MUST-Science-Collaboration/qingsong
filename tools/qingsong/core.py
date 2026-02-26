@@ -383,15 +383,27 @@ class QingsongCore:
             },
         )
 
-    def flush(self) -> int:
+    def flush(self, strict: bool = True) -> int:
         """
         Write all staged changes to disk.
 
+        Args:
+            strict: If True, validate items before flushing.
+
         Returns:
             Number of items written.
-        """
-        count = 0
 
+        Raises:
+            ValueError: If validation fails in strict mode.
+        """
+        if strict:
+            for item_id in self.staged_changes:
+                result = self.validate_item(item_id)
+                if not result.valid:
+                    errors_msg = "; ".join([f"{e.field}: {e.message}" for e in result.errors])
+                    raise ValueError(f"Validation failed for staged item {item_id}: {errors_msg}")
+
+        count = 0
         for item_id, change in self.staged_changes.items():
             item = change.item
             

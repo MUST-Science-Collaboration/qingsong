@@ -315,6 +315,36 @@ def validate_retirement(item: BaseItem) -> list[ValidationError]:
     return errors
 
 
+def validate_circular_dependencies(
+    all_items: dict[str, BaseItem],
+) -> list[ValidationError]:
+    """
+    Check for circular dependencies in the item link graph.
+
+    Args:
+        all_items: Dictionary of all items.
+
+    Returns:
+        List of validation errors.
+    """
+    from .graph import find_item_cycles
+
+    errors = []
+    cycles = find_item_cycles(all_items)
+
+    for cycle in cycles:
+        # Format cycle as a chain for the error message
+        chain = " -> ".join(cycle) + f" -> {cycle[0]}"
+        errors.append(ValidationError(
+            item_id=cycle[0],
+            field="links",
+            message=f"Circular dependency detected: {chain}",
+            severity="error",
+        ))
+
+    return errors
+
+
 def validate_item(
     item: BaseItem,
     all_items: dict[str, BaseItem],
@@ -366,7 +396,7 @@ def validate_all(
     errors: list[ValidationError] = []
     warnings: list[ValidationError] = []
 
-    # Validate each item
+    # Validate each item individually
     for item in all_items.values():
         item_errors = validate_item(item, all_items, metadata)
         for err in item_errors:
@@ -374,6 +404,14 @@ def validate_all(
                 warnings.append(err)
             else:
                 errors.append(err)
+
+    # Global validations: Graph-level checks
+    graph_errors = validate_circular_dependencies(all_items)
+    for err in graph_errors:
+        if err.severity == "warning":
+            warnings.append(err)
+        else:
+            errors.append(err)
 
     return ValidationResult(
         valid=len(errors) == 0,

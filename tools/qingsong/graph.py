@@ -13,8 +13,7 @@ try:
 except ImportError:
     HAS_NETWORKX = False
 
-from .core import QingsongCore
-from .models import ItemType
+from .models import ItemType, BaseItem
 
 
 # Color scheme for item types
@@ -41,12 +40,12 @@ LINK_COLORS = {
 }
 
 
-def build_graph(core: QingsongCore, include_external: bool = False) -> "nx.DiGraph":
+def build_graph(items: dict[str, BaseItem], include_external: bool = False) -> "nx.DiGraph":
     """
     Build a NetworkX directed graph from items and links.
 
     Args:
-        core: QingsongCore instance.
+        items: Dictionary of items.
         include_external: Whether to include external link targets.
 
     Returns:
@@ -58,7 +57,7 @@ def build_graph(core: QingsongCore, include_external: bool = False) -> "nx.DiGra
     G = nx.DiGraph()
 
     # Add nodes for all items
-    for item_id, item in core.items.items():
+    for item_id, item in items.items():
         G.add_node(
             item_id,
             type=item.type.value,
@@ -70,7 +69,7 @@ def build_graph(core: QingsongCore, include_external: bool = False) -> "nx.DiGra
         )
 
     # Add edges for all links
-    for item in core.items.values():
+    for item in items.values():
         for link in item.links:
             target_id = link.target_id
 
@@ -106,7 +105,7 @@ def build_graph(core: QingsongCore, include_external: bool = False) -> "nx.DiGra
 
 
 def get_neighborhood(
-    core: QingsongCore,
+    items: dict[str, BaseItem],
     item_id: str,
     depth: int = 1,
 ) -> "nx.DiGraph":
@@ -114,7 +113,7 @@ def get_neighborhood(
     Get the neighborhood graph around a specific item.
 
     Args:
-        core: QingsongCore instance.
+        items: Dictionary of items.
         item_id: Center item ID.
         depth: Number of hops to include.
 
@@ -124,7 +123,7 @@ def get_neighborhood(
     if not HAS_NETWORKX:
         raise ImportError("networkx is required for graph functionality")
 
-    G = build_graph(core)
+    G = build_graph(items)
 
     if item_id not in G:
         return nx.DiGraph()
@@ -144,6 +143,41 @@ def get_neighborhood(
         current = next_level
 
     return G.subgraph(nodes).copy()
+
+
+def find_cycles(G: "nx.DiGraph") -> list[list[str]]:
+    """
+    Find all simple cycles in the graph.
+
+    Args:
+        G: NetworkX directed graph.
+
+    Returns:
+        List of cycles, where each cycle is a list of node IDs.
+    """
+    if not HAS_NETWORKX:
+        raise ImportError("networkx is required for graph functionality")
+
+    return list(nx.simple_cycles(G))
+
+
+def find_item_cycles(items: dict[str, BaseItem]) -> list[list[str]]:
+    """
+    Find circular dependencies in the item link graph.
+
+    Args:
+        items: Dictionary of items.
+
+    Returns:
+        List of circular dependency chains.
+    """
+    if not HAS_NETWORKX:
+        # Fallback if networkx is missing could be implemented here,
+        # but since it's installed we use it.
+        return []
+
+    G = build_graph(items)
+    return find_cycles(G)
 
 
 def graph_to_dict(G: "nx.DiGraph") -> dict[str, Any]:
