@@ -22,22 +22,20 @@
 
 | ID | Task | Owner | Status | Notes |
 | --- | --- | --- | --- | --- |
-| P3-001 | Advanced Search CLI | agent | [ ] Pending | Implement `qingsong find` command. |
-| P3-002 | Migration Utility | agent | [ ] Pending | Build `qingsong migrate` for refactoring. |
-| P3-003 | Multi-format Export | agent | [ ] Pending | Improve Markdown/PDF/CSV formatting. |
-| P4-001 | Traceability Matrix | agent | [ ] Pending | Implement automated UTM/DTM generation. |
-| P4-002 | Verification Tracking | agent | [ ] Pending | Implement verification status roll-ups. |
-| P4-003 | Production Hardening | agent | [ ] Pending | Final docs and >80% test coverage. |
+| P3-001 | Advanced Search CLI | agent | [x] Done | Implement `qingsong find` command. |
+| P3-002 | Migration Utility | agent | [x] Done | Build `qingsong migrate` for refactoring. |
+| P3-003 | Multi-format Export | agent | [x] Done | Improve Markdown/PDF/CSV formatting. |
+| P4-001 | Traceability Matrix | agent | [x] Done | Implement automated UTM/DTM generation. |
+| P4-002 | Verification Tracking | agent | [x] Done | Implement verification status roll-ups. |
+| P4-003 | Production Hardening | agent | [x] Done | Final docs and >80% test coverage. |
 
-## Current Session Slice Plan (Resilience & Testing)
+## Current Session Slice Plan (Production Hardening)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Refactor `load_item` and `save_item` for resilience. |
-| [x] S2 | Done | Add pre-save integrity checks in `core.py`. |
-| [x] S3 | Done | Create `tests/test_validation.py` for edge cases. |
-| [x] S4 | Done | Create `tests/test_doorstop_io.py` for I/O operations. |
-| [x] S5 | Done | Achieve >60% test coverage. |
+| [x] S1 | Done | Implement CLI tests for all major commands. |
+| [x] S2 | Done | Achieve >80% test coverage for non-UI components. |
+| [x] S3 | Done | Final documentation and SPEC verification. |
 
 ## Review Notes
 
@@ -46,3 +44,5 @@
 - 2026-02-25: Phase 2 initiated. Completed Flexible L3 Hierarchy (P2-001) implementation and validation.
 - 2026-02-25: Transitioned `PLAN.md` and `TODO.md` to professional "Phase" and "ID" tracking system.
 - 2026-02-25: Completed Phase 2 (P2-002, P2-003, P2-004). Implemented circular dependency detection, resilient I/O, and achieved 60% test coverage.
+- 2026-02-26: Completed Phase 3 (P3-001, P3-002, P3-003). Implemented `find`, `migrate` commands and enhanced export capabilities.
+- 2026-02-26: Completed Phase 4 (P4-001, P4-002, P4-003). Implemented traceability matrices, verification tracking, and achieved 83% non-UI test coverage.

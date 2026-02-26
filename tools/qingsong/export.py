@@ -30,6 +30,55 @@ def _format_datetime(dt: datetime | str | None) -> str:
     return dt.strftime("%Y-%m-%d %H:%M")
 
 
+def export_to_csv(
+    items: list[BaseItem],
+    output_path: Path,
+) -> None:
+    """
+    Export a list of items to a CSV file.
+
+    Args:
+        items: List of items to export.
+        output_path: Path to the output CSV file.
+    """
+    import csv
+    import io
+
+    if not items:
+        return
+
+    # Convert to dicts for CSV writing
+    records = []
+    for item in items:
+        record = item.model_dump(mode="json")
+        # Flatten some complex fields if needed, or just use JSON strings
+        # For CSV, flat is better
+        flat_record = {
+            "id_full": record["id_full"],
+            "type": record["type"],
+            "title": record["title"],
+            "status": record["status"],
+            "owner": record["owner"],
+            "system_path": record["system_path"],
+            "l3": record.get("l3"),
+            "category_path": record.get("category_path"),
+            "created_at": record["created_at"],
+            "updated_at": record["updated_at"],
+        }
+        # Add some type-specific fields if they exist
+        if "priority" in record: flat_record["priority"] = record["priority"]
+        if "likelihood" in record: flat_record["likelihood"] = record["likelihood"]
+        if "consequence" in record: flat_record["consequence"] = record["consequence"]
+        if "risk_score" in record: flat_record["risk_score"] = record["risk_score"]
+        
+        records.append(flat_record)
+
+    with open(output_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=records[0].keys())
+        writer.writeheader()
+        writer.writerows(records)
+
+
 def export_requirements_markdown(
     core: QingsongCore,
     system_path: str | None = None,
@@ -77,9 +126,19 @@ def export_requirements_markdown(
         "",
         f"**Total Requirements:** {len(items)}",
         "",
-        "---",
+        "## Summary Table",
         "",
+        "| ID | Title | Status | Owner | Priority |",
+        "|---|---|---|---|---|",
     ])
+
+    for item in items:
+        lines.append(
+            f"| {item.id_full} | {_escape_markdown(item.title[:50])} | "
+            f"{item.status.value} | {item.owner} | {getattr(item, 'priority', 'N/A')} |"
+        )
+
+    lines.extend(["", "---", "", "## Requirement Details", ""])
 
     # Group by category
     categories: dict[str, list[BaseItem]] = {}

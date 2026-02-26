@@ -328,6 +328,91 @@ def new_item(
 
 
 # =============================================================================
+# Find command
+# =============================================================================
+
+@app.command("find")
+def find(
+    query: Optional[str] = typer.Argument(None, help="Keyword search query"),
+    item_type: Optional[str] = typer.Option(None, "--type", "-t", help="Filter by type"),
+    system: Optional[str] = typer.Option(None, "--system", "-s", help="Filter by system"),
+    status: Optional[str] = typer.Option(None, "--status", help="Filter by status"),
+    owner: Optional[str] = typer.Option(None, "--owner", "-o", help="Filter by owner"),
+    limit: int = typer.Option(50, "--limit", "-n", help="Maximum items to show"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table, json"),
+):
+    """Search for items using keywords and filters."""
+    try:
+        core = QingsongCore.load()
+        results = []
+
+        if query:
+            # Use FTS5 search
+            results = core.search(query)
+        else:
+            # Load all and filter manually (or we could use core.query but this is safer for staged items)
+            results = [item.model_dump(mode="json") for item in core.items.values()]
+
+        # Apply metadata filters
+        if item_type:
+            type_map = {"req": "REQ", "rsk": "RSK", "ifc": "IFC", "doc": "DOC", "dat": "DAT", "note": "NOTE"}
+            t = type_map.get(item_type.lower(), item_type.upper())
+            results = [r for r in results if r["type"] == t]
+
+        if system:
+            results = [r for r in results if r["system_path"] == system]
+
+        if status:
+            results = [r for r in results if r["status"] == status]
+
+        if owner:
+            results = [r for r in results if r["owner"] == owner]
+
+        # Sort by rank (if search) or ID
+        if not query:
+            results.sort(key=lambda x: x["id_full"])
+
+        # Limit
+        total = len(results)
+        results = results[:limit]
+
+        if format == "json":
+            import json
+            console.print(json.dumps(results, indent=2, default=str))
+            return
+
+        if not results:
+            console.print("[yellow]No items found.[/yellow]")
+            return
+
+        # Display table
+        table = Table(title=f"Search Results ({len(results)} of {total})")
+        table.add_column("ID", style="cyan")
+        table.add_column("Type")
+        table.add_column("Title")
+        table.add_column("System", style="green")
+        table.add_column("Status")
+        table.add_column("Owner")
+
+        for r in results:
+            status_style = "green" if r["status"] == "active" else "yellow"
+            table.add_row(
+                r["id_full"],
+                r["type"],
+                r["title"][:40] + "..." if len(r["title"]) > 40 else r["title"],
+                r["system_path"],
+                f"[{status_style}]{r['status']}[/{status_style}]",
+                r["owner"],
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
 # List commands
 # =============================================================================
 
@@ -458,11 +543,11 @@ def graph_cmd(
 
         if item_id:
             console.print(f"[bold]Building neighborhood graph for {item_id}...[/bold]")
-            G = get_neighborhood(core, item_id, depth=depth)
+            G = get_neighborhood(core.items, item_id, depth=depth)
             title = f"Neighborhood of {item_id}"
         else:
             console.print("[bold]Building full graph...[/bold]")
-            G = build_graph(core)
+            G = build_graph(core.items)
             title = "Qingsong Item Graph"
 
         stats = get_graph_stats(G)
@@ -486,21 +571,46 @@ def graph_cmd(
 
 @app.command("export")
 def export_cmd(
-    export_type: str = typer.Argument(..., help="Export type: requirements, risks, interfaces, summary"),
+    export_type: str = typer.Argument(..., help="Export type: requirements, risks, interfaces, summary, all"),
     output: Path = typer.Option(Path("export.md"), "--output", "-o", help="Output file"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Output format: markdown, csv"),
     system: Optional[str] = typer.Option(None, "--system", "-s", help="Filter by system"),
 ):
-    """Export documents."""
+    """Export documents in various formats."""
     try:
         from .export import (
             export_requirements_markdown,
             export_risk_register_markdown,
             export_interface_list_markdown,
             export_summary_markdown,
+            export_to_csv,
         )
 
         core = QingsongCore.load()
 
+        if format == "csv":
+            if export_type == "all":
+                items = list(core.items.values())
+            else:
+                type_map = {
+                    "requirements": ItemType.REQ,
+                    "risks": ItemType.RSK,
+                    "interfaces": ItemType.IFC,
+                }
+                it = type_map.get(export_type)
+                if not it:
+                    console.print(f"[red]Invalid type for CSV export: {export_type}[/red]")
+                    raise typer.Exit(1)
+                items = core.get_items_by_type(it)
+            
+            if system:
+                items = [i for i in items if i.system_path == system]
+                
+            export_to_csv(items, output)
+            console.print(f"[green]✓ Exported {len(items)} items to CSV: {output}[/green]")
+            return
+
+        # Markdown exports
         export_funcs = {
             "requirements": export_requirements_markdown,
             "risks": export_risk_register_markdown,
@@ -519,7 +629,171 @@ def export_cmd(
         else:
             content = func(core, system_path=system, output_path=output)
 
-        console.print(f"[green]✓ Exported to {output}[/green]")
+        console.print(f"[green]✓ Exported {export_type} to Markdown: {output}[/green]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
+# Verification command
+# =============================================================================
+
+@app.command("verify")
+def verify_cmd():
+    """Show requirement verification status summary."""
+    try:
+        core = QingsongCore.load()
+        summary = core.get_verification_summary()
+
+        if summary["total"] == 0:
+            console.print("[yellow]No requirements found to verify.[/yellow]")
+            return
+
+        console.print(Panel.fit(
+            f"[bold]Total Requirements:[/bold] {summary['total']}\n"
+            f"[bold]Verified:[/bold] {summary['verified']} ({summary['percent']:.1f}%)\n"
+            f"[bold]Pending:[/bold] {summary['total'] - summary['verified']}",
+            title="Verification Dashboard"
+        ))
+
+        # By method
+        table_m = Table(title="By Verification Method")
+        table_m.add_column("Method", style="cyan")
+        table_m.add_column("Count", justify="right")
+        for m, c in summary["by_method"].items():
+            table_m.add_row(m, str(c))
+        console.print(table_m)
+
+        # By system
+        table_s = Table(title="By System")
+        table_s.add_column("System", style="green")
+        table_s.add_column("Total")
+        table_s.add_column("Verified")
+        table_s.add_column("Progress")
+
+        for s, stats in summary["by_system"].items():
+            p = (stats["verified"] / stats["total"]) * 100
+            progress_bar = "█" * int(p/10) + "░" * (10 - int(p/10))
+            table_s.add_row(s, str(stats["total"]), str(stats["verified"]), f"{progress_bar} {p:.1f}%")
+        
+        console.print(table_s)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
+# Traceability command
+# =============================================================================
+
+@app.command("trace")
+def trace(
+    direction: str = typer.Option("downward", "--direction", "-d", help="Direction: upward, downward"),
+    format: str = typer.Option("table", "--format", "-f", help="Format: table, csv, json"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file"),
+):
+    """Generate traceability matrix for requirements."""
+    try:
+        core = QingsongCore.load()
+        matrix = core.get_traceability_matrix(direction=direction)
+
+        if format == "json":
+            import json
+            content = json.dumps(matrix, indent=2, default=str)
+            if output:
+                output.write_text(content)
+            else:
+                console.print(content)
+            return
+
+        if format == "csv":
+            import csv
+            import io
+            f = io.StringIO()
+            writer = csv.writer(f)
+            writer.writerow(["Requirement ID", "Title", "Linked IDs", "Link Types"])
+            for row in matrix:
+                linked_ids = ", ".join([l["id"] for l in row["links"]])
+                link_types = ", ".join([l["type"] for l in row["links"]])
+                writer.writerow([row["id"], row["title"], linked_ids, link_types])
+            
+            content = f.getvalue()
+            if output:
+                output.write_text(content)
+                console.print(f"[green]✓ Exported to {output}[/green]")
+            else:
+                console.print(content)
+            return
+
+        # Table/Markdown
+        table = Table(title=f"{direction.capitalize()} Traceability Matrix")
+        table.add_column("Requirement", style="cyan")
+        table.add_column("Title")
+        table.add_column("Links", style="green")
+
+        for row in matrix:
+            links_str = "\n".join([f"• {l['id']} ({l['type']})" for l in row['links']])
+            if not links_str:
+                links_str = "[red]NO LINKS[/red]"
+            table.add_row(row["id"], row["title"][:40], links_str)
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
+# Migration command
+# =============================================================================
+
+@app.command("migrate")
+def migrate(
+    item_id: str = typer.Argument(..., help="Item ID to migrate"),
+    new_system: str = typer.Option(..., "--system", "-s", help="New system path (e.g., SPS/DET)"),
+    new_l3: Optional[str] = typer.Option(None, "--l3", help="New L3 task code"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would change without writing to disk"),
+):
+    """Migrate an item to a new system/folder and update all links."""
+    try:
+        core = QingsongCore.load()
+        
+        # Check if item exists
+        item = core.get_item(item_id)
+        if not item:
+            console.print(f"[red]Item not found: {item_id}[/red]")
+            raise typer.Exit(1)
+            
+        console.print(f"[bold]Migrating {item_id} to {new_system}{'/' + new_l3 if new_l3 else ''}...[/bold]")
+        
+        # Perform migration (staged)
+        migrated = core.migrate_item(item_id, new_system, new_l3)
+        
+        console.print(f"[green]✓ Item staged for migration: {item_id} → {migrated.id_full}[/green]")
+        
+        # List other items being updated
+        affected_links = [cid for cid, change in core.staged_changes.items() 
+                         if change.action == "update" and cid != migrated.id_full]
+        
+        if affected_links:
+            console.print(f"  [bold]{len(affected_links)} incoming links updated:[/bold]")
+            for cid in affected_links:
+                console.print(f"    - {cid}")
+        
+        if dry_run:
+            console.print("\n[yellow]Dry run: discarding changes.[/yellow]")
+            core.discard_changes()
+        else:
+            count = core.flush()
+            console.print(f"\n[bold green]✓ Migration complete. {count} files updated/deleted.[/bold green]")
+            
+            # Rebuild cache to reflect new IDs
+            console.print("[bold]Rebuilding cache...[/bold]")
+            core.build_cache()
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")

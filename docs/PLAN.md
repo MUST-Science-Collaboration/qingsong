@@ -23,20 +23,20 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P2-003 | Resilient I/O Refactor | Improve `doorstop_io` to handle corrupted YAMLs and missing configs gracefully. |
 | P2-004 | Comprehensive Unit Testing | Achieve >60% coverage for core and validation modules. |
 
-## Phase 3: CLI & Search Expansion (Current)
+## Phase 3: CLI & Search Expansion (Completed)
 **Objective**: Enable efficient engineer workflows through advanced CLI tools and refactoring utilities.
 
 | ID | Task | Description |
 | --- | --- | --- |
-| P3-001 | Advanced Search CLI | Implement `qingsong find` with metadata filters and FTS5 search. |
-| P3-002 | Migration Utility | Build `qingsong migrate` to handle ID updates and link refactoring during system moves. |
-| P3-003 | Multi-format Export | Enhance Markdown and CSV export capabilities for external reviews. |
+| P3-001 | Advanced Search CLI | Implement `qingsong find` with metadata filters and FTS5 search (Done). |
+| P3-002 | Migration Utility | Build `qingsong migrate` to handle ID updates and link refactoring during system moves (Done). |
+| P3-003 | Multi-format Export | Enhance Markdown and CSV export capabilities for external reviews (Done). |
 
-## Phase 4: Verification & Traceability
+## Phase 4: Verification & Traceability (Completed)
 **Objective**: Finalize the verification loop and deliver automated compliance reporting.
 
 | ID | Task | Description |
 | --- | --- | --- |
-| P4-001 | Traceability Matrix | Generate automated Upward/Downward Traceability Matrices (UTM/DTM). |
-| P4-002 | Verification Tracking | Implement verification status roll-ups and compliance dashboard. |
-| P4-003 | Production Hardening | Final documentation pass, performance profiling, and >80% test coverage. |
+| P4-001 | Traceability Matrix | Generate automated Upward/Downward Traceability Matrices (UTM/DTM) (Done). |
+| P4-002 | Verification Tracking | Implement verification status roll-ups and compliance dashboard (Done). |
+| P4-003 | Production Hardening | Final documentation pass, performance profiling, and >80% test coverage (non-UI) (Done). |

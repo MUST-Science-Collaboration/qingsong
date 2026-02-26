@@ -93,3 +93,51 @@ def test_summary(core):
     summary = core.summary()
     assert "total_items" in summary
     assert "items_by_type" in summary
+
+def test_migrate_item(core):
+    # Setup
+    item = core.create_item(
+        item_type=ItemType.REQ,
+        system_path="FPS/FID",
+        title="To Migrate",
+        text="T",
+        owner="eng001",
+        category_path="performance/accuracy"
+    )
+    core.flush()
+    old_id = item.id_full
+    
+    # Migrate
+    migrated = core.migrate_item(old_id, "SPS/DET")
+    new_id = migrated.id_full
+    assert new_id.startswith("MUST-SPS-DET-REQ")
+    assert old_id not in core.items
+    assert new_id in core.items
+    
+    # Verify links updated (setup a link first)
+    source = core.create_item(
+        item_type=ItemType.REQ,
+        system_path="FPS/FID",
+        title="Source",
+        text="T",
+        owner="eng001",
+        category_path="performance/accuracy",
+        links=[{"target_id": new_id, "link_type": "related_to"}]
+    )
+    # Re-migrate target
+    target_migrated_again = core.migrate_item(new_id, "FPS/FID", new_l3="FID-AIT")
+    final_id = target_migrated_again.id_full
+    assert core.get_item(source.id_full).links[0].target_id == final_id
+
+def test_traceability_matrix(core):
+    matrix = core.get_traceability_matrix(direction="upward")
+    assert isinstance(matrix, list)
+    if matrix:
+        assert "id" in matrix[0]
+        assert "links" in matrix[0]
+
+def test_verification_summary(core):
+    summary = core.get_verification_summary()
+    assert "total" in summary
+    assert "verified" in summary
+    assert "percent" in summary

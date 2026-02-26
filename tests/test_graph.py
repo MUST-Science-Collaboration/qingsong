@@ -67,3 +67,18 @@ def test_graph_to_dict(core):
     d = graph_to_dict(G)
     assert "nodes" in d
     assert "edges" in d
+
+def test_export_graph_html(core, tmp_path):
+    from tools.qingsong.graph import build_graph, export_graph_html
+    G = build_graph(core.items)
+    output = tmp_path / "graph.html"
+    export_graph_html(G, output)
+    assert output.exists()
+    assert "<svg" in output.read_text()
+
+def test_get_graph_stats(core):
+    from tools.qingsong.graph import build_graph, get_graph_stats
+    G = build_graph(core.items)
+    stats = get_graph_stats(G)
+    assert "node_count" in stats
+    assert "edge_count" in stats
