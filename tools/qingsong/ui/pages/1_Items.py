@@ -116,7 +116,7 @@ def render_new_item_form(core):
         # Optional L3
         l3 = st.selectbox("L3 Task (Optional)", ["None"] + (core.metadata.valid_l3_codes if core.metadata else []))
         
-        submitted = st.form_submit_state = st.form_submit_button("Create Item (Stage)")
+        submitted = st.form_submit_button("Create Item (Stage)")
         
         if submitted:
             if not title or not text:
@@ -147,6 +147,7 @@ def main():
     with tab_create:
         render_new_item_form(core)
 
+    with tab_view:
         # Filters
         with st.expander("Filter & Search", expanded=False):
             col1, col2, col3, col4 = st.columns(4)
@@ -171,42 +172,43 @@ def main():
             q = query.lower()
             items = [i for i in items if q in i.title.lower() or q in i.text.lower() or q in i.id_full.lower()]
     
-            # Layout
-            col_list, col_detail = st.columns([2, 3])
-        
-            with col_list:
-                st.subheader(f"Results ({len(items)})")
+        # Layout
+        col_list, col_detail = st.columns([2, 3])
+    
+        with col_list:
+            st.subheader(f"Results ({len(items)})")
+            
+            # If search was performed via FTS5, we might have snippets
+            fts_results = {}
+            if query:
+                try:
+                    # Use the core search which returns dicts with snippets
+                    search_data = core.search(query)
+                    fts_results = {r["id_full"]: r.get("snippet") for r in search_data}
+                except:
+                    pass
+    
+            for i in sorted(items, key=lambda x: x.id_full):
+                label = f"{i.id_full}: {i.title[:40]}..."
+                if i.has_placeholders:
+                    label = "⚠️ " + label
                 
-                # If search was performed via FTS5, we might have snippets
-                fts_results = {}
-                if query:
-                    try:
-                        # Use the core search which returns dicts with snippets
-                        search_data = core.search(query)
-                        fts_results = {r["id_full"]: r.get("snippet") for r in search_data}
-                    except:
-                        pass
-        
-                for i in sorted(items, key=lambda x: x.id_full):
-                    label = f"{i.id_full}: {i.title[:40]}..."
-                    if i.has_placeholders:
-                        label = "⚠️ " + label
+                with st.container():
+                    if st.button(label, key=f"btn_{i.id_full}", width="stretch"):
+                        st.session_state.selected_item = i.id_full
                     
-                    with st.container():
-                        if st.button(label, key=f"btn_{i.id_full}", width="stretch"):
-                            st.session_state.selected_item = i.id_full
-                        
-                        # Show snippet if this was a search result
-                        if i.id_full in fts_results and fts_results[i.id_full]:
-                            st.caption(f"...{fts_results[i.id_full]}...")
-                        
-                        st.write("") # Spacer
+                    # Show snippet if this was a search result
+                    if i.id_full in fts_results and fts_results[i.id_full]:
+                        st.caption(f"...{fts_results[i.id_full]}...")
                     
-            with col_detail:
-                sel_id = st.session_state.get("selected_item")
-                if sel_id:
-                    render_item_detail(core, sel_id)
-                else:
-                    st.info("Select an item to view details.")
-        if __name__ == "__main__":
+                    st.write("") # Spacer
+                
+        with col_detail:
+            sel_id = st.session_state.get("selected_item")
+            if sel_id:
+                render_item_detail(core, sel_id)
+            else:
+                st.info("Select an item to view details.")
+
+if __name__ == "__main__":
     main()
