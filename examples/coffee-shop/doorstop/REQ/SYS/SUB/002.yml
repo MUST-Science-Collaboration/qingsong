@@ -9,9 +9,12 @@ system_path: SYS/SUB
 owner: eng001
 collaborators: []
 status: draft
-links: []
+links:
+  - uid: MUST-SYS-SUB-REQ-001
+    type: related_to
+discussions: []
 created_at: '2026-02-26T15:25:14.048903Z'
-updated_at: '2026-02-26T15:25:14.048903Z'
+updated_at: '2026-02-26T17:46:38.498683Z'
 tags: []
 references: []
 category_path: functional

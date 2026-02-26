@@ -70,6 +70,29 @@ def render_item_detail(core, item_id):
         for other in linked["incoming"]:
             st.markdown(f"← **{other.id_full}**")
 
+    # Impact Analysis
+    st.divider()
+    st.subheader("💥 Impact Analysis (Transitive)")
+    
+    with st.expander("Analyze Change Ripple Effect"):
+        direction = st.radio("Impact Direction", ["both", "downward", "upward"], horizontal=True, key=f"impact_dir_{item_id}")
+        if st.button("Run Analysis", key=f"run_impact_{item_id}"):
+            report = core.get_impact_analysis(item_id, direction=direction)
+            if report["impacted_count"] == 0:
+                st.success("No transitive dependencies found. This item is an leaf node.")
+            else:
+                st.warning(f"Changing this item potentially impacts **{report['impacted_count']}** other items.")
+                impact_df = pd.DataFrame([
+                    {
+                        "ID": tid,
+                        "Type": i.type.value,
+                        "Title": i.title,
+                        "System": i.system_path
+                    }
+                    for tid, i in report["items"].items()
+                ])
+                st.dataframe(impact_df, width="stretch", hide_index=True)
+
     # Discussions
     st.divider()
     st.subheader("💬 Discussions")

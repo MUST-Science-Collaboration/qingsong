@@ -88,3 +88,12 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P9-001 | Design Discussions | Implement a `discussions` schema for recording comments and rationale in YAML files (Done). |
 | P9-002 | Advanced FTS5 Search | Unlock Boolean search and ranking in the CLI and WebUI (Done). |
 | P9-003 | Collaboration UI | Build interactive comment threads and collaborator management in the browser (Done). |
+
+## Phase 10: Impact Analysis (Completed)
+**Objective**: Provide automated insights into the ripple effect of requirement and system changes.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P10-001 | Impact Logic | Implement recursive transitive dependency analysis in the core engine (Done). |
+| P10-002 | Impact CLI | Add a CLI command to visualize the impact tree of a specific item (Done). |
+| P10-003 | Impact UI | Build an interactive Impact Explorer in the browser dashboard (Done). |

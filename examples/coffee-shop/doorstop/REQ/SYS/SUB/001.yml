@@ -4,7 +4,7 @@ normative: true
 type: REQ
 id_full: MUST-SYS-SUB-REQ-001
 title: Online Ordering
-text: The system shall allow customers to place orders via a mobile app.
+text: The system shall allow customers to place orders via a mobile app. The choice of the app is TBD.
 system_path: SYS/SUB
 owner: pm001
 collaborators: []

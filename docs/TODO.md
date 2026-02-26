@@ -55,24 +55,22 @@
 | P7-003 | UI Stability Dashboard | agent | [x] Done | "Stability Watchlist" on main dashboard. |
 | P7-004 | UI Visual Highlighting | agent | [x] Done | Warning icons and TBD filter in Explorer. |
 
-## Implementation Backlog (Phase 9 Completed)
+## Implementation Backlog (Phase 10 Completed)
 
 | ID | Task | Owner | Status | Notes |
 | --- | --- | --- | --- | --- |
-| P9-001 | Design Discussions | agent | [x] Done | Add `discussions` field to BaseItem. |
-| P9-002 | Advanced FTS5 Search | agent | [x] Done | Support Boolean operators and ranking. |
-| P9-003 | Collaboration UI | agent | [x] Done | Build comment threads in the WebUI. |
-| P9-004 | Collaborator Management | agent | [x] Done | WebUI for managing item collaborators. |
+| P10-001 | Impact Logic | agent | [x] Done | Recursive traversal for transitive dependencies. |
+| P10-002 | Impact CLI | agent | [x] Done | `qingsong impact` command. |
+| P10-003 | Impact UI | agent | [x] Done | "Impact Explorer" in WebUI item details. |
 
-## Current Session Slice Plan (Search & Collaboration)
+## Current Session Slice Plan (Impact Analysis)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Add `Comment` model and `discussions` field to `BaseItem`. |
-| [x] S2 | Done | Update `doorstop_io` to handle discussion persistence. |
-| [x] S3 | Done | Implement `qingsong find --advanced` or refactor search for FTS5. |
-| [x] S4 | Done | Add "Discussions" section to Item detail view in WebUI. |
-| [x] S5 | Done | Add "Collaborators" management to WebUI. |
+| [x] S1 | Done | Implement `core.get_impact_analysis()` algorithm. |
+| [x] S2 | Done | Add `qingsong impact` command to `cli.py`. |
+| [x] S3 | Done | Add "Impact Analysis" section to `1_Items.py` in WebUI. |
+| [x] S4 | Done | Verify with complex link chains in demo project. |
 
 ## Review Notes
 
@@ -88,3 +86,4 @@
 - 2026-02-27: Completed Phase 7 (P7-001, P7-002, P7-003, P7-004). Implemented TBD/TBC placeholder tracking and integrated it into the CLI and WebUI.
 - 2026-02-27: Completed Phase 8 (P8-001, P8-002, P8-003, P8-004). Implemented PDF export engine and formal document templates, and updated pre-commit hooks for CI/CD automation.
 - 2026-02-27: Completed Phase 9 (P9-001, P9-002, P9-003, P9-004). Implemented design discussions, enhanced FTS5 search with snippets, and added collaborator management to the WebUI.
+- 2026-02-27: Completed Phase 10 (P10-001, P10-002, P10-003). Implemented recursive impact analysis in core, CLI, and WebUI.

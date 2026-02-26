@@ -1,0 +1,23 @@
+active: true
+derived: false
+normative: true
+type: REQ
+id_full: MUST-SYS-SUB-REQ-003
+title: Chain Item 3
+text: Deep link
+system_path: SYS/SUB
+owner: eng001
+collaborators: []
+status: draft
+links:
+  - uid: MUST-SYS-SUB-REQ-002
+    type: related_to
+discussions: []
+created_at: '2026-02-26T17:46:30.674691Z'
+updated_at: '2026-02-26T17:46:38.498634Z'
+tags: []
+references: []
+category_path: functional
+priority: must
+verified: false
+allocated_to: []
