@@ -36,6 +36,24 @@ def main():
         st.metric("Systems", len(summary["systems"]))
         
     st.divider()
+
+    # Quick Actions
+    st.subheader("⚡ Quick Actions")
+    qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
+    with qa_col1:
+        if st.button("➕ New Requirement", width="stretch"):
+            st.switch_page("pages/1_Items.py")
+    with qa_col2:
+        if st.button("🔍 Search Items", width="stretch"):
+            st.switch_page("pages/1_Items.py")
+    with qa_col3:
+        if st.button("🔗 Check Traceability", width="stretch"):
+            st.switch_page("pages/2_Traceability.py")
+    with qa_col4:
+        if st.button("💡 View Insights", width="stretch"):
+            st.switch_page("pages/6_Insights.py")
+
+    st.divider()
     
     # Visual breakdowns
     col1, col2 = st.columns(2)

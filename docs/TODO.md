@@ -72,14 +72,24 @@
 | P11-003 | Reporting CLI | agent | [x] Done | `qingsong report` command group. |
 | P11-004 | UI Insights Page | agent | [x] Done | New "Insights" page in WebUI. |
 
-## Current Session Slice Plan (Orphan & Coverage)
+## Implementation Backlog (Phase 12 Completed)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P12-001 | Direct Item Editing | agent | [x] Done | Web forms for updating item content. |
+| P12-002 | In-Place Linking | agent | [x] Done | Tool for adding/removing links in UI. |
+| P12-003 | Interactive Migrations | agent | [x] Done | UI form for `migrate_item`. |
+| P12-004 | UX Polish | agent | [x] Done | Styling, colors, and quick-actions. |
+
+## Current Session Slice Plan (Enhanced UI)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Implement `core.get_orphan_report()` and `core.get_coverage_stats()`. |
-| [x] S2 | Done | Add `qingsong report` command to `cli.py`. |
-| [x] S3 | Done | Create `pages/6_Insights.py` in WebUI. |
-| [x] S4 | Done | Verify with sample data in Coffee Shop vault. |
+| [x] S1 | Done | Add "Edit Mode" toggle and form to `1_Items.py`. |
+| [x] S2 | Done | Implement link management UI in item details. |
+| [x] S3 | Done | Add "Migrate Item" expander to item details. |
+| [x] S4 | Done | Add "Quick Links" to Dashboard for common tasks. |
+| [x] S5 | Done | Verify all interactive flows in browser. |
 
 ## Review Notes
 
@@ -97,3 +107,4 @@
 - 2026-02-27: Completed Phase 9 (P9-001, P9-002, P9-003, P9-004). Implemented design discussions, enhanced FTS5 search with snippets, and added collaborator management to the WebUI.
 - 2026-02-27: Completed Phase 10 (P10-001, P10-002, P10-003). Implemented recursive impact analysis in core, CLI, and WebUI.
 - 2026-02-27: Completed Phase 11 (P11-001, P11-002, P11-003, P11-004). Implemented orphan detection and coverage reporting in core, CLI, and a new WebUI "Insights" page.
+- 2026-02-27: Completed Phase 12 (P12-001, P12-002, P12-003, P12-004). Enhanced WebUI with in-place editing, link management, interactive migrations, and dashboard quick-actions.

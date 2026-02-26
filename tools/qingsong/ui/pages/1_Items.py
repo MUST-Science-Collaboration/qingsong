@@ -24,11 +24,23 @@ def render_item_detail(core, item_id):
         st.error(f"Item {item_id} not found.")
         return
 
-    st.subheader(f"📄 {item.id_full}")
-    
+    # Header with Edit Toggle
+    col_h, col_edit = st.columns([4, 1])
+    with col_h:
+        st.subheader(f"📄 {item.id_full}")
+    with col_edit:
+        edit_mode = st.toggle("Edit Mode", key=f"edit_toggle_{item_id}")
+
     if item.has_placeholders:
         st.warning("⚠️ This item contains **TBD** or **TBC** placeholders and is considered unstable.")
 
+    if edit_mode:
+        render_edit_form(core, item)
+    else:
+        render_view_mode(core, item)
+
+def render_view_mode(core, item):
+    item_id = item.id_full
     col1, col2, col3 = st.columns(3)
     with col1: st.metric("Type", item.type.value)
     with col2: st.metric("Status", item.status.value)
@@ -120,6 +132,75 @@ def render_item_detail(core, item_id):
                         st.error(f"Failed to add comment: {e}")
                 else:
                     st.error("Comment cannot be empty.")
+
+def render_edit_form(core, item):
+    """Form to edit an existing item."""
+    item_id = item.id_full
+    
+    with st.form(f"edit_form_{item_id}"):
+        st.write("**Core Content**")
+        new_title = st.text_input("Title", value=item.title)
+        new_text = st.text_area("Description / Text", value=item.text, height=200)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            new_status = st.selectbox("Status", ["draft", "active", "retired"], index=["draft", "active", "retired"].index(item.status.value))
+        with col2:
+            new_owner = st.selectbox("Owner", core.metadata.valid_person_ids if core.metadata else [], index=(core.metadata.valid_person_ids.index(item.owner) if core.metadata and item.owner in core.metadata.valid_person_ids else 0))
+
+        st.divider()
+        st.write("**Relationship Management**")
+        
+        # Display current links with delete option
+        updated_links = list(item.links)
+        for idx, link in enumerate(item.links):
+            c1, c2 = st.columns([4, 1])
+            c1.markdown(f"🔗 `{link.link_type}`: **{link.target_id}**")
+            if c2.checkbox("Remove", key=f"del_link_{item_id}_{idx}"):
+                updated_links.remove(link)
+        
+        st.write("➕ Add Link")
+        lx1, lx2 = st.columns(2)
+        target_id = lx1.text_input("Target ID", key=f"new_link_target_{item_id}")
+        link_type = lx2.selectbox("Link Type", core.metadata.valid_link_types if core.metadata else ["related_to"], key=f"new_link_type_{item_id}")
+        
+        if st.form_submit_button("Stage Changes", type="primary"):
+            try:
+                updates = {
+                    "title": new_title,
+                    "text": new_text,
+                    "status": new_status,
+                    "owner": new_owner,
+                    "links": updated_links
+                }
+                
+                # Add new link if provided
+                if target_id:
+                    from qingsong.models.common import Link
+                    updates["links"].append(Link(target_id=target_id, link_type=link_type))
+                
+                core.update_item(item_id, **updates)
+                st.success("Changes staged! Flush in the sidebar to save.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Update failed: {e}")
+
+    # Migration (Separate because it changes ID)
+    st.divider()
+    with st.expander("🛠️ Advanced: Migrate Item"):
+        st.info("Migration moves the item to a new system and updates its ID and all incoming links.")
+        new_sys = st.selectbox("New System", core.metadata.valid_system_paths if core.metadata else [], key=f"mig_sys_{item_id}")
+        new_l3 = st.selectbox("New L3 (Optional)", ["None"] + (core.metadata.valid_l3_codes if core.metadata else []), key=f"mig_l3_{item_id}")
+        
+        if st.button("Migrate Item"):
+            try:
+                l3_val = None if new_l3 == "None" else new_l3
+                migrated = core.migrate_item(item_id, new_sys, l3_val)
+                st.success(f"Migrated to {migrated.id_full}! Staged.")
+                st.session_state.selected_item = migrated.id_full
+                st.rerun()
+            except Exception as e:
+                st.error(f"Migration failed: {e}")
 
 def render_new_item_form(core):
     """Render a form to create a new item."""
