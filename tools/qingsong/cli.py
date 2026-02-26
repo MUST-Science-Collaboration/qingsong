@@ -991,6 +991,76 @@ def ui():
 
 
 # =============================================================================
+# Report commands
+# =============================================================================
+
+report_app = typer.Typer(help="Analytical reports and gap analysis")
+app.add_typer(report_app, name="report")
+
+@report_app.command("orphans")
+def report_orphans():
+    """Identify items with design gaps (no parents or children)."""
+    try:
+        core = get_core()
+        report = core.get_orphan_report()
+
+        console.print("[bold red]Design Gap Analysis (Orphans)[/bold red]")
+
+        # Root Orphans
+        table_root = Table(title="Root Orphans (No Parents - potentially disconnected goals)")
+        table_root.add_column("Requirement ID", style="cyan")
+        table_root.add_column("Title")
+        for tid in report["root_orphans"]:
+            item = core.items[tid]
+            table_root.add_row(tid, item.title[:60])
+        console.print(table_root)
+
+        # Leaf Orphans
+        table_leaf = Table(title="Leaf Orphans (No Children - unimplemented/unverified)")
+        table_leaf.add_column("Item ID", style="cyan")
+        table_leaf.add_column("Type")
+        table_leaf.add_column("Title")
+        for tid in report["leaf_orphans"]:
+            item = core.items[tid]
+            table_leaf.add_row(tid, item.type.value, item.title[:60])
+        console.print(table_leaf)
+
+        # Unverified
+        table_unver = Table(title="Unverified Requirements (No incoming 'verifies' links)")
+        table_unver.add_column("Requirement ID", style="cyan")
+        table_unver.add_column("Title")
+        for tid in report["unverified_requirements"]:
+            item = core.items[tid]
+            table_unver.add_row(tid, item.title[:60])
+        console.print(table_unver)
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@report_app.command("coverage")
+def report_coverage():
+    """Calculate system-wide coverage metrics."""
+    try:
+        core = get_core()
+        stats = core.get_coverage_stats()
+
+        console.print(Panel.fit(
+            f"[bold]Total Requirements:[/bold] {stats['total_requirements']}\n\n"
+            f"[bold]Traceability Coverage:[/bold] {stats['traceability_count']} ({stats['traceability_percent']:.1f}%)\n"
+            f"[dim]Requirements that derive from a parent goals.[/dim]\n\n"
+            f"[bold]Verification Coverage:[/bold] {stats['verification_count']} ({stats['verification_percent']:.1f}%)\n"
+            f"[dim]Requirements linked to implementation/verification evidence.[/dim]",
+            title="System Maturity & Coverage"
+        ))
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# =============================================================================
 # Impact command
 # =============================================================================
 

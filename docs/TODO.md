@@ -63,14 +63,23 @@
 | P10-002 | Impact CLI | agent | [x] Done | `qingsong impact` command. |
 | P10-003 | Impact UI | agent | [x] Done | "Impact Explorer" in WebUI item details. |
 
-## Current Session Slice Plan (Impact Analysis)
+## Implementation Backlog (Phase 11 Completed)
+
+| ID | Task | Owner | Status | Notes |
+| --- | --- | --- | --- | --- |
+| P11-001 | Gap Detection Logic | agent | [x] Done | Logic for root/leaf orphans and unverified items. |
+| P11-002 | Coverage Analytics | agent | [x] Done | Traceability and verification percentage metrics. |
+| P11-003 | Reporting CLI | agent | [x] Done | `qingsong report` command group. |
+| P11-004 | UI Insights Page | agent | [x] Done | New "Insights" page in WebUI. |
+
+## Current Session Slice Plan (Orphan & Coverage)
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| [x] S1 | Done | Implement `core.get_impact_analysis()` algorithm. |
-| [x] S2 | Done | Add `qingsong impact` command to `cli.py`. |
-| [x] S3 | Done | Add "Impact Analysis" section to `1_Items.py` in WebUI. |
-| [x] S4 | Done | Verify with complex link chains in demo project. |
+| [x] S1 | Done | Implement `core.get_orphan_report()` and `core.get_coverage_stats()`. |
+| [x] S2 | Done | Add `qingsong report` command to `cli.py`. |
+| [x] S3 | Done | Create `pages/6_Insights.py` in WebUI. |
+| [x] S4 | Done | Verify with sample data in Coffee Shop vault. |
 
 ## Review Notes
 
@@ -87,3 +96,4 @@
 - 2026-02-27: Completed Phase 8 (P8-001, P8-002, P8-003, P8-004). Implemented PDF export engine and formal document templates, and updated pre-commit hooks for CI/CD automation.
 - 2026-02-27: Completed Phase 9 (P9-001, P9-002, P9-003, P9-004). Implemented design discussions, enhanced FTS5 search with snippets, and added collaborator management to the WebUI.
 - 2026-02-27: Completed Phase 10 (P10-001, P10-002, P10-003). Implemented recursive impact analysis in core, CLI, and WebUI.
+- 2026-02-27: Completed Phase 11 (P11-001, P11-002, P11-003, P11-004). Implemented orphan detection and coverage reporting in core, CLI, and a new WebUI "Insights" page.
