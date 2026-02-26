@@ -60,7 +60,7 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P6-003 | Advanced Search & Graph | Integrate SQLite FTS5 search into the UI and embed interactive NetworkX graphs for visual dependency tracking (Done). |
 | P6-004 | Interactive Editor (Draft) | Implement form components to create, update, and migrate items directly from the browser using the staging API (Done). |
 
-## Phase 7: Stability Tracking (Current)
+## Phase 7: Stability Tracking (Completed)
 **Objective**: Explicitly manage items with "TBD" or "TBC" placeholders to track project maturity.
 
 | ID | Task | Description |
@@ -69,3 +69,13 @@ Deliver a robust, production-grade requirements management system (RMS) for the 
 | P7-002 | CLI TBD Filter | Add `--tbd` filter to the `find` command for rapid isolation (Done). |
 | P7-003 | UI Stability Dashboard | Create a "Stability Watchlist" panel on the UI Dashboard (Done). |
 | P7-004 | UI Visual Highlighting | Add visual warnings and filters for unstable items in the Items Explorer (Done). |
+
+## Phase 8: Automated Compliance & Export (Completed)
+**Objective**: Transition "Requirements as Code" into formal, review-ready documents and automate repository health checks.
+
+| ID | Task | Description |
+| --- | --- | --- |
+| P8-001 | PDF Export Engine | Implement a robust PDF generation engine with professional headers/footers (Done). |
+| P8-002 | Formal Document Templates | Create "Requirements Specification" and "Risk Register" PDF layouts (Done). |
+| P8-003 | Compliance Reporting | Generate a "Project Maturity Report" rolling up verification and stability metrics (Done). |
+| P8-004 | CI/CD Automation | Integrate automated validation and cache building into git hooks (Done). |

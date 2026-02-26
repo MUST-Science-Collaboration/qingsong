@@ -15,6 +15,174 @@ from .core import QingsongCore
 from .models import BaseItem, ItemType, Requirement, Risk, Interface
 
 
+from fpdf import FPDF
+
+
+class PDFGenerator(FPDF):
+    """Base class for Qingsong PDF reports."""
+
+    def __init__(self, title: str, project_id: str = "MUST"):
+        super().__init__()
+        self.report_title = title
+        self.project_id = project_id
+        self.set_title(title)
+        self.set_author("Qingsong Management Engine")
+
+    def header(self):
+        # Logo
+        self.set_font("helvetica", "B", 15)
+        self.cell(0, 10, f"{self.project_id} - Qingsong", border=False, ln=0, align="L")
+        self.set_font("helvetica", "I", 8)
+        self.cell(0, 10, f"Generated: {datetime.now().strftime('%Y-%m-%d')}", border=False, ln=1, align="R")
+        self.set_draw_color(30, 58, 95)  # Dark blue
+        self.line(10, 20, 200, 20)
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("helvetica", "I", 8)
+        self.cell(0, 10, f"Page {self.page_no()}/{{nb}}", align="C")
+
+    def section_title(self, label: str):
+        self.set_font("helvetica", "B", 14)
+        self.set_fill_color(230, 230, 230)
+        self.cell(0, 10, label, ln=1, fill=True)
+        self.ln(4)
+
+    def item_header(self, id_full: str, title: str):
+        self.set_font("helvetica", "B", 11)
+        self.cell(0, 8, f"{id_full}: {title}", ln=1)
+        self.set_font("helvetica", "", 9)
+
+    def multi_cell_markdown(self, text: str):
+        """Very basic markdown-ish text handling."""
+        self.set_font("helvetica", "", 10)
+        # Replace common markdown chars for PDF display
+        clean_text = text.replace("**", "").replace("__", "").replace("`", "'")
+        self.multi_cell(0, 5, clean_text)
+        self.ln(2)
+
+
+def export_requirements_pdf(
+    core: QingsongCore,
+    output_path: Path,
+    system_path: str | None = None,
+) -> None:
+    """Export requirements to a formal PDF."""
+    items = core.get_items_by_type(ItemType.REQ)
+    if system_path:
+        items = [i for i in items if i.system_path == system_path]
+    items.sort(key=lambda x: x.id_full)
+
+    pdf = PDFGenerator("Requirements Specification", project_id=core.metadata.project_id if core.metadata else "MUST")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    pdf.set_font("helvetica", "B", 20)
+    pdf.cell(0, 20, "Requirements Specification", ln=1, align="C")
+    if system_path:
+        pdf.set_font("helvetica", "B", 14)
+        pdf.cell(0, 10, f"System: {system_path}", ln=1, align="C")
+    pdf.ln(10)
+
+    # Summary Table
+    pdf.section_title("Summary Table")
+    pdf.set_font("helvetica", "B", 9)
+    pdf.cell(40, 8, "ID", border=1)
+    pdf.cell(100, 8, "Title", border=1)
+    pdf.cell(30, 8, "Status", border=1)
+    pdf.cell(20, 8, "Owner", border=1, ln=1)
+
+    pdf.set_font("helvetica", "", 8)
+    for item in items:
+        pdf.cell(40, 7, item.id_full, border=1)
+        pdf.cell(100, 7, item.title[:60], border=1)
+        pdf.cell(30, 7, item.status.value, border=1)
+        pdf.cell(20, 7, item.owner, border=1, ln=1)
+    
+    pdf.add_page()
+    pdf.section_title("Detailed Requirements")
+    
+    for item in items:
+        if pdf.get_y() > 250:
+            pdf.add_page()
+        pdf.item_header(item.id_full, item.title)
+        pdf.set_font("helvetica", "I", 9)
+        pdf.cell(0, 6, f"Status: {item.status.value} | Owner: {item.owner} | System: {item.system_path}", ln=1)
+        pdf.ln(2)
+        pdf.multi_cell_markdown(item.text)
+        
+        if item.links:
+            pdf.set_font("helvetica", "B", 9)
+            pdf.cell(0, 6, "Links:", ln=1)
+            pdf.set_font("helvetica", "", 9)
+            for link in item.links:
+                pdf.cell(0, 5, f"  - {link.link_type}: {link.target_id}", ln=1)
+        
+        pdf.ln(5)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+
+    pdf.output(str(output_path))
+
+
+def export_maturity_report_pdf(
+    core: QingsongCore,
+    output_path: Path,
+) -> None:
+    """Export a Project Maturity & Compliance Report to PDF."""
+    summary = core.get_verification_summary()
+    staged = len(core.staged_changes)
+    tbd_items = [i for i in core.items.values() if i.has_placeholders]
+
+    pdf = PDFGenerator("Project Maturity Report", project_id=core.metadata.project_id if core.metadata else "MUST")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    pdf.set_font("helvetica", "B", 20)
+    pdf.cell(0, 20, "Project Maturity & Compliance", ln=1, align="C")
+    pdf.ln(10)
+
+    # Verification Progress
+    pdf.section_title("1. Verification Progress")
+    pdf.set_font("helvetica", "", 11)
+    pdf.cell(0, 8, f"Total Requirements: {summary['total']}", ln=1)
+    pdf.cell(0, 8, f"Verified Requirements: {summary['verified']} ({summary['percent']:.1f}%)", ln=1)
+    pdf.cell(0, 8, f"Pending Verification: {summary['total'] - summary['verified']}", ln=1)
+    pdf.ln(5)
+
+    # Stability Tracking
+    pdf.section_title("2. Stability Tracking (TBD/TBC)")
+    if not tbd_items:
+        pdf.set_text_color(40, 167, 69) # Green
+        pdf.cell(0, 8, "No TBD or TBC placeholders found. Project requirements are stable.", ln=1)
+        pdf.set_text_color(0, 0, 0)
+    else:
+        pdf.set_text_color(220, 53, 69) # Red
+        pdf.cell(0, 8, f"Found {len(tbd_items)} items with TBD/TBC placeholders.", ln=1)
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(5)
+        pdf.set_font("helvetica", "B", 9)
+        pdf.cell(50, 8, "ID", border=1)
+        pdf.cell(100, 8, "Title", border=1)
+        pdf.cell(40, 8, "Owner", border=1, ln=1)
+        pdf.set_font("helvetica", "", 8)
+        for i in tbd_items:
+            pdf.cell(50, 7, i.id_full, border=1)
+            pdf.cell(100, 7, i.title[:60], border=1)
+            pdf.cell(40, 7, i.owner, border=1, ln=1)
+
+    # Staging Status
+    pdf.ln(10)
+    pdf.section_title("3. Repository Health")
+    if staged > 0:
+        pdf.cell(0, 8, f"Warning: {staged} changes are currently staged but not flushed to disk.", ln=1)
+    else:
+        pdf.cell(0, 8, "Repository is synchronized with disk.", ln=1)
+
+    pdf.output(str(output_path))
+
+
 def _escape_markdown(text: str) -> str:
     """Escape special markdown characters."""
     # Simple escape - just handle pipes for tables

@@ -715,9 +715,9 @@ def graph_cmd(
 
 @app.command("export")
 def export_cmd(
-    export_type: str = typer.Argument(..., help="Export type: requirements, risks, interfaces, summary, all"),
+    export_type: str = typer.Argument(..., help="Export type: requirements, risks, interfaces, summary, maturity, all"),
     output: Path = typer.Option(Path("export.md"), "--output", "-o", help="Output file"),
-    format: str = typer.Option("markdown", "--format", "-f", help="Output format: markdown, csv"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Output format: markdown, csv, pdf"),
     system: Optional[str] = typer.Option(None, "--system", "-s", help="Filter by system"),
 ):
     """Export documents in various formats."""
@@ -728,9 +728,28 @@ def export_cmd(
             export_interface_list_markdown,
             export_summary_markdown,
             export_to_csv,
+            export_requirements_pdf,
+            export_maturity_report_pdf,
         )
 
         core = get_core()
+
+        if format == "pdf":
+            # Set default PDF extension if not provided
+            if output.suffix != ".pdf":
+                output = output.with_suffix(".pdf")
+                
+            if export_type == "requirements":
+                export_requirements_pdf(core, output, system_path=system)
+                console.print(f"[green]✓ Exported requirements to PDF: {output}[/green]")
+            elif export_type == "maturity":
+                export_maturity_report_pdf(core, output)
+                console.print(f"[green]✓ Exported Project Maturity Report to PDF: {output}[/green]")
+            else:
+                console.print(f"[red]PDF export not yet supported for type: {export_type}[/red]")
+                console.print("Supported PDF types: requirements, maturity")
+                raise typer.Exit(1)
+            return
 
         if format == "csv":
             if export_type == "all":

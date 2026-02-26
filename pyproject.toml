@@ -33,6 +33,7 @@ dependencies = [
     "streamlit>=1.28",
     "networkx>=3.0",
     "pandas>=2.0",
+    "fpdf2>=2.8.6",
 ]
 
 [project.optional-dependencies]
