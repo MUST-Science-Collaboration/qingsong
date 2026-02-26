@@ -56,3 +56,13 @@ Qingsong (青松) is a requirements management system for the MUST telescope pro
 - IDs are logically linked to their system path.
 - Renaming a system or moving an item triggers an ID update.
 - The system must provide a `migrate` tool to update all incoming links when an ID changes.
+
+## 7. Collaboration & Discussion
+- All items support a `discussions` field.
+- Comments record author, timestamp, and design rationale.
+- Discussions are stored directly in the item YAML to preserve history alongside technical requirements.
+
+## 8. Analytical Intelligence
+- **Impact Analysis**: Recursive traversal of the link graph to identify transitive dependencies affected by a change.
+- **Orphan Detection**: Automated identification of requirements without parents (root orphans) or implementation evidence (leaf orphans).
+- **Coverage Metrics**: Real-time calculation of traceability and verification completion percentages.

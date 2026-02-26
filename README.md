@@ -118,14 +118,37 @@ qingsong validate
 # List all items
 qingsong list
 
-# Filter by type, system, status, or owner
-qingsong list --type req --system FPS/FID --status active
+# Search content using FTS5 (supports Boolean: AND, OR, NOT)
+qingsong find "fiber AND accuracy"
 
-# Show item details
+# Show details of a specific item
 qingsong show MUST-FPS-FID-REQ-001
 
 # Show repository summary
 qingsong summary
+
+### Analysis and Reporting
+
+```bash
+# Identify design gaps (orphans and unverified items)
+qingsong report orphans
+
+# Show system maturity and coverage metrics
+qingsong report coverage
+
+# Analyze transitive impact of changing an item
+qingsong impact MUST-FPS-FID-REQ-001 --direction both
+
+# Show requirement verification dashboard
+qingsong verify
+```
+
+### Refactoring
+
+```bash
+# Migrate an item to a new system (updates ID and all incoming links)
+qingsong migrate MUST-FPS-FID-REQ-001 --system SPS/DET
+```
 ```
 
 ### Creating Items
@@ -168,17 +191,14 @@ qingsong query "SELECT * FROM items" --format csv
 ### Exports
 
 ```bash
-# Export requirements document
-qingsong export requirements --system FPS/FID -o requirements.md
+# Export requirements document (Markdown or PDF)
+qingsong export requirements -o requirements.pdf --format pdf
 
-# Export risk register
-qingsong export risks -o risk_register.md
+# Export project maturity report (PDF)
+qingsong export maturity -o maturity.pdf --format pdf
 
-# Export interface list
-qingsong export interfaces -o interfaces.md
-
-# Export summary
-qingsong export summary -o summary.md
+# Export to CSV for Excel
+qingsong export requirements --format csv -o reqs.csv
 ```
 
 ### Graph Visualization
