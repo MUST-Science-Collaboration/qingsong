@@ -5,6 +5,7 @@
   var panel = document.getElementById("tree-panel");
   if (!data || !canvas) { return; }
   var svgNS = "http://www.w3.org/2000/svg";
+  var recordBase = window.QINGSONG_RECORD_BASE || "";
   var columnWidth = 250, boxWidth = 220, boxHeight = 42, rowHeight = 52, margin = 16;
   var colors = {
     product: {stroke: "#c2410c", fill: "#fff7ed"},
@@ -128,7 +129,7 @@
     var path = [];
     for (var step = node; step; step = step.parent) { path.unshift(step.code); }
     var requirements = node.requirements.map(function (entry) {
-      return "<li><a href=\"r/" + escape(entry.id) + ".html\">" + escape(entry.id) + "</a> " + escape(entry.title) + "</li>";
+      return "<li><a href=\"" + recordBase + "r/" + escape(entry.id) + ".html\">" + escape(entry.id) + "</a> " + escape(entry.title) + "</li>";
     }).join("");
     panel.innerHTML =
       "<h3>" + escape(node.code) + " <span class=\"small\">" + escape(node.structural_code || "") + "</span></h3>" +
