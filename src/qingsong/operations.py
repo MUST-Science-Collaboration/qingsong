@@ -1,8 +1,12 @@
-"""Recorded changes: adopt, new, revise, supersede, withdraw, approve, confirm, renumber
-(docs/SPEC.md §8, §9, §11). Every operation validates the result and rewrites the stamp."""
+"""Recorded changes: adopt, new, revise, supersede, withdraw, approve, confirm, renumber, init
+(docs/SPEC.md §8, §9, §11). Every operation validates the result, rewrites the stamp, writes the
+file atomically and reads it back to verify the stamp."""
 
 import datetime
+import io
+import os
 import re
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -12,7 +16,13 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
 
 from qingsong import gitutil, ids
-from qingsong.hashing import field_value, normative_hash_of, stamp_of, text_hash
+from qingsong.hashing import (
+    approved_text_hash,
+    field_value,
+    normative_hash_of,
+    stamp_of,
+    text_hash,
+)
 from qingsong.schema import RecordBase, maturity_order, plain, record_folders
 from qingsong.vault import (
     Vault,
@@ -20,11 +30,11 @@ from qingsong.vault import (
     load,
     record_adapter,
     round_trip_yaml,
-    write_new_record,
 )
 
 bookkeeping_fields = ("revision", "normative_revision", "normative_hash", "history", "stamp")
-translated_types = {"requirement": "statement", "figure": "caption"}
+translated_types = ("requirement", "figure")
+minimum_reason_length = 10
 
 
 class OperationError(Exception):
@@ -46,6 +56,18 @@ def require_record(vault: Vault, record_id: str) -> RecordBase:
     return vault.records[record_id]
 
 
+def require_current(record: RecordBase) -> None:
+    if record.lifecycle != "current":
+        raise OperationError(f"{record.id} is {record.lifecycle}; it can no longer be changed")
+
+
+def require_recorded(record: RecordBase) -> None:
+    if stamp_of(record) != record.stamp:
+        raise OperationError(
+            f"{record.id} has unrecorded changes; record them first with qingsong revise"
+        )
+
+
 def validate(data: dict[str, Any]) -> RecordBase:
     try:
         return record_adapter.validate_python(plain(data))
@@ -53,13 +75,17 @@ def validate(data: dict[str, Any]) -> RecordBase:
         raise OperationError(describe_validation_error(error)) from error
 
 
+def languages_of(vault: Vault) -> tuple[str, str]:
+    assert vault.config is not None
+    return vault.config.languages.reference, vault.config.languages.second
+
+
 def translation_fields(vault: Vault, record_type: str) -> list[str]:
     if record_type not in translated_types or vault.config is None:
         return []
-    fields = list(vault.config.languages.bilingual_fields)
     if record_type == "figure":
-        fields = ["title", "caption"]
-    return fields
+        return ["title", "caption"]
+    return list(vault.config.languages.bilingual_fields)
 
 
 def translation_entries(
@@ -68,20 +94,26 @@ def translation_entries(
     status: str,
     person: str | None,
     today: datetime.date,
-    only_missing: dict[str, Any] | None = None,
-) -> dict:
-    """Translation state for every bilingual field that exists in both languages."""
-    assert vault.config is not None
-    languages = {vault.config.languages.reference, vault.config.languages.second}
-    origin = getattr(record, "text_origin", vault.config.languages.reference)
-    entries: dict[str, Any] = dict(only_missing or {})
+    existing: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Translation state for bilingual fields present in both languages.
+
+    With `existing`, entries whose source hash is still current are kept as they are; only stale
+    or missing entries are (re)written."""
+    languages = set(languages_of(vault))
+    origin = getattr(record, "text_origin", None)
+    entries: dict[str, Any] = dict(existing or {})
+    if origin not in languages:
+        return entries
     for name in translation_fields(vault, record.type):
         value = field_value(record, name)
         if not isinstance(value, dict) or not languages <= set(value):
             continue
-        if only_missing is not None and name in only_missing:
+        current_hash = text_hash(value[origin])
+        old = entries.get(name)
+        if existing is not None and old is not None and old.get("source_hash") == current_hash:
             continue
-        entry: dict[str, Any] = {"source_hash": text_hash(value[origin]), "status": status}
+        entry: dict[str, Any] = {"source_hash": current_hash, "status": status}
         if status == "reviewed":
             entry["by"] = person
             entry["date"] = today
@@ -114,7 +146,7 @@ def load_round_trip(path: Path) -> CommentedMap:
     try:
         with path.open(encoding="utf-8") as handle:
             data = round_trip_yaml().load(handle)
-    except YAMLError as error:
+    except (YAMLError, UnicodeDecodeError) as error:
         first = str(error).strip().splitlines()
         raise OperationError(
             f"{path.name} is not valid YAML ({' '.join(first[:2])}); "
@@ -125,22 +157,59 @@ def load_round_trip(path: Path) -> CommentedMap:
     return data
 
 
-def finish(path: Path, data: CommentedMap) -> RecordBase:
-    """Validate the edited data, write the new stamp, save."""
+def serialize(data: CommentedMap) -> str:
+    buffer = io.StringIO()
+    round_trip_yaml().dump(data, buffer)
+    return buffer.getvalue()
+
+
+def write_atomically(path: Path, text: str, exclusive: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if exclusive and path.exists():
+        raise OperationError(f"{path.name} already exists; it will not be overwritten")
+    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8") as stream:
+            stream.write(text)
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
+
+
+def stamped(data: CommentedMap) -> tuple[RecordBase, str]:
+    """Write normative hash and stamp into the data; return the record and its serialized text.
+
+    The text is parsed again and must give the same stamp, so that nothing is lost in writing."""
     data["stamp"] = "0" * 16
     record = validate(data)
     data["normative_hash"] = normative_hash_of(record)
-    record = validate(data)
-    data["stamp"] = stamp_of(record)
-    with path.open("w", encoding="utf-8") as handle:
-        round_trip_yaml().dump(data, handle)
-    return validate(data)
+    data["stamp"] = stamp_of(validate(data))
+    text = serialize(data)
+    reread = validate(round_trip_yaml().load(text))
+    if stamp_of(reread) != data["stamp"]:
+        raise OperationError(
+            f"{data.get('id')}: the record does not survive writing as YAML unchanged "
+            "(please report this as a qingsong bug)"
+        )
+    return reread, text
+
+
+def finish(path: Path, data: CommentedMap, exclusive: bool = False) -> RecordBase:
+    record, text = stamped(data)
+    write_atomically(path, text, exclusive=exclusive)
+    return record
 
 
 def edit(
-    vault: Vault, record_id: str, change: Callable[[CommentedMap, RecordBase], None]
+    vault: Vault,
+    record_id: str,
+    change: Callable[[CommentedMap, RecordBase], None],
+    allow_unrecorded: bool = False,
 ) -> RecordBase:
     record = require_record(vault, record_id)
+    if not allow_unrecorded:
+        require_recorded(record)
     path = vault.files[record_id]
     data = load_round_trip(path)
     change(data, record)
@@ -180,6 +249,8 @@ def adopt(
         )
     if record_id in vault.records and vault.files[record_id].resolve() != expected:
         raise OperationError(f"{record_id} already exists")
+    if translation not in ("machine", "reviewed"):
+        raise OperationError("translation must be machine or reviewed")
     data.setdefault("lifecycle", "current")
     data["revision"] = 1
     data["normative_revision"] = 1
@@ -187,7 +258,7 @@ def adopt(
     data["history"] = [history_event(1, today, person, event, summary, via=via)]
     data["stamp"] = "0" * 16
     draft = validate(data)
-    if hasattr(draft, "translation") and not data.get("translation"):
+    if record_type in translated_types and not data.get("translation"):
         reviewer = person if translation == "reviewed" else None
         entries = translation_entries(vault, draft, translation, reviewer, today)
         if entries:
@@ -195,68 +266,31 @@ def adopt(
     return finish(path, data)
 
 
-def allocate_number(vault: Vault, record_type: str, namespace: str | None) -> int:
+def numbers_in_use(vault: Vault, record_type: str, namespace: str | None) -> set[int]:
+    """Numbers used in the working tree (loaded or not) and on every main reference."""
     used: set[int] = set()
+
+    def note(stem: str) -> None:
+        if ids.id_matches(record_type, stem) and ids.namespace_of(record_type, stem) == namespace:
+            used.add(ids.number_of(record_type, stem) or 0)
+
+    folder = vault.root / record_folders[record_type]
+    if folder.exists():
+        for path in folder.rglob("*.y*ml"):
+            note(path.stem)
     for record in vault.records.values():
-        if record.type == record_type and ids.namespace_of(record_type, record.id) == namespace:
-            number = ids.number_of(record_type, record.id)
-            if number is not None:
-                used.add(number)
+        if record.type == record_type:
+            note(record.id)
     for record_id, _path in vault.duplicates:
-        number = ids.number_of(record_type, record_id)
-        if number is not None and ids.namespace_of(record_type, record_id) == namespace:
-            used.add(number)
-    ref = gitutil.main_ref(vault.root)
-    if ref:
+        note(record_id)
+    for ref in gitutil.main_refs(vault.root):
         for name in gitutil.files_at(vault.root, ref, record_folders[record_type]):
-            stem = Path(name).stem
-            if (
-                ids.id_matches(record_type, stem)
-                and ids.namespace_of(record_type, stem) == namespace
-            ):
-                used.add(ids.number_of(record_type, stem) or 0)
-    return max(used, default=0) + 1
+            note(Path(name).stem)
+    return used
 
 
-def new_requirement(
-    root: Path,
-    namespace: str,
-    title: str,
-    statement: str,
-    person: str,
-    level: str | None = None,
-    via: str | None = None,
-    today: datetime.date | None = None,
-) -> RecordBase:
-    today = today_date(today)
-    vault = load(root)
-    require_person(vault, person)
-    assert vault.config is not None
-    namespaces = vault.namespaces()
-    if namespace not in namespaces:
-        raise OperationError(
-            f"unknown namespace {namespace}; known: {', '.join(sorted(namespaces))}"
-        )
-    allocated = namespaces[namespace]
-    if level is None:
-        level = expected_level(vault, namespace)
-    record_id = ids.format_id(
-        "requirement", namespace, allocate_number(vault, "requirement", namespace)
-    )
-    language = vault.config.languages.reference
-    data = CommentedMap()
-    data["id"] = record_id
-    data["type"] = "requirement"
-    data["title"] = {language: title}
-    data["lifecycle"] = "current"
-    data["statement"] = {language: statement}
-    data["level"] = level
-    data["allocated_to"] = allocated
-    data["maturity"] = "concept"
-    data["text_origin"] = text_origin_for(vault, allocated)
-    path = root / ids.relative_path("requirement", record_id)
-    write_new_record(path, data)
-    return adopt(root, path, person, "created", event="created", via=via, today=today)
+def allocate_number(vault: Vault, record_type: str, namespace: str | None) -> int:
+    return max(numbers_in_use(vault, record_type, namespace), default=0) + 1
 
 
 def expected_level(vault: Vault, namespace: str) -> str:
@@ -281,6 +315,47 @@ def text_origin_for(vault: Vault, node_reference: str) -> str:
     return vault.config.languages.default_text_origin
 
 
+def new_requirement(
+    root: Path,
+    namespace: str,
+    title: str,
+    statement: str,
+    person: str,
+    level: str | None = None,
+    via: str | None = None,
+    today: datetime.date | None = None,
+) -> RecordBase:
+    """Allocate the next ID; title and statement are given in the node's origin language."""
+    today = today_date(today)
+    vault = load(root)
+    require_person(vault, person)
+    namespaces = vault.namespaces()
+    if namespace not in namespaces:
+        raise OperationError(
+            f"unknown namespace {namespace}; known: {', '.join(sorted(namespaces))}"
+        )
+    allocated = namespaces[namespace]
+    number = allocate_number(vault, "requirement", namespace)
+    record_id = ids.format_id("requirement", namespace, number)
+    origin = text_origin_for(vault, allocated)
+    data = CommentedMap()
+    data["id"] = record_id
+    data["type"] = "requirement"
+    data["title"] = {origin: title}
+    data["lifecycle"] = "current"
+    data["statement"] = {origin: statement}
+    data["level"] = level or expected_level(vault, namespace)
+    data["allocated_to"] = allocated
+    data["maturity"] = "concept"
+    data["text_origin"] = origin
+    data["revision"] = 1
+    data["normative_revision"] = 1
+    data["normative_hash"] = "0" * 16
+    data["history"] = [history_event(1, today, person, "created", "created", via=via)]
+    path = root / ids.relative_path("requirement", record_id)
+    return finish(path, data, exclusive=True)
+
+
 def revise(
     root: Path,
     record_id: str,
@@ -297,30 +372,26 @@ def revise(
     vault = load(root)
     require_person(vault, person)
     record = require_record(vault, record_id)
-    current_normative = normative_hash_of(record)
-    normative_changed = current_normative != record.normative_hash
+    require_current(record)
+    normative_changed = normative_hash_of(record) != record.normative_hash
     unchanged = stamp_of(record) == record.stamp
+    if change_class not in ("editorial", "value", "reallocate"):
+        raise OperationError("the class must be editorial, value or reallocate")
     if change_class == "editorial" and normative_changed:
         raise OperationError(
-            "values, level or verification method changed: this is a 'value' change, not editorial"
+            "values, level or verification methods changed: this is a 'value' change, not editorial"
         )
-    if change_class == "value" and not normative_changed and unchanged:
-        raise OperationError("nothing changed since the last recorded state")
+    if change_class == "reallocate" and normative_changed:
+        raise OperationError("a reallocation may not change values, level or verification methods")
     if unchanged and translation == "unchanged" and not to_draft:
         raise OperationError("nothing changed since the last recorded state")
     maturity = getattr(record, "maturity", None)
     if maturity == "baselined" and not decision:
         raise OperationError("a change to a baselined requirement needs --decision")
-    if (
-        maturity in ("agreed", "baselined")
-        and change_class != "editorial"
-        and len(summary.split()) < 3
-    ):
+    if maturity in ("agreed", "baselined") and len(summary.strip()) < minimum_reason_length:
         raise OperationError("give a summary that states the reason for the change")
     if to_draft and maturity != "concept":
         raise OperationError("--to-draft applies only to concept requirements")
-    if change_class == "reallocate" and normative_changed:
-        raise OperationError("a reallocation may not change values, level or verification method")
 
     def change(data: CommentedMap, old: RecordBase) -> None:
         data["revision"] = old.revision + 1
@@ -329,14 +400,14 @@ def revise(
         if to_draft:
             data["maturity"] = "draft"
         if translation != "unchanged":
-            refreshed = translation_entries(
-                vault, old, "reviewed" if translation == "reviewed" else "machine", person, today
-            )
+            status = "reviewed" if translation == "reviewed" else "machine"
+            existing = {
+                name: state.model_dump(mode="json", exclude_none=True)
+                for name, state in getattr(old, "translation", {}).items()
+            }
+            refreshed = translation_entries(vault, old, status, person, today, existing=existing)
             if refreshed:
-                existing = data.get("translation") or CommentedMap()
-                for name, entry in refreshed.items():
-                    existing[name] = entry
-                data["translation"] = existing
+                data["translation"] = refreshed
         data["history"].append(
             history_event(
                 old.revision + 1,
@@ -350,7 +421,7 @@ def revise(
             )
         )
 
-    return edit(vault, record_id, change)
+    return edit(vault, record_id, change, allow_unrecorded=True)
 
 
 def supersede(
@@ -367,12 +438,17 @@ def supersede(
     vault = load(root)
     require_person(vault, person)
     record = require_record(vault, old_id)
-    if record.lifecycle != "current":
-        raise OperationError(f"{old_id} is already {record.lifecycle}")
+    require_current(record)
+    if not successors:
+        raise OperationError("name at least one successor")
     for successor in successors:
-        require_record(vault, successor)
         if successor == old_id:
             raise OperationError("a record cannot supersede itself")
+        other = require_record(vault, successor)
+        if other.type != record.type:
+            raise OperationError(f"{successor} is a {other.type}, not a {record.type}")
+        if other.lifecycle != "current":
+            raise OperationError(f"{successor} is {other.lifecycle}")
     if maturity_order.get(getattr(record, "maturity", "concept"), 0) >= 2 and not decision:
         raise OperationError("superseding an agreed or baselined requirement needs --decision")
 
@@ -402,8 +478,7 @@ def withdraw(
     vault = load(root)
     require_person(vault, person)
     record = require_record(vault, record_id)
-    if record.lifecycle != "current":
-        raise OperationError(f"{record_id} is already {record.lifecycle}")
+    require_current(record)
     if maturity_order.get(getattr(record, "maturity", "concept"), 0) >= 2 and not decision:
         raise OperationError("withdrawing an agreed or baselined requirement needs --decision")
 
@@ -434,9 +509,12 @@ def approve(
     if not vault.is_approver(person):
         raise OperationError(f"{person} is not an approver (people.yaml)")
     record = require_record(vault, record_id)
+    require_current(record)
     if record.type != "requirement":
         raise OperationError("only requirements carry maturity")
     current = record.maturity
+    if to not in ("agreed", "draft"):
+        raise OperationError("approve --to takes agreed or draft (baselines come with Phase 6)")
     if to == "agreed" and current not in ("draft", "agreed"):
         raise OperationError(
             f"{record_id} is {current}; only draft or agreed requirements can be approved"
@@ -445,19 +523,18 @@ def approve(
         raise OperationError(
             f"{record_id} is {current}; only agreed or baselined requirements can be reopened"
         )
-    if to not in ("agreed", "draft"):
-        raise OperationError("approve --to takes agreed or draft (baselines come with Phase 6)")
-    if stamp_of(record) != record.stamp:
-        raise OperationError(f"{record_id} has unrecorded changes; run qingsong revise first")
+    reference_language = languages_of(vault)[0]
 
     def change(data: CommentedMap, old: RecordBase) -> None:
         data["maturity"] = to
-        data["approval"] = {
-            "by": person,
-            "date": today,
-            "ref": ref,
-            "normative_revision": old.normative_revision,
-        }
+        if to == "agreed":
+            data["approval"] = {
+                "by": person,
+                "date": today,
+                "ref": ref,
+                "normative_revision": old.normative_revision,
+                "text_hash": approved_text_hash(old, reference_language),
+            }
         data["revision"] = old.revision + 1
         summary = f"approved as {to} ({ref})" if to == "agreed" else f"reopened as draft ({ref})"
         data["history"].append(
@@ -479,6 +556,7 @@ def confirm(
     vault = load(root)
     require_person(vault, person)
     child = require_record(vault, child_id)
+    require_current(child)
     parent = require_record(vault, parent_id)
     links = [
         name
@@ -516,16 +594,22 @@ def renumber(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Move a record that has not reached main to a free ID, rewriting every reference.
+
+    All changes are prepared and verified in memory before any file is written."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
     record = require_record(vault, old_id)
+    require_recorded(record)
     if not ids.id_matches(record.type, new_id):
         raise OperationError(f"{new_id} is not a valid {record.type} ID")
     if new_id in vault.records:
         raise OperationError(f"{new_id} already exists")
-    ref = gitutil.main_ref(root)
-    if ref:
+    refs = gitutil.main_refs(root)
+    if not refs:
+        raise OperationError("no main branch found; cannot verify that the record is unmerged")
+    for ref in refs:
         on_main = {
             Path(name).stem for name in gitutil.files_at(root, ref, record_folders[record.type])
         }
@@ -533,51 +617,45 @@ def renumber(
             raise OperationError(f"{old_id} is on {ref}; it is permanent and cannot be renumbered")
         if new_id in on_main:
             raise OperationError(f"{new_id} is already used on {ref}")
-    pattern = re.compile(rf"(?<![A-Za-z0-9-]){re.escape(old_id)}(?![A-Za-z0-9-])")
-    old_path = vault.files[old_id]
-    new_path = root / ids.relative_path(record.type, new_id)
-    new_path.parent.mkdir(parents=True, exist_ok=True)
-    new_path.write_text(pattern.sub(new_id, old_path.read_text(encoding="utf-8")), encoding="utf-8")
-    old_path.unlink()
+    if vault.load_findings or vault.duplicates:
+        raise OperationError("some files do not load; fix them (qingsong check) before renumbering")
+    pattern = re.compile(rf"(?<![A-Za-z0-9]){re.escape(old_id)}(?![0-9])")
+    plans: list[tuple[Path, Path, CommentedMap]] = []
     for other_id, path in vault.files.items():
-        if other_id == old_id:
-            continue
         text = path.read_text(encoding="utf-8")
         if not pattern.search(text):
             continue
-        path.write_text(pattern.sub(new_id, text), encoding="utf-8")
-        refreshed = load(root)
-
-        def note(data: CommentedMap, old: RecordBase) -> None:
-            data["revision"] = old.revision + 1
-            data["history"].append(
-                history_event(
-                    old.revision + 1,
-                    today,
-                    person,
-                    "renumbered",
-                    f"reference {old_id} renumbered to {new_id}",
-                    via=via,
-                )
-            )
-
-        edit(refreshed, other_id, note)
-    refreshed = load(root)
-
-    def own(data: CommentedMap, old: RecordBase) -> None:
-        data["revision"] = old.revision + 1
-        data["history"].append(
-            history_event(
-                old.revision + 1,
-                today,
-                person,
-                "renumbered",
-                f"renumbered from {old_id} before reaching main",
-                via=via,
-            )
+        other = vault.records[other_id]
+        require_recorded(other)
+        data = round_trip_yaml().load(pattern.sub(new_id, text))
+        target = root / ids.relative_path(other.type, data["id"])
+        rewritten = validate(data)
+        origin = getattr(rewritten, "text_origin", None)
+        for name, entry in (data.get("translation") or {}).items():
+            old_value, new_value = field_value(other, name), field_value(rewritten, name)
+            if not (isinstance(old_value, dict) and isinstance(new_value, dict) and origin):
+                continue
+            if entry.get("source_hash") == text_hash(old_value.get(origin, "")):
+                entry["source_hash"] = text_hash(new_value.get(origin, ""))
+        summary = (
+            f"renumbered from {old_id} before reaching main"
+            if other_id == old_id
+            else f"reference {old_id} renumbered to {new_id}"
         )
-
-    return edit(refreshed, new_id, own)
+        data["revision"] = other.revision + 1
+        data["history"].append(
+            history_event(other.revision + 1, today, person, "renumbered", summary, via=via)
+        )
+        plans.append((path, target, data))
+    prepared = [(path, target, stamped(data)[1]) for path, target, data in plans]
+    for path, target, _text in prepared:
+        if target != path and target.exists():
+            raise OperationError(f"{target.name} already exists")
+    for path, target, text in prepared:
+        write_atomically(target, text)
+        if target != path:
+            path.unlink()
+    return load(root).records[new_id]
 
 
 default_levels = [
@@ -615,6 +693,7 @@ def init_vault(path: Path, code: str, name: str) -> Path:
     (path / "glossary.yaml").write_text("terms: {}\n", encoding="utf-8")
     (path / "tree").mkdir(exist_ok=True)
     (path / "tree" / f"{code}.yaml").write_text(
-        f'node: {code}\nnames: {{en: "{name}"}}\nkind: product\nstatus: active\n', encoding="utf-8"
+        f'node: {code}\nnames: {{en: "{name}"}}\nkind: product\nstatus: active\n',
+        encoding="utf-8",
     )
     return path

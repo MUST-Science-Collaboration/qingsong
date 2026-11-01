@@ -25,7 +25,7 @@ derives_from:
 sources:
   - {source: SRC-DEMO-INS-DET-RD-v1.0, locator: "Sec. 2, table 1, row 1"}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: Bias frames for every detector., zh: 每片探测器拍摄本底帧。}
 maturity: draft
 text_origin: en
@@ -34,14 +34,14 @@ aliases:
 lifecycle: current
 revision: 1
 normative_revision: 1
-normative_hash: 14ccd3d7097491ed
+normative_hash: 546d990271bb621b
 history:
   - revision: 1
     date: &id001 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
-stamp: 2f7969e6523a3591
+stamp: b74e42f975d57e73
 translation:
   title:
     source_hash: a73bd8da0f0ebd92

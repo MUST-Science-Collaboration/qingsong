@@ -9,7 +9,7 @@ from qingsong.schema import RecordBase
 
 stamp_excluded_fields = {"stamp", "history"}
 normative_fields: dict[str, tuple[str, ...]] = {
-    "requirement": ("values", "level", "verification.method"),
+    "requirement": ("values", "level", "verification.methods"),
     "condition": ("values",),
     "interface": ("owner_end", "other_end", "values"),
     "quantity": ("dimension", "unit"),
@@ -50,3 +50,12 @@ def normative_hash_of(record: RecordBase) -> str:
     """Hash of the fields whose change can never be editorial (values, level, verification method…)."""
     fields = normative_fields.get(record.type, ())
     return short_hash(canonical_json({name: field_value(record, name) for name in fields}))
+
+
+def approved_text_hash(record: RecordBase, language: str) -> str:
+    """Hash of the approved wording: statement and verification criteria in the reference language."""
+    statement = field_value(record, "statement") or {}
+    criteria = field_value(record, "verification.criteria") or {}
+    return short_hash(
+        canonical_json({"statement": statement.get(language), "criteria": criteria.get(language)})
+    )

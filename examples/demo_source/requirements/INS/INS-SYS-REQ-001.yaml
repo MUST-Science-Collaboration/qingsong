@@ -18,8 +18,7 @@ allocated_to: INS
 derives_from:
   - {id: DEMO-SRV-REQ-001, normative_revision: 1}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: End-to-end throughput measurement., zh: 端到端通光效率测量。}
-maturity: agreed
-approval: {by: alice, date: 2026-02-01, ref: "demo#1", normative_revision: 1}
+maturity: draft
 text_origin: en

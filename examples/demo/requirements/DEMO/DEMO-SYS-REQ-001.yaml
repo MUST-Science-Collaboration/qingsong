@@ -22,21 +22,21 @@ derives_from:
 constrained_by:
   - {id: SITE-COND-001, normative_revision: 1}
 verification:
-  method: analysis
+  methods: [analysis]
   criteria: {en: Thermal analysis of each system., zh: 各系统热分析。}
 maturity: draft
 text_origin: en
 lifecycle: current
 revision: 1
 normative_revision: 1
-normative_hash: 1b6795a3b72f6361
+normative_hash: 5af3890c852de9c1
 history:
   - revision: 1
     date: &id001 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
-stamp: 735d3a7ec72fdba8
+stamp: 364cf8bc5ebff3f8
 translation:
   title:
     source_hash: 4cf813db4737723e

@@ -105,7 +105,7 @@ def read_yaml(path: Path) -> Any:
 def round_trip_yaml() -> YAML:
     yaml = YAML(typ="rt")
     yaml.preserve_quotes = True
-    yaml.width = 100
+    yaml.width = 1_000_000
     yaml.indent(mapping=2, sequence=4, offset=2)
     return yaml
 
@@ -255,12 +255,29 @@ def load_records(vault: Vault) -> None:
             continue
         for path in sorted(base.rglob("*.yaml")):
             load_record_file(vault, path, record_type)
+        for path in sorted(base.rglob("*.yml")):
+            vault.load_findings.append(
+                Finding(
+                    "integrity.path_mismatch",
+                    "error",
+                    "record files end in .yaml, not .yml",
+                    file=vault.relative(path),
+                    fix=f"rename it to {path.stem}.yaml",
+                )
+            )
 
 
 def load_record_file(vault: Vault, path: Path, expected_type: str) -> None:
     relative = vault.relative(path)
     try:
         data = plain(read_yaml(path))
+    except (UnicodeDecodeError, OSError) as error:
+        vault.load_findings.append(
+            Finding(
+                "integrity.yaml_syntax", "error", f"cannot read the file: {error}", file=relative
+            )
+        )
+        return
     except YAMLError as error:
         vault.load_findings.append(
             Finding(

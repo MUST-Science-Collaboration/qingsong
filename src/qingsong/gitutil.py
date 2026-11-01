@@ -3,11 +3,16 @@
 import subprocess
 from pathlib import Path
 
+main_candidates = ("origin/main", "main")
+
 
 def run_git(root: Path, *arguments: str) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git", "-C", str(root), *arguments], capture_output=True, text=True, check=False
-    )
+    try:
+        return subprocess.run(
+            ["git", "-C", str(root), *arguments], capture_output=True, text=True, check=False
+        )
+    except OSError as error:
+        return subprocess.CompletedProcess(["git"], 127, "", str(error))
 
 
 def is_repository(root: Path) -> bool:
@@ -18,13 +23,11 @@ def ref_exists(root: Path, ref: str) -> bool:
     return run_git(root, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}").returncode == 0
 
 
-def main_ref(root: Path) -> str | None:
+def main_refs(root: Path) -> list[str]:
+    """Every main reference that exists (remote and local), so that neither is overlooked."""
     if not is_repository(root):
-        return None
-    for candidate in ("origin/main", "main"):
-        if ref_exists(root, candidate):
-            return candidate
-    return None
+        return []
+    return [candidate for candidate in main_candidates if ref_exists(root, candidate)]
 
 
 def files_at(root: Path, ref: str, folder: str) -> list[str]:

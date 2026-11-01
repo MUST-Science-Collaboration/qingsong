@@ -2,6 +2,7 @@
 except empty lists and absent optional values."""
 
 import datetime
+import math
 import re
 from typing import Annotated, Any, Literal
 
@@ -81,6 +82,13 @@ class ValueSlot(StrictModel):
 
     @model_validator(mode="after")
     def check_numbers(self) -> "ValueSlot":
+        for number in (self.value, self.minimum, self.maximum):
+            if number is not None and not math.isfinite(number):
+                raise ValueError("values must be finite numbers")
+        if self.tolerance and (self.tolerance.plus < 0 or self.tolerance.minus < 0):
+            raise ValueError("tolerances are given as non-negative magnitudes")
+        if self.minimum is not None and self.maximum is not None and self.minimum > self.maximum:
+            raise ValueError("minimum is larger than maximum")
         if self.certainty == "tbd":
             return self
         if self.relation == "range":
@@ -92,7 +100,7 @@ class ValueSlot(StrictModel):
 
 
 class Verification(StrictModel):
-    method: VerificationMethod
+    methods: list[VerificationMethod] = Field(min_length=1)
     level: str | None = None
     criteria: LocalizedText
 
@@ -102,6 +110,7 @@ class Approval(StrictModel):
     date: datetime.date
     ref: str
     normative_revision: int
+    text_hash: str
 
 
 class TranslationState(StrictModel):
@@ -284,6 +293,8 @@ class Release(StrictModel):
     version: str
     date: datetime.date
     summary: LocalizedText
+    by: str | None = None
+    note: LocalizedText | None = None
     tag: str | None = None
     made_with_qingsong: bool
 

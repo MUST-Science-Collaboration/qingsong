@@ -161,7 +161,7 @@ def test_supersede_and_withdraw(demo):
         demo, "INS-DET-REQ-001", [successor.id], "split by readout mode", "alice", today=day
     )
     assert record.lifecycle == "superseded" and record.superseded_by == [successor.id]
-    with pytest.raises(OperationError, match="already superseded"):
+    with pytest.raises(OperationError, match="it can no longer be changed"):
         operations.withdraw(demo, "INS-DET-REQ-001", "obsolete", "alice", today=day)
     with pytest.raises(OperationError, match="needs --decision"):
         operations.withdraw(demo, "INS-SYS-REQ-001", "obsolete", "alice", today=day)
@@ -247,3 +247,102 @@ def test_against_detects_removed_node(demo_repository):
         if finding.rule == "integrity.against"
     ]
     assert any("INS-AIT" in message for message in messages)
+
+
+def test_other_operations_refuse_unrecorded_edits(demo):
+    edit_yaml(
+        requirement_file(demo, "INS-DET-REQ-001"),
+        lambda data: data["values"]["read_noise"].__setitem__("value", 30),
+    )
+    with pytest.raises(OperationError, match="unrecorded changes"):
+        operations.confirm(demo, "INS-DET-REQ-001", "DEMO-SRV-REQ-001", "alice", today=day)
+    with pytest.raises(OperationError, match="unrecorded changes"):
+        operations.withdraw(demo, "INS-DET-REQ-001", "obsolete", "alice", today=day)
+
+
+def test_new_never_overwrites_a_file_that_does_not_load(demo):
+    broken = requirement_file(demo, "INS-DET-REQ-002")
+    broken.write_text("id: INS-DET-REQ-002\nrevision: x\n")
+    record = operations.new_requirement(
+        demo, "INS-DET", "Gain", "The gain shall be stable.", "alice"
+    )
+    assert record.id == "INS-DET-REQ-003"
+    assert broken.read_text() == "id: INS-DET-REQ-002\nrevision: x\n"
+
+
+def test_new_writes_the_text_in_the_origin_language(demo):
+    record = operations.new_requirement(demo, "INS-OPT", "鬼像", "鬼像应足够暗。", "alice")
+    assert record.text_origin == "zh" and record.statement == {"zh": "鬼像应足够暗。"}
+
+
+def test_approval_binds_the_approved_wording(demo):
+    def reword(data):
+        data["statement"]["en"] = data["statement"]["en"].replace("at least", "no less than")
+
+    edit_yaml(requirement_file(demo, "INS-SYS-REQ-001"), reword)
+    operations.revise(
+        demo, "INS-SYS-REQ-001", "editorial", "clearer wording of the limit", "alice", today=day
+    )
+    messages = [f.message for f in checks.run(load(demo)) if f.rule == "change.approval"]
+    assert any("approved wording" in message for message in messages)
+
+
+def test_against_catches_a_value_change_without_a_normative_revision(demo_repository):
+    root = demo_repository
+    path = requirement_file(root, "INS-DET-REQ-001")
+    data = operations.load_round_trip(path)
+    data["values"]["read_noise"]["value"] = 30
+    _record, text = operations.stamped(data)
+    path.write_text(text)
+    messages = [
+        f.message for f in checks.run(load(root), against="main") if f.rule == "integrity.against"
+    ]
+    assert any("normative revision did not change" in message for message in messages)
+
+
+def test_renumber_rewrites_verification_ids_and_keeps_translations(demo_repository):
+    root = demo_repository
+    git(root, "checkout", "-q", "-b", "work")
+    record = operations.new_requirement(
+        root, "INS-DET", "Gain", "The gain shall be stable.", "alice"
+    )
+    folder = root / "verifications"
+    folder.mkdir()
+    verification = folder / f"VER-{record.id}-01.yaml"
+    verification.write_text(
+        f"id: VER-{record.id}-01\ntype: verification\ntitle: {{en: Gain test}}\n"
+        f"requirement: {record.id}\nrequirement_normative_revision: 1\nmethods: [test]\n",
+        encoding="utf-8",
+    )
+    verification.write_text(
+        verification.read_text().replace("methods: [test]", "method: test\nstatus: planned")
+    )
+    operations.adopt(root, verification, "alice", "plan")
+    edit_yaml(
+        requirement_file(root, "INS-OPT-REQ-001"),
+        lambda data: data["rationale"].__setitem__("zh", f"见[[{record.id}]]。"),
+    )
+    operations.revise(
+        root,
+        "INS-OPT-REQ-001",
+        "editorial",
+        "cross-reference",
+        "alice",
+        translation="reviewed",
+        today=day,
+    )
+    operations.renumber(root, record.id, "INS-DET-REQ-007", "alice", today=day)
+    assert (folder / "VER-INS-DET-REQ-007-01.yaml").exists()
+    assert not verification.exists()
+    fired = rules_fired(root)
+    assert "change.translation" not in fired and "integrity.id_syntax" not in fired
+
+
+def test_missing_git_does_not_crash(demo, monkeypatch):
+    monkeypatch.setenv("PATH", "")
+    record = operations.new_requirement(
+        demo, "INS-DET", "Gain", "The gain shall be stable.", "alice"
+    )
+    assert record.id == "INS-DET-REQ-002"
+    findings = checks.run(load(demo), against="main")
+    assert any(f.rule == "integrity.against" and "not found" in f.message for f in findings)

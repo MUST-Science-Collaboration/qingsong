@@ -18,21 +18,21 @@ allocated_to: INS-OPT
 derives_from:
   - {id: INS-SYS-REQ-001, normative_revision: 1}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: Witness-sample measurement., zh: 陪镀片测量。}
 maturity: draft
 text_origin: zh
 lifecycle: current
 revision: 1
 normative_revision: 1
-normative_hash: 90199f608fd3babc
+normative_hash: a351dd202dda839d
 history:
   - revision: 1
     date: &id001 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
-stamp: b0994008dc315ef9
+stamp: feffd5a2eccecfb8
 translation:
   title:
     source_hash: f99695c477663f4a

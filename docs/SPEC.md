@@ -165,7 +165,7 @@ Every record is one YAML file, apart from nodes (§4.1).
 
 | Type | Normative content |
 |---|---|
-| Requirement | statement, values, level, verification method and criteria |
+| Requirement | statement, values, level, verification methods and criteria. Values, level and methods can never change editorially (`normative_hash`); wording changes are recorded as editorial or value changes by the author, and any change of the approved wording makes the approval stale. |
 | Condition | values, conditions of measurement |
 | Interface | endpoints, agreed values |
 | Quantity | dimension, canonical unit |
@@ -185,9 +185,9 @@ Every record is one YAML file, apart from nodes (§4.1).
 | `derives_from` | list of `{id, normative_revision}`: the parent's normative revision when the link was last confirmed |
 | `constrained_by` | list of `{id, normative_revision}` pointing to conditions |
 | `sources` | list of `{source, locator}`, e.g. the section and table row of an imported document |
-| `verification` | `{method, level, criteria: {en, zh}}`. The method is one of `test`, `analysis`, `inspection`, `demonstration`, `review_of_design`, and has bilingual labels from the vocabulary. |
+| `verification` | `{methods, level, criteria: {en, zh}}`. `methods` is a non-empty list of `test`, `analysis`, `inspection`, `demonstration`, `review_of_design` (several methods are common, e.g. "by design and test"), each with bilingual labels from the vocabulary. |
 | `maturity` | §9 |
-| `approval` | `{by, date, ref, normative_revision}`: the latest maturity approval, and the content it approved |
+| `approval` | `{by, date, ref, normative_revision, text_hash}`: the latest maturity approval and what it approved: the normative revision and a hash of the reference-language statement and verification criteria. A change of either makes the approval stale. |
 | `text_origin` | `en` or `zh` (§7) |
 | `translation` | per-field tracking (§7) |
 | `variants` | (proposed) other versions of this requirement stated elsewhere, e.g. a vendor's wording or value in its specification: `{source, label, statement, values, relation}`, where `relation` is `vendor_stated`, `proposed` or `rejected`. Shown for comparison; excluded from consistency checks. |

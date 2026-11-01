@@ -215,7 +215,28 @@ def missing_rationale(root: Path) -> None:
     edit_yaml(requirement_file(root, "DEMO-SCI-REQ-001"), lambda data: data.pop("rationale"))
 
 
+def malformed_reference(root: Path) -> None:
+    edit_yaml(
+        requirement_file(root, "INS-DET-REQ-001"),
+        lambda data: data["rationale"].__setitem__("en", "See [[ INS-SYS-REQ-001 ]]."),
+    )
+
+
+def compliant_without_evidence(root: Path) -> None:
+    folder = root / "verifications"
+    folder.mkdir()
+    (folder / "VER-INS-DET-REQ-001-01.yaml").write_text(
+        "id: VER-INS-DET-REQ-001-01\ntype: verification\ntitle: {en: Read noise test}\n"
+        "requirement: INS-DET-REQ-001\nrequirement_normative_revision: 1\nmethod: test\n"
+        "status: compliant\n",
+        encoding="utf-8",
+    )
+    operations.adopt(root, folder / "VER-INS-DET-REQ-001-01.yaml", "alice", "test fixture")
+
+
 cases = {
+    "content.references": malformed_reference,
+    "content.evidence": compliant_without_evidence,
     "integrity.config": broken_config,
     "integrity.yaml_syntax": broken_yaml,
     "integrity.schema": unknown_field,

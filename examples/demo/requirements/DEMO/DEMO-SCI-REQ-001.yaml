@@ -13,21 +13,21 @@ justification:
 level: science
 allocated_to: DEMO
 verification:
-  method: analysis
+  methods: [analysis]
   criteria: {en: Survey forecast., zh: 巡天预测。}
 maturity: draft
 text_origin: en
 lifecycle: current
 revision: 1
 normative_revision: 1
-normative_hash: 7bd9f67e3b54d8c6
+normative_hash: fc01139119bd93ee
 history:
   - revision: 1
     date: &id001 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
-stamp: 2e280fafa382592a
+stamp: 1d834c0e6d6cc561
 translation:
   title:
     source_hash: 4e68e0b561fd234a

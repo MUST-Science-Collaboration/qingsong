@@ -61,7 +61,17 @@ def run(
     for rule_id, entry in rules.items():
         if selected is not None and rule_id not in selected:
             continue
-        findings.extend(entry.function(context))
+        try:
+            findings.extend(entry.function(context))
+        except Exception as error:  # a broken rule must not hide the other findings
+            findings.append(
+                Finding(
+                    rule_id,
+                    "error",
+                    f"the rule could not run: {error!r}",
+                    fix="report this as a qingsong bug, with the record that caused it",
+                )
+            )
     return sorted(
         findings,
         key=lambda finding: (

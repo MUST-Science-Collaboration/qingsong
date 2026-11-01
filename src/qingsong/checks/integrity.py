@@ -34,14 +34,25 @@ def duplicate_ids(context: Context) -> Iterator[Finding]:
 @rule("integrity.id_syntax", "every ID follows the pattern of its record type")
 def id_syntax(context: Context) -> Iterator[Finding]:
     for record in context.vault.records.values():
+        file = relative_file(context.vault, record.id)
         if not ids.id_matches(record.type, record.id):
             yield Finding(
                 "integrity.id_syntax",
                 "error",
                 f"{record.id!r} is not a valid {record.type} ID",
                 record=record.id,
-                file=relative_file(context.vault, record.id),
+                file=file,
             )
+        elif record.type == "verification":
+            embedded = ids.id_patterns["verification"].match(record.id).group("requirement")
+            if embedded != record.requirement:
+                yield Finding(
+                    "integrity.id_syntax",
+                    "error",
+                    f"the ID names {embedded} but the record verifies {record.requirement}",
+                    record=record.id,
+                    file=file,
+                )
 
 
 @rule("integrity.path_mismatch", "each file is stored where its ID says")
@@ -298,6 +309,18 @@ def against_reference(context: Context) -> Iterator[Finding]:
                 f"history entries recorded at {ref} were changed",
                 record=record_id,
                 fix="history is append-only",
+            )
+        if (
+            data.get("normative_hash") != record.normative_hash
+            and data.get("normative_revision") == record.normative_revision
+        ):
+            yield Finding(
+                "integrity.against",
+                "error",
+                f"values, level or verification methods differ from {ref} but the normative "
+                "revision did not change",
+                record=record_id,
+                fix="record the change as a 'value' change (qingsong revise --class value)",
             )
         if lifecycle_rank.get(str(data.get("lifecycle")), 0) > lifecycle_rank[record.lifecycle]:
             yield Finding(

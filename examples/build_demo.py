@@ -30,6 +30,7 @@ def build(source: Path, target: Path) -> Path:
                 translation="reviewed",
                 today=build_date,
             )
+    operations.approve(target, "INS-SYS-REQ-001", "agreed", "alice", "demo#1", today=build_date)
     return target
 
 

@@ -13,7 +13,7 @@ justification:
 level: science
 allocated_to: DEMO
 verification:
-  method: analysis
+  methods: [analysis]
   criteria: {en: Survey forecast., zh: 巡天预测。}
 maturity: draft
 text_origin: en

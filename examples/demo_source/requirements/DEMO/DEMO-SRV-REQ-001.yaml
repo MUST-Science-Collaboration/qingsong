@@ -19,7 +19,7 @@ allocated_to: DEMO
 derives_from:
   - {id: DEMO-SCI-REQ-001, normative_revision: 1}
 verification:
-  method: analysis
+  methods: [analysis]
   criteria: {en: Exposure-time calculation., zh: 曝光时间计算。}
 maturity: draft
 text_origin: en

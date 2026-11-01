@@ -49,7 +49,8 @@ reserved_codes = {
     "ICD",
 }
 node_code_pattern = re.compile(r"^[A-Z][A-Z0-9]{1,5}$")
-reference_pattern = re.compile(r"\[\[([^\[\]|#]+)(?:#([^\[\]|]+))?\]\]")
+reference_pattern = re.compile(r"\[\[([A-Za-z0-9._-]+)(?:#([A-Za-z0-9_-]+))?\]\]")
+any_double_bracket = re.compile(r"\[\[[^\[\]]*\]\]")
 
 
 def id_matches(record_type: str, record_id: str) -> bool:
@@ -96,4 +97,4 @@ def relative_path(record_type: str, record_id: str) -> Path:
 
 
 def references_in_text(text: str) -> list[tuple[str, str | None]]:
-    return [(match.group(1).strip(), match.group(2)) for match in reference_pattern.finditer(text)]
+    return [(match.group(1), match.group(2)) for match in reference_pattern.finditer(text)]

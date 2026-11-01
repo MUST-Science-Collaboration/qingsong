@@ -57,3 +57,42 @@ def test_bidirectional_reference_is_not_a_cycle(demo):
 def test_checks_never_write_to_the_vault(demo_repository):
     checks.run(load(demo_repository), against="main")
     assert git(demo_repository, "status", "--porcelain") == ""
+
+
+def test_unknown_text_origin_is_a_finding_not_a_crash(demo):
+    edit_yaml(
+        requirement_file(demo, "INS-DET-REQ-001"),
+        lambda data: data.__setitem__("text_origin", "fr"),
+    )
+    assert ("content.languages", "error") in findings(demo)
+
+
+def test_empty_statement_is_an_error(demo):
+    edit_yaml(
+        requirement_file(demo, "INS-DET-REQ-001"), lambda data: data.__setitem__("statement", {})
+    )
+    assert ("content.languages", "error") in findings(demo)
+
+
+def test_open_values_next_to_chinese_and_no_false_alarms(demo):
+    def change(data):
+        data["statement"]["zh"] = "巡天应测量红移，数量为TBD。"
+        data["statement"]["en"] = (
+            "The survey shall measure redshifts ($z_{max}$, see [Table 2](t.md))."
+        )
+
+    edit_yaml(requirement_file(demo, "DEMO-SCI-REQ-001"), change)
+    found = [f for f in checks.run(load(demo)) if f.record == "DEMO-SCI-REQ-001"]
+    assert any(f.rule == "content.open_values" and "TBD" in f.message for f in found)
+    assert not any(f.rule == "content.values" for f in found)
+
+
+def test_long_text_with_repeated_spaces_survives_writing(demo):
+    from qingsong import operations
+
+    def change(data):
+        data["rationale"]["en"] = "word " * 40 + "two  spaces   three    four" + " word" * 40
+
+    edit_yaml(requirement_file(demo, "DEMO-SCI-REQ-001"), change)
+    operations.revise(demo, "DEMO-SCI-REQ-001", "editorial", "long rationale", "alice")
+    assert ("change.unrecorded", "error") not in findings(demo)

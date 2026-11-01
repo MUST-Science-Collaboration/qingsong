@@ -22,7 +22,7 @@ derives_from:
 constrained_by:
   - {id: SITE-COND-001, normative_revision: 1}
 verification:
-  method: analysis
+  methods: [analysis]
   criteria: {en: Thermal analysis of each system., zh: 各系统热分析。}
 maturity: draft
 text_origin: en

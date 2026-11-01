@@ -5,7 +5,13 @@ from collections.abc import Iterator
 
 from qingsong.checks import Context, by_maturity, relative_file, rule
 from qingsong.findings import Finding
-from qingsong.hashing import field_value, normative_hash_of, stamp_of, text_hash
+from qingsong.hashing import (
+    approved_text_hash,
+    field_value,
+    normative_hash_of,
+    stamp_of,
+    text_hash,
+)
 from qingsong.operations import translation_fields
 from qingsong.schema import Requirement
 
@@ -14,13 +20,14 @@ from qingsong.schema import Requirement
 def unrecorded(context: Context) -> Iterator[Finding]:
     vault = context.vault
     for record in vault.records.values():
+        file = relative_file(vault, record.id)
         if stamp_of(record) != record.stamp:
             yield Finding(
                 "change.unrecorded",
                 "error",
                 "content changed since the last recorded change",
                 record=record.id,
-                file=relative_file(vault, record.id),
+                file=file,
                 fix=f"qingsong revise {record.id} --class editorial|value|reallocate --summary …",
             )
         elif normative_hash_of(record) != record.normative_hash:
@@ -29,7 +36,7 @@ def unrecorded(context: Context) -> Iterator[Finding]:
                 "error",
                 "normative_hash does not match the content",
                 record=record.id,
-                file=relative_file(vault, record.id),
+                file=file,
                 fix="bookkeeping fields are written by qingsong only",
             )
 
@@ -70,8 +77,8 @@ def history(context: Context) -> Iterator[Finding]:
             yield Finding(
                 "change.history",
                 "error",
-                f"normative revision {record.normative_revision} does not equal 1 + {value_changes} "
-                "value changes",
+                f"normative revision {record.normative_revision} does not equal 1 + "
+                f"{value_changes} value changes",
                 record=record.id,
                 file=file,
             )
@@ -83,6 +90,7 @@ def suspect_links(context: Context) -> Iterator[Finding]:
     for record in vault.records.values():
         if not isinstance(record, Requirement) or record.lifecycle != "current":
             continue
+        file = relative_file(vault, record.id)
         for link in [*record.derives_from, *record.constrained_by]:
             target = vault.records.get(link.id)
             if target is None:
@@ -94,7 +102,7 @@ def suspect_links(context: Context) -> Iterator[Finding]:
                     f"{link.id} changed (normative revision {link.normative_revision} → "
                     f"{target.normative_revision}) since this link was confirmed",
                     record=record.id,
-                    file=relative_file(vault, record.id),
+                    file=file,
                     fix=f"review, then qingsong confirm {record.id} {link.id}",
                 )
             elif link.normative_revision > target.normative_revision:
@@ -104,7 +112,7 @@ def suspect_links(context: Context) -> Iterator[Finding]:
                     f"link records normative revision {link.normative_revision} of {link.id}, "
                     f"which is only at {target.normative_revision}",
                     record=record.id,
-                    file=relative_file(vault, record.id),
+                    file=file,
                 )
 
 
@@ -113,8 +121,9 @@ def suspect_links(context: Context) -> Iterator[Finding]:
 )
 def approvals(context: Context) -> Iterator[Finding]:
     vault = context.vault
+    reference = vault.config.languages.reference if vault.config else "en"
     for record in vault.records.values():
-        if not isinstance(record, Requirement):
+        if not isinstance(record, Requirement) or record.lifecycle != "current":
             continue
         file = relative_file(vault, record.id)
         if record.maturity in ("agreed", "baselined"):
@@ -138,11 +147,25 @@ def approvals(context: Context) -> Iterator[Finding]:
                     file=file,
                     fix="approve again, or reopen as draft",
                 )
-        if record.approval and not vault.is_approver(record.approval.by):
+            elif record.approval.text_hash != approved_text_hash(record, reference):
+                yield Finding(
+                    "change.approval",
+                    "error",
+                    "the approved wording (statement or verification criteria) has changed",
+                    record=record.id,
+                    file=file,
+                    fix="approve again, or reopen as draft",
+                )
+        if (
+            record.approval
+            and vault.people
+            and record.approval.by in vault.people.people
+            and not vault.is_approver(record.approval.by)
+        ):
             yield Finding(
                 "change.approval",
-                "error",
-                f"approved by {record.approval.by}, who is not an approver",
+                "warning",
+                f"approved by {record.approval.by}, who is no longer listed as an approver",
                 record=record.id,
                 file=file,
             )
@@ -155,10 +178,12 @@ def translations(context: Context) -> Iterator[Finding]:
         return
     languages = {vault.config.languages.reference, vault.config.languages.second}
     for record in vault.records.values():
-        if record.type not in ("requirement", "figure"):
+        if record.type not in ("requirement", "figure") or record.lifecycle != "current":
             continue
         maturity = getattr(record, "maturity", "draft")
         origin = record.text_origin
+        if origin not in languages:
+            continue
         file = relative_file(vault, record.id)
         for name in translation_fields(vault, record.type):
             value = field_value(record, name)
@@ -203,13 +228,15 @@ def translations(context: Context) -> Iterator[Finding]:
                 and state.by in vault.people.people
             ):
                 reads = set(vault.people.people[state.by].languages)
-                if reads and not languages <= reads:
+                if not languages <= reads:
                     yield Finding(
                         "change.translation",
                         "error",
-                        f"{name}: reviewed by {state.by}, who is not listed as reading both languages",
+                        f"{name}: reviewed by {state.by}, who is not listed as reading "
+                        f"{' and '.join(sorted(languages))}",
                         record=record.id,
                         file=file,
+                        fix="list the reviewer's languages in people.yaml",
                     )
 
 
@@ -218,7 +245,7 @@ def stale_evidence(context: Context) -> Iterator[Finding]:
     vault = context.vault
     today = datetime.date.today()
     for record in vault.records.values():
-        if record.type not in ("verification", "waiver"):
+        if record.type not in ("verification", "waiver") or record.lifecycle != "current":
             continue
         file = relative_file(vault, record.id)
         target = vault.records.get(record.requirement)
@@ -234,12 +261,7 @@ def stale_evidence(context: Context) -> Iterator[Finding]:
                 record=record.id,
                 file=file,
             )
-        if (
-            record.type == "waiver"
-            and record.expires
-            and record.expires < today
-            and record.lifecycle == "current"
-        ):
+        if record.type == "waiver" and record.expires and record.expires < today:
             yield Finding(
                 "change.stale_evidence",
                 "error",

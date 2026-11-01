@@ -25,7 +25,7 @@ derives_from:
 sources:
   - {source: SRC-DEMO-INS-DET-RD-v1.0, locator: "Sec. 2, table 1, row 1"}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: Bias frames for every detector., zh: 每片探测器拍摄本底帧。}
 maturity: draft
 text_origin: en

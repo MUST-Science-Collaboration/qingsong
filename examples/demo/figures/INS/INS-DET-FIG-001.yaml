@@ -5,8 +5,7 @@ caption:
   en: Bias-frame histogram used to measure the read noise for [[INS-DET-REQ-001]] (illustration).
   zh: 用于测量[[INS-DET-REQ-001]]读出噪声的本底帧直方图（示意）。
 files:
-  - {path: INS-DET-FIG-001.png, sha256:
-      dd88d80041451a6d9706ee4194e669baf3580407a0702128a6bec05aae2475e7}
+  - {path: INS-DET-FIG-001.png, sha256: dd88d80041451a6d9706ee4194e669baf3580407a0702128a6bec05aae2475e7}
 provenance:
   script: make_demo_figure.py
   repository: qingsong examples

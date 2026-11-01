@@ -18,22 +18,26 @@ allocated_to: INS
 derives_from:
   - {id: DEMO-SRV-REQ-001, normative_revision: 1}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: End-to-end throughput measurement., zh: 端到端通光效率测量。}
 maturity: agreed
-approval: {by: alice, date: 2026-02-01, ref: "demo#1", normative_revision: 1}
 text_origin: en
 lifecycle: current
-revision: 1
+revision: 2
 normative_revision: 1
-normative_hash: 93ec950b0fcd2e5e
+normative_hash: 869bb7194e57a2cc
 history:
   - revision: 1
     date: &id001 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
-stamp: 0a1408327e0bf3d9
+  - revision: 2
+    date: &id002 2026-11-01
+    by: alice
+    event: approved
+    summary: approved as agreed (demo#1)
+stamp: 76dad92bd6d055e5
 translation:
   title:
     source_hash: 534f5cfec246b2fb
@@ -55,3 +59,9 @@ translation:
     status: reviewed
     by: alice
     date: *id001
+approval:
+  by: alice
+  date: *id002
+  ref: demo#1
+  normative_revision: 1
+  text_hash: 97755e3e6bdcd530

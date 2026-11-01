@@ -18,7 +18,7 @@ allocated_to: INS-OPT
 derives_from:
   - {id: INS-SYS-REQ-001, normative_revision: 1}
 verification:
-  method: test
+  methods: [test]
   criteria: {en: Witness-sample measurement., zh: 陪镀片测量。}
 maturity: draft
 text_origin: zh
