@@ -1,0 +1,51 @@
+id: DEMO-SCI-REQ-001
+type: requirement
+title: {en: Galaxy redshift survey, zh: 星系红移巡天}
+statement:
+  en: The survey shall measure the redshifts of one million emission-line galaxies.
+  zh: 巡天应测量一百万个发射线星系的红移。
+rationale:
+  en: Needed for the clustering measurement of the science case.
+  zh: 科学目标中的成团性测量所需。
+justification:
+  en: Science case of the demo survey.
+  zh: 演示巡天的科学目标。
+level: science
+allocated_to: DEMO
+verification:
+  method: analysis
+  criteria: {en: Survey forecast., zh: 巡天预测。}
+maturity: draft
+text_origin: en
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 7bd9f67e3b54d8c6
+history:
+  - revision: 1
+    date: &id001 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: 2e280fafa382592a
+translation:
+  title:
+    source_hash: 4e68e0b561fd234a
+    status: reviewed
+    by: alice
+    date: *id001
+  statement:
+    source_hash: 327f540c43399847
+    status: reviewed
+    by: alice
+    date: *id001
+  rationale:
+    source_hash: 6008844b95072861
+    status: reviewed
+    by: alice
+    date: *id001
+  verification.criteria:
+    source_hash: 5e783b7a69e06f1b
+    status: reviewed
+    by: alice
+    date: *id001

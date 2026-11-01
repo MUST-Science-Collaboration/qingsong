@@ -1,0 +1,4 @@
+node: DEMO
+names: {en: "Demo Survey Telescope", zh: "演示巡天望远镜"}
+kind: product
+status: active

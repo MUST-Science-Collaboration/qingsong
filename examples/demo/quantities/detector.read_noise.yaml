@@ -1,0 +1,17 @@
+id: detector.read_noise
+type: quantity
+title: {en: Detector read noise, zh: 探测器读出噪声}
+symbol: σ~read~
+dimension: "[]"
+unit: count
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 9ab8a494081f721a
+history:
+  - revision: 1
+    date: 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: 2f75785a4a1810ca

@@ -50,7 +50,8 @@ A vault is a git repository with a `qingsong.toml` file at its root.
   requirements/<SYSTEM>/<ID>.yaml
   conditions/<ID>.yaml    facts about context nodes (§5.3)
   interfaces/ issues/ decisions/ verifications/ waivers/ sources/ baselines/
-  documents/<DOC>.yaml    generated-document definitions (§5.4)
+  documents/<DOC>.yaml    generated-document definitions (§5.5)
+  figures/<SYSTEM>/      figure records and image files (§5.4)
   templates/              reference style for Word output
 ```
 
@@ -156,6 +157,7 @@ Every record is one YAML file, apart from nodes (§4.1).
 | `aliases` | other names of this record (§6.2) |
 | `revision` | integer from 1; increases with every recorded change |
 | `normative_revision` | integer from 1; increases only with changes of meaning (§8.1) |
+| `normative_hash` | hash of the fields whose change is never editorial (values, level, verification method), written by qingsong; `revise` refuses `editorial` when it differs |
 | `history` | append-only list of change events (§8.1) |
 | `stamp` | hash of every field except `stamp` and `history`, written by qingsong (§8.2) |
 
@@ -232,7 +234,8 @@ Units are parsed with `pint`.
 | Waiver | `WVR-NNNN` | Approved departure: requirement and its `normative_revision`, scope, reason, approver, expiry. The requirement itself is unchanged. |
 | Source | `SRC-<slug>` | External document: number, version, date, file name, sha256, storage path |
 | Baseline | `BL-<slug>` | A named, frozen set of records, its git tag and the review it belongs to |
-| Document | document number | §5.4 |
+| Document | document number | §5.5 |
+| Figure | `<NAMESPACE>-FIG-NNN` | §5.4 |
 
 ID syntax (checked):
 
@@ -248,7 +251,50 @@ ID syntax (checked):
 
 Numbers sort numerically, not lexically.
 
-### 5.4 Documents and releases (proposed)
+### 5.4 Text, figures and document content (proposed; from the first pilot document, 2026-11-01)
+
+**Text format.** Every prose field (`statement`, `rationale`, `notes`, `suggestions`, criteria, captions, document text) is Markdown (CommonMark) per language, with the following additions:
+- **Sub- and superscript:** `~x~` and `^x^`, as in pandoc.
+- **Inline mathematics:** `$…$` in LaTeX.
+- **Cross-references:** `[[ID]]`. A requirement ID renders as the ID. A figure ID renders as "Figure 3.2" / "图3.2", numbered by the document being rendered (outside a document, as the figure's ID). `[[DOC#key]]` renders as the number of that section, e.g. "Section 4.1".
+
+Cross-references are checked like any other reference. Numbers written by hand ("Figure 3.2", "Section 4") are avoided, because numbering belongs to documents.
+
+**Requirement parts.** Besides `statement`, `rationale` and `verification`, a requirement may carry `notes` and `suggestions`, both `{en, zh}` and informative. Renderers show them in a fixed order: requirement, rationale, notes, suggestions, verification.
+
+**Figure.** Figures are records with ID `<NAMESPACE>-FIG-NNN` and file `figures/<SYSTEM>/<ID>.yaml`, next to the image files (`<ID>.png`, optionally `.svg` and `.pdf`). A figure record holds:
+- the caption `{en, zh}` and the alt text;
+- the image files with their sha256;
+- provenance: the generating script and its repository, version or commit, data, and date.
+
+Images are shared by both languages; captions are translated. Image files are part of the stamp through their hashes, so a changed image is a recorded change.
+
+**Glossary.** `glossary.yaml` lists:
+- acronyms and terms, with expansions `{en, zh}`;
+- optional definitions `{en, zh}`;
+- symbols, with meanings `{en, zh}`.
+
+Documents select from it.
+
+**Document outline.** An ordered list of blocks:
+
+| Block | Holds |
+|---|---|
+| `section` | key, title `{en, zh}`, nested blocks |
+| `text` | `{en, zh}` Markdown |
+| `requirement` | a requirement ID |
+| `figure` | a figure ID |
+| `table` | header and rows of bilingual cells, optional caption |
+| `definitions` | glossary terms or symbols to list |
+
+Front matter holds:
+- the title `{en, zh}`;
+- roles, as `{role {en, zh}, person}` for authors, checkers and approvers;
+- reference documents, as source IDs;
+- the bibliography;
+- the change record of releases made before qingsong.
+
+### 5.5 Documents and releases (proposed)
 
 A document record holds:
 - its number and title;
@@ -418,7 +464,9 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong check [--against REF]` | run the rules (§10) | 1 |
 | `qingsong new <type> --namespace NS` | allocate an ID and write a skeleton | 1 |
 | `qingsong revise ID --class C --summary S [--decision D]` | record a change (§8.1) | 1 |
-| `qingsong supersede OLD --by NEW…`, `qingsong withdraw ID` | lifecycle changes | 1 |
+| `qingsong adopt FILE --summary S` | take a hand-written record file in: adds revision, history and stamp | 1 |
+| `qingsong supersede OLD --with NEW…`, `qingsong withdraw ID --reason R` | lifecycle changes | 1 |
+| `qingsong rules` | list the check rules | 1 |
 | `qingsong approve ID --to M --by P --ref R` | record a maturity change | 1 |
 | `qingsong confirm CHILD PARENT` | clear a suspect link after review | 1 |
 | `qingsong renumber --unmerged OLD NEW` | move a record not yet on main to a free number | 1 |
@@ -492,6 +540,8 @@ src/qingsong/
   - The defect classes found in the 2026-11-01 review of the earlier version are regression tests: duplicate IDs, unreadable files, dangling links, deleted files and silent defaults.
 - **CI** (GitHub Actions) runs `uv sync --locked`, `ruff check`, `ruff format --check` and `pytest`. Failures are never masked.
 - **Performance.** Load and check time is measured on a synthetic vault of 10,000 records in Phase 1, and the measurement is recorded here. A cache is introduced only if the measurement shows a need.
+  - Measured 2026-11-02 (`tools/benchmark.py`, Apple silicon, Python 3.13): loading 10,000 requirements takes 4.9 s with the C YAML parser (19.9 s with the pure-Python parser), and all checks take 3.6 s. 500 records: about 0.5 s in total. No cache is needed at MUST's expected size (hundreds to a few thousand records).
+- **Writing YAML by hand.** A text that starts with `[` or `{` must be quoted, or YAML reads it as a list or a mapping: `zh: "[[ID]]的…"`. `adopt` reports this case explicitly.
 
 ## 14. Development sequence
 

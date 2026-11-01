@@ -1,0 +1,33 @@
+id: INS-DET-REQ-001
+type: requirement
+title: {en: Read noise, zh: 读出噪声}
+statement:
+  en: The detector read noise shall be {read_noise} (see [[INS-DET-FIG-001]]).
+  zh: 探测器读出噪声应为{read_noise}（见[[INS-DET-FIG-001]]）。
+values:
+  read_noise:
+    quantity: detector.read_noise
+    relation: le
+    value: 3
+    unit: count
+    certainty: provisional
+    issue: ISS-0001
+rationale:
+  en: Keeps the faintest spectra sky-limited ([[DEMO-SRV-REQ-001]]).
+  zh: 使最暗光谱处于天光限（[[DEMO-SRV-REQ-001]]）。
+notes:
+  en: Measured at the operating temperature, in the slow readout mode.
+  zh: 在工作温度下以慢读出模式测量。
+level: subsystem
+allocated_to: INS-DET
+derives_from:
+  - {id: DEMO-SRV-REQ-001, normative_revision: 1}
+sources:
+  - {source: SRC-DEMO-INS-DET-RD-v1.0, locator: "Sec. 2, table 1, row 1"}
+verification:
+  method: test
+  criteria: {en: Bias frames for every detector., zh: 每片探测器拍摄本底帧。}
+maturity: draft
+text_origin: en
+aliases:
+  - {id: RD-001, kind: legacy, document: DEMO-INS-DET-RD, from_version: "0.1", to_version: "1.0"}

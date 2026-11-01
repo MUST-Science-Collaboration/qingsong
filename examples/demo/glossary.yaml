@@ -1,0 +1,16 @@
+terms:
+  SN:
+    kind: acronym
+    text: S/N
+    expansion: {en: Signal-to-noise ratio, zh: 信噪比}
+  FWHM:
+    kind: acronym
+    expansion: {en: Full width at half maximum, zh: 半高全宽}
+  batch:
+    kind: term
+    expansion: {en: Batch, zh: 批次}
+    definition: {en: All detectors delivered in one shipment., zh: 同一次发货中交付的全部探测器。}
+  theta_in:
+    kind: symbol
+    text: θ~in~
+    definition: {en: Injection angle, zh: 入射角}

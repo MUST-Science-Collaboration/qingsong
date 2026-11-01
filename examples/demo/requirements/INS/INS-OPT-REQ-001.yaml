@@ -1,0 +1,56 @@
+id: INS-OPT-REQ-001
+type: requirement
+title: {en: Lens coating reflectance, zh: 镜头膜层反射率}
+statement:
+  en: The reflectance of every lens surface shall be {reflectance} from 400 to 900 nm.
+  zh: 每个透镜表面在400至900 nm的反射率应{reflectance}。
+values:
+  reflectance:
+    relation: le
+    value: 1
+    unit: percent
+    certainty: firm
+rationale:
+  en: Contributes to [[INS-SYS-REQ-001]].
+  zh: 支撑[[INS-SYS-REQ-001]]。
+level: subsystem
+allocated_to: INS-OPT
+derives_from:
+  - {id: INS-SYS-REQ-001, normative_revision: 1}
+verification:
+  method: test
+  criteria: {en: Witness-sample measurement., zh: 陪镀片测量。}
+maturity: draft
+text_origin: zh
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 90199f608fd3babc
+history:
+  - revision: 1
+    date: &id001 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: b0994008dc315ef9
+translation:
+  title:
+    source_hash: f99695c477663f4a
+    status: reviewed
+    by: alice
+    date: *id001
+  statement:
+    source_hash: d7b599d985f799b9
+    status: reviewed
+    by: alice
+    date: *id001
+  rationale:
+    source_hash: 795e1fb0ce6e568b
+    status: reviewed
+    by: alice
+    date: *id001
+  verification.criteria:
+    source_hash: b8e69b804466b4c0
+    status: reviewed
+    by: alice
+    date: *id001

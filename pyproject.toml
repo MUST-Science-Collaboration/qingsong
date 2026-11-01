@@ -11,7 +11,12 @@ requires-python = ">=3.11,<3.15"
 license-files = ["LICENSE"]
 authors = [{ name = "MUST Science Collaboration" }]
 keywords = ["requirements", "systems engineering", "traceability", "telescope"]
-dependencies = ["typer>=0.12,<1"]
+dependencies = [
+    "pint>=0.24,<1",
+    "pydantic>=2.7,<3",
+    "ruamel-yaml>=0.18,<0.19",
+    "typer>=0.12,<1",
+]
 
 [project.scripts]
 qingsong = "qingsong.cli:app"

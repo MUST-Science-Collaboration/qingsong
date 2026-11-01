@@ -1,0 +1,36 @@
+id: INS-DET-FIG-001
+type: figure
+title: {en: Read-noise measurement, zh: 读出噪声测量}
+caption:
+  en: Bias-frame histogram used to measure the read noise for [[INS-DET-REQ-001]] (illustration).
+  zh: 用于测量[[INS-DET-REQ-001]]读出噪声的本底帧直方图（示意）。
+files:
+  - {path: INS-DET-FIG-001.png, sha256:
+      dd88d80041451a6d9706ee4194e669baf3580407a0702128a6bec05aae2475e7}
+provenance:
+  script: make_demo_figure.py
+  repository: qingsong examples
+  date: 2026-11-01
+text_origin: en
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 44136fa355b3678a
+history:
+  - revision: 1
+    date: &id001 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: 671c9eae8213a0d4
+translation:
+  title:
+    source_hash: 417d9387adf9c074
+    status: reviewed
+    by: alice
+    date: *id001
+  caption:
+    source_hash: 671193e3a0ee9df0
+    status: reviewed
+    by: alice
+    date: *id001

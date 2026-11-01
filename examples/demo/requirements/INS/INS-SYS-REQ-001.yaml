@@ -1,0 +1,57 @@
+id: INS-SYS-REQ-001
+type: requirement
+title: {en: Instrument throughput, zh: 仪器通光效率}
+statement:
+  en: The instrument shall transmit at least {throughput} of the light reaching its entrance.
+  zh: 仪器应至少传输到达其入口光线的{throughput}。
+values:
+  throughput:
+    relation: ge
+    value: 40
+    unit: percent
+    certainty: firm
+rationale:
+  en: Part of the signal-to-noise budget of [[DEMO-SRV-REQ-001]].
+  zh: "[[DEMO-SRV-REQ-001]]信噪比预算的一部分。"
+level: element
+allocated_to: INS
+derives_from:
+  - {id: DEMO-SRV-REQ-001, normative_revision: 1}
+verification:
+  method: test
+  criteria: {en: End-to-end throughput measurement., zh: 端到端通光效率测量。}
+maturity: agreed
+approval: {by: alice, date: 2026-02-01, ref: "demo#1", normative_revision: 1}
+text_origin: en
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 93ec950b0fcd2e5e
+history:
+  - revision: 1
+    date: &id001 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: 0a1408327e0bf3d9
+translation:
+  title:
+    source_hash: 534f5cfec246b2fb
+    status: reviewed
+    by: alice
+    date: *id001
+  statement:
+    source_hash: edf593cfd2bd9864
+    status: reviewed
+    by: alice
+    date: *id001
+  rationale:
+    source_hash: 2cd3edd1fedd2628
+    status: reviewed
+    by: alice
+    date: *id001
+  verification.criteria:
+    source_hash: 6a1d13717bb290bb
+    status: reviewed
+    by: alice
+    date: *id001
