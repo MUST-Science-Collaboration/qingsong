@@ -234,7 +234,15 @@ def compliant_without_evidence(root: Path) -> None:
     operations.adopt(root, folder / "VER-INS-DET-REQ-001-01.yaml", "alice", "test fixture")
 
 
+def figure_placed_twice(root: Path) -> None:
+    def change(data):
+        data["outline"][1]["section"]["blocks"].append({"figure": "INS-DET-FIG-001"})
+
+    edit_yaml(root / "documents" / "DEMO-INS-DET-RD.yaml", change)
+
+
 cases = {
+    "structure.outline": figure_placed_twice,
     "content.references": malformed_reference,
     "content.evidence": compliant_without_evidence,
     "integrity.config": broken_config,

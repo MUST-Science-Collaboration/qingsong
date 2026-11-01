@@ -2,7 +2,7 @@
 {% block title %}{{ record.id }}{% endblock %}
 {% block body %}
 <h1><span class="rid">{{ record.id }}</span> {{ site.text(record.title, prefix, block=False) }}</h1>
-<figure class="doc-figure">{% for image in record.files %}{% if image.path.endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp')) %}<img src="{{ prefix }}images/{{ image.path }}" alt="{{ site.plain(record.alt or record.title) }}">{% endif %}{% endfor %}
+<figure class="doc-figure">{% for image in record.files %}{% if image.path.endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp')) %}<img src="{{ prefix }}images/{{ record.id }}/{{ image.path }}" alt="{{ site.plain(record.alt or record.title) }}">{% endif %}{% endfor %}
 <figcaption>{{ site.text(record.caption, prefix) }}</figcaption></figure>
 {% if record.provenance %}<p class="small">Made by {{ record.provenance.script or "?" }}{% if record.provenance.repository %} ({{ record.provenance.repository }}){% endif %}{% if record.provenance.date %}, {{ record.provenance.date }}{% endif %}. {{ record.provenance.note or "" }}</p>{% endif %}
 {% endblock %}

@@ -343,3 +343,33 @@ def ends(context: Context) -> Iterator[Finding]:
                     file=file,
                     fix="conditions describe context nodes only",
                 )
+
+
+def outline_counts(blocks, counts: dict[str, int]) -> dict[str, int]:
+    for block in blocks:
+        if block.section is not None:
+            outline_counts(block.section.blocks, counts)
+        for target in (block.requirement, block.figure):
+            if target:
+                counts[target] = counts.get(target, 0) + 1
+    return counts
+
+
+@rule("structure.outline", "each requirement and figure appears once in a document outline")
+def outline(context: Context) -> Iterator[Finding]:
+    from qingsong.schema import Document
+
+    vault = context.vault
+    for record in vault.records.values():
+        if not isinstance(record, Document):
+            continue
+        for target, count in sorted(outline_counts(record.outline, {}).items()):
+            if count > 1:
+                yield Finding(
+                    "structure.outline",
+                    "warning",
+                    f"{target} appears {count} times in the outline",
+                    record=record.id,
+                    file=relative_file(vault, record.id),
+                    fix="place each requirement and figure once; refer to it elsewhere with [[ID]]",
+                )

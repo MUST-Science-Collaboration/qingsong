@@ -58,3 +58,21 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 
 - **Check what a cited document is before building on a summary of it.** A research summary called a project workbook (a work breakdown) a requirements document. The draft plan mapped a requirement level onto it until the file itself was checked. Open the source, or its extraction, before placing a document in the specification tree.
 - **Independent review before building.** A reviewer given the files, not the author's conclusions, found 24 problems in the first specification draft. The most serious were suspect links triggered by editorial changes, approvals not tied to the approved content, and ID collisions between branches. Review every specification change this way before implementation.
+
+## 8. Overnight run (2026-11-02)
+
+- **Verify that a write survives a read.** YAML line folding silently collapsed repeated spaces and broke a stamp.
+  It was found only while importing the first real document. Every write is now parsed back and its stamp
+  compared before the file is replaced.
+- **Run the oldest supported Python before pushing.** A backslash inside an f-string expression is valid only from
+  Python 3.12. Ruff caught it, but only after `target-version` checks ran on the whole tree.
+- **Independent reviewers find what automated checks cannot.**
+  - The transcription check confirmed every paragraph verbatim. Only the independent reviewer saw English bullets
+    duplicated inside the Chinese text, wrong verification methods, and bracketed words that were not tracked.
+  - The renderer review found script injection through embedded JSON, and ordinary text ("$5", "~45 m") read as
+    markup.
+  - Plan a review for every new layer that people will read.
+- **A project's own conventions beat generic syntax.** In MUST documents any bracketed text marks a provisional
+  value ("[five]"), not only bracketed numbers.
+- **Never use `git stash -u` on a working tree with untracked work.** It briefly removes the untracked files.
+  Copy the files to a scratch folder instead.

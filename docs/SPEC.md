@@ -255,7 +255,7 @@ Numbers sort numerically, not lexically.
 
 ### 5.4 Text, figures and document content (proposed; from the first pilot document, 2026-11-01)
 
-**Text format.** Every prose field (`statement`, `rationale`, `notes`, `suggestions`, criteria, captions, document text) is Markdown (CommonMark) per language, with the following additions:
+**Text format.** Every prose field (`statement`, `rationale`, `notes`, `suggestions`, criteria, captions, document text) is a Markdown subset per language: paragraphs; bullet (`- `) and numbered (`1. `) lists, nested by indentation, which may follow a paragraph line directly; `**bold**`, `*italic*`, `` `code` `` and backslash escapes. Emphasis, sub- and superscript and mathematics follow pandoc's rules, so that `2 * 3`, `~45 m` and `$5` stay as written. It also has the following additions:
 - **Sub- and superscript:** `~x~` and `^x^`, as in pandoc.
 - **Inline mathematics:** `$…$` in LaTeX.
 - **Cross-references:** `[[ID]]`. A requirement ID renders as the ID. A figure ID renders as "Figure 3.2" / "图3.2", numbered by the document being rendered (outside a document, as the figure's ID). `[[DOC#key]]` renders as the number of that section, e.g. "Section 4.1".

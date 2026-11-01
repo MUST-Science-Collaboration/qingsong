@@ -17,7 +17,7 @@
     {% set figure = vault.records.get(block.figure) %}
     {% if figure %}
     <figure class="doc-figure" id="{{ figure.id }}">
-      {% for image in figure.files %}{% if image.path.endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp')) %}<img src="{{ prefix }}images/{{ image.path }}" alt="{{ site.plain(figure.alt or figure.title) }}" loading="lazy">{% endif %}{% endfor %}
+      {% for image in figure.files %}{% if image.path.endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp')) %}<img src="{{ prefix }}images/{{ figure.id }}/{{ image.path }}" alt="{{ site.plain(figure.alt or figure.title) }}" loading="lazy">{% endif %}{% endfor %}
       <figcaption>{{ site.caption(figure, numbering.figures[figure.id], prefix, document) }}<a class="rid small" href="{{ prefix }}f/{{ figure.id }}.html">{{ figure.id }}</a></figcaption>
     </figure>
     {% endif %}

@@ -18,7 +18,7 @@ from qingsong.render.model import (
     requirement_documents,
     tree_data,
 )
-from qingsong.render.text import blocks, inline, substitute_slots
+from qingsong.render.text import blocks, format_slot, inline, substitute_slots
 from qingsong.schema import Document, Figure, Requirement
 from qingsong.vault import Vault
 
@@ -39,6 +39,20 @@ words = {
     "en": {"section": "Section", "figure": "Figure"},
     "zh": {"section": "第{}节", "figure": "图"},
 }
+
+
+def script_json(data) -> str:
+    """JSON that is safe inside a <script> element."""
+    text = json.dumps(data, ensure_ascii=False)
+    for character, escaped in (
+        ("<", "\\u003c"),
+        (">", "\\u003e"),
+        ("&", "\\u0026"),
+        ("\u2028", "\\u2028"),
+        ("\u2029", "\\u2029"),
+    ):
+        text = text.replace(character, escaped)
+    return text
 
 
 class Site:
@@ -176,6 +190,9 @@ class Site:
             )
         return Markup("".join(parts))
 
+    def slot_text(self, slot) -> str:
+        return format_slot(slot, "en").replace("\\", "")
+
     def plain(self, value: dict | None, language: str = "en") -> str:
         if not value:
             return ""
@@ -232,14 +249,12 @@ class Site:
             events=events,
             documents=self.documents,
         )
-        self.render(
-            "tree.html", "tree.html", "", tree=json.dumps(tree_data(self.vault), ensure_ascii=False)
-        )
+        self.render("tree.html", "tree.html", "", tree=script_json(tree_data(self.vault)))
         self.render(
             "flow.html",
             "flow.html",
             "",
-            flow=json.dumps(self.flow_data(requirements), ensure_ascii=False),
+            flow=script_json(self.flow_data(requirements)),
         )
         for document in self.documents:
             self.render(
@@ -278,7 +293,7 @@ class Site:
             if isinstance(record, Figure):
                 folder = self.vault.files[record.id].parent
                 for image in record.files:
-                    target = self.output / "images" / image.path
+                    target = self.output / "images" / record.id / image.path
                     target.parent.mkdir(parents=True, exist_ok=True)
                     if (folder / image.path).exists():
                         shutil.copyfile(folder / image.path, target)
@@ -339,7 +354,7 @@ class Site:
                 }
             )
         (self.output / "static" / "search_index.js").write_text(
-            "window.QINGSONG_INDEX = " + json.dumps(entries, ensure_ascii=False) + ";\n",
+            "window.QINGSONG_INDEX = " + script_json(entries) + ";\n",
             encoding="utf-8",
         )
 

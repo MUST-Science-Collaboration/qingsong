@@ -170,6 +170,13 @@ class FigureFile(StrictModel):
     path: str
     sha256: str
 
+    @field_validator("path")
+    @classmethod
+    def plain_name(cls, path: str) -> str:
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", path):
+            raise ValueError("an image is a plain file name next to the figure record")
+        return path
+
 
 class Provenance(StrictModel):
     script: str | None = None
@@ -310,6 +317,15 @@ class TableBlock(StrictModel):
     caption: LocalizedText | None = None
     header: list[LocalizedText]
     rows: list[list[LocalizedText]]
+
+    @model_validator(mode="after")
+    def check_widths(self) -> "TableBlock":
+        for index, row in enumerate(self.rows):
+            if len(row) != len(self.header):
+                raise ValueError(
+                    f"table row {index + 1} has {len(row)} cells, the header {len(self.header)}"
+                )
+        return self
 
 
 class DefinitionsBlock(StrictModel):

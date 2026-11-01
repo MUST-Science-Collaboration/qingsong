@@ -13,15 +13,43 @@ from pathlib import Path
 
 import docx
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
+from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
-from qingsong.render.model import number_document
-from qingsong.render.text import substitute_slots, token_pattern
+from qingsong.render.model import documents_of, number_document
+from qingsong.render.text import parse_blocks, substitute_slots, token_pattern
 from qingsong.schema import Block, Document, Figure, Requirement
 from qingsong.vault import Vault
 
+settings_after_update = {
+    qn(f"w:{name}")
+    for name in (
+        "hdrShapeDefaults",
+        "footnotePr",
+        "endnotePr",
+        "compat",
+        "docVars",
+        "rsids",
+        "attachedSchema",
+        "themeFontLang",
+        "clrSchemeMapping",
+        "doNotIncludeSubdocsInStats",
+        "doNotAutoCompressPictures",
+        "forceUpgrade",
+        "captions",
+        "readModeInkLockDown",
+        "smartTagType",
+        "shapeDefaults",
+        "doNotEmbedSmartTags",
+        "decimalSymbol",
+        "listSeparator",
+    )
+} | {
+    "{http://schemas.openxmlformats.org/officeDocument/2006/math}mathPr",
+    "{http://schemas.openxmlformats.org/schemaLibrary/2006/main}schemaLibrary",
+}
 part_labels = [
     ("statement", "需求 (Requirement)"),
     ("rationale", "原因 (Rationale)"),
@@ -29,7 +57,6 @@ part_labels = [
     ("suggestions", "建议 (Suggestions)"),
 ]
 verification_label = "验收方式 (Verification)"
-list_marker = re.compile(r"^\s*-\s+")
 
 
 class WordRenderer:
@@ -45,6 +72,7 @@ class WordRenderer:
         self.vault = vault
         self.document = document
         self.numbering = number_document(document)
+        self.numberings = {record.id: number_document(record) for record in documents_of(vault)}
         self.version = version
         self.latin_font = latin_font
         self.east_asian_font = east_asian_font
@@ -88,13 +116,28 @@ class WordRenderer:
 
     # text -----------------------------------------------------------------------------------
     def label(self, target: str, key: str | None, language: str) -> str:
+        """The same labels as the HTML site: sections and figures are numbered by the document
+        that holds them, also when that is another document."""
         record = self.vault.records.get(target)
         if key:
-            number = self.numbering.sections.get(key, "?") if target == self.document.id else "?"
+            other = self.numberings.get(target)
+            number = other.sections.get(key, "?") if other else "?"
             return f"Section {number}" if language == "en" else f"第{number}节"
         if isinstance(record, Figure):
-            number = self.numbering.figures.get(target)
-            if number:
+            home = (
+                self.numbering
+                if target in self.numbering.figures
+                else next(
+                    (
+                        numbering
+                        for numbering in self.numberings.values()
+                        if target in numbering.figures
+                    ),
+                    None,
+                )
+            )
+            if home:
+                number = home.figures[target]
                 return f"Figure {number}" if language == "en" else f"图{number}"
         return target
 
@@ -130,6 +173,8 @@ class WordRenderer:
                 )
             elif match.group("link"):
                 self.runs(paragraph, match.group("link_text"), language, bold, italic)
+                if match.group("url") != match.group("link_text"):
+                    self.add_run(paragraph, f" ({match.group('url')})", italic=italic)
             elif kind == "code":
                 self.add_run(paragraph, token[1:-1], monospace=True)
             elif kind == "math":
@@ -209,23 +254,23 @@ class WordRenderer:
     def localized_paragraphs(
         self, value: dict | None, level: int | None, languages=("en", "zh")
     ) -> None:
-        """Each language's paragraphs in turn; "- " lines become bullets one level deeper."""
+        """Each language's paragraphs in turn; list items become bullets one level deeper (numbered
+        items keep their number as text)."""
         if not value:
             return
         shown = [language for language in languages if language in value]
         same = len(shown) == 2 and value[shown[0]].strip() == value[shown[1]].strip()
         for language in shown[:1] if same else shown:
-            for block in re.split(r"\n\s*\n", value[language].strip()):
-                lines = [line for line in block.split("\n") if line.strip()]
-                if lines and all(list_marker.match(line) for line in lines):
-                    for line in lines:
-                        self.paragraph(
-                            list_marker.sub("", line),
-                            language,
-                            level=(level + 1) if level is not None else 0,
-                        )
-                elif lines:
-                    self.paragraph(" ".join(line.strip() for line in lines), language, level=level)
+            for block in parse_blocks(value[language]):
+                if block.kind == "paragraph":
+                    self.paragraph(block.text, language, level=level)
+                    continue
+                counters: dict[int, int] = {}
+                for item in block.items:
+                    counters[item.level] = counters.get(item.level, 0) + 1
+                    prefix = f"{counters[item.level]}. " if item.ordered else ""
+                    base = (level + 1) if level is not None else 0
+                    self.paragraph(prefix + item.text, language, level=min(base + item.level, 8))
 
     def bilingual_title(self, value: dict) -> str:
         english, chinese = value.get("en", ""), value.get("zh", "")
@@ -241,8 +286,13 @@ class WordRenderer:
         for cell, text in zip(table.rows[0].cells, header, strict=True):
             cell.paragraphs[0].text = ""
             self.runs(cell.paragraphs[0], text, "en", bold=True)
+        header_row = table.rows[0]._tr.get_or_add_trPr()
+        repeat = OxmlElement("w:tblHeader")
+        repeat.set(qn("w:val"), "true")
+        header_row.append(repeat)
         for row in rows:
             cells = table.add_row().cells
+            row = [*row, *[""] * (len(cells) - len(row))][: len(cells)]
             for index, (cell, text) in enumerate(zip(cells, row, strict=True)):
                 language = languages[index] if languages else "en"
                 parts = text.split("\n") if text else [""]
@@ -357,7 +407,13 @@ class WordRenderer:
         update = settings.find(qn("w:updateFields"))
         if update is None:
             update = OxmlElement("w:updateFields")
-            settings.append(update)
+            following = next(
+                (child for child in settings if child.tag in settings_after_update), None
+            )
+            if following is not None:
+                following.addprevious(update)
+            else:
+                settings.append(update)
         update.set(qn("w:val"), "true")
 
     def page_break(self) -> None:
@@ -386,6 +442,8 @@ class WordRenderer:
                 if isinstance(record, Figure):
                     self.figure(record)
             elif block.table is not None:
+                if block.table.caption:
+                    self.caption_paragraphs(block.table.caption)
                 header = [
                     cell.get("en") or next(iter(cell.values())) for cell in block.table.header
                 ]
@@ -402,6 +460,8 @@ class WordRenderer:
                 ]
                 self.table(header, rows)
             elif block.definitions is not None:
+                if block.definitions.caption:
+                    self.caption_paragraphs(block.definitions.caption)
                 self.definitions(block.definitions.terms)
 
     def requirement(self, record: Requirement, depth: int) -> None:
@@ -425,19 +485,37 @@ class WordRenderer:
         folder = self.vault.files[record.id].parent
         section = self.word.sections[-1]
         width = section.page_width - section.left_margin - section.right_margin
+        embedded = False
         for image in record.files:
             path = folder / image.path
             if path.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".bmp") and path.exists():
                 paragraph = self.word.add_paragraph()
                 paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                paragraph.add_run().add_picture(str(path), width=width)
+                native = DocxImage.from_file(str(path)).width
+                paragraph.add_run().add_picture(str(path), width=min(native, width))
+                embedded = True
                 break
-        number = self.numbering.figures.get(record.id, record.id)
-        for language, prefix in (("en", f"Figure {number}. "), ("zh", f"图{number} ")):
+        if not embedded:
+            names = ", ".join(image.path for image in record.files) or "no file"
+            self.paragraph(
+                f"[Image not embedded in Word ({names}); see the HTML version of {record.id}.]",
+                align=WD_ALIGN_PARAGRAPH.CENTER,
+            )
+        number = self.numbering.figures.get(record.id)
+        labels = (
+            {"en": f"Figure {number}. ", "zh": f"图{number} "} if number else {"en": "", "zh": ""}
+        )
+        for language, prefix in labels.items():
             if language in record.caption:
                 paragraph = self.paragraph(style="Caption")
                 self.add_run(paragraph, prefix, bold=True)
                 self.runs(paragraph, record.caption[language], language)
+
+    def caption_paragraphs(self, caption: dict) -> None:
+        for language in ("en", "zh"):
+            if language in caption:
+                paragraph = self.paragraph(style="Caption")
+                self.runs(paragraph, caption[language], language)
 
     def definitions(self, terms: list[str]) -> None:
         glossary = self.vault.glossary.terms if self.vault.glossary else {}

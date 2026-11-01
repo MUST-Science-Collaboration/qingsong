@@ -21,8 +21,8 @@
   </header>
   <section class="part statement"><h4><span class="lang en">Requirement</span><span class="lang zh">需求</span></h4>{{ site.text(record.statement, prefix, document, values=record["values"]) }}</section>
   {% if record.values %}
-  <table class="values"><tr><th>Value</th><th>Relation</th><th>Value</th><th>Unit</th><th>Certainty</th></tr>
-  {% for name, slot in record.values.items() %}<tr><td><code>{{ name }}</code></td><td>{{ slot.relation }}</td><td>{% if slot.relation == "range" %}{{ slot.minimum }} – {{ slot.maximum }}{% else %}{{ slot.value if slot.value is not none else "TBD" }}{% endif %}{% if slot.tolerance %} (+{{ slot.tolerance.plus }}/−{{ slot.tolerance.minus }}){% endif %}</td><td>{{ slot.unit or "" }}</td><td>{{ badge(slot.certainty, "certainty-" ~ slot.certainty) }}</td></tr>{% endfor %}
+  <table class="values"><tr><th>Value</th><th>Relation</th><th colspan="2">As written</th><th>Certainty</th></tr>
+  {% for name, slot in record.values.items() %}<tr><td><code>{{ name }}</code></td><td>{{ slot.relation }}</td><td colspan="2">{{ site.slot_text(slot) }}</td><td>{{ badge(slot.certainty, "certainty-" ~ slot.certainty) }}</td></tr>{% endfor %}
   </table>
   {% endif %}
   {% if record.rationale %}<section class="part"><h4><span class="lang en">Rationale</span><span class="lang zh">原因</span></h4>{{ site.text(record.rationale, prefix, document) }}</section>{% endif %}

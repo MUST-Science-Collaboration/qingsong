@@ -19,7 +19,7 @@ def test_site_renders_every_page(demo, tmp_path):
         "checks.html",
         "static/site.css",
         "static/search_index.js",
-        "images/INS-DET-FIG-001.png",
+        "images/INS-DET-FIG-001/INS-DET-FIG-001.png",
         "documents/DEMO-INS-DET-RD.html",
         "f/INS-DET-FIG-001.html",
     ):
@@ -58,3 +58,95 @@ def test_open_values_are_marked_and_text_is_escaped(demo, tmp_path):
     page = (site / "r" / "DEMO-SCI-REQ-001.html").read_text()
     assert "&lt;script&gt;" in page and "<script> out" not in page
     assert re.search(r'<mark class="open"[^>]*>\[5 %\]</mark>', page)
+
+
+def test_record_text_cannot_break_out_of_scripts(demo, tmp_path):
+    from conftest import edit_yaml, requirement_file
+
+    edit_yaml(
+        requirement_file(demo, "INS-DET-REQ-001"),
+        lambda data: data["title"].__setitem__("en", "Noise </script><script>alert(1)</script>"),
+    )
+    site = render_site(load(demo), tmp_path / "site").parent
+    for name in ("tree.html", "flow.html", "static/search_index.js"):
+        assert "</script><script>alert(1)" not in (site / name).read_text(), name
+
+
+def test_inline_markup_follows_pandoc_rules():
+    from qingsong.render.text import blocks, inline
+
+    def resolve(target, key, language):
+        return target, None
+
+    assert inline("costs $5 or $10", "en", resolve) == "costs $5 or $10"
+    assert inline("~45 m to ~50 m", "en", resolve) == "~45 m to ~50 m"
+    assert inline("2 * 3 = 6 and 4 * 5", "en", resolve) == "2 * 3 = 6 and 4 * 5"
+    assert inline("H~2~O and m^2^", "en", resolve) == "H<sub>2</sub>O and m<sup>2</sup>"
+    assert (
+        inline("**bold *nested* here**", "en", resolve)
+        == "<strong>bold <em>nested</em> here</strong>"
+    )
+    assert inline(r"\*literal\*", "en", resolve) == "*literal*"
+    assert "<mark" not in inline("Note[^1]", "en", resolve)
+    assert "href" not in inline("[x](javascript:alert(1))", "en", resolve)
+    assert blocks("Shall:\n- a\n- b", "en", resolve) == "<p>Shall:</p><ul><li>a</li><li>b</li></ul>"
+    assert blocks("- a\n  more\n- b\n  - c", "en", resolve) == (
+        "<ul><li>a more</li><li>b<ul><li>c</li></ul></li></ul>"
+    )
+
+
+def test_value_slots_read_as_written():
+    from qingsong.render.text import format_slot
+    from qingsong.schema import ValueSlot
+
+    def slot(**fields):
+        return ValueSlot.model_validate(fields)
+
+    assert (
+        format_slot(
+            slot(
+                relation="eq",
+                value=100,
+                tolerance={"plus": 2, "minus": 2},
+                unit="um",
+                certainty="firm",
+            ),
+            "en",
+        )
+        == "100 ± 2 μm"
+    )
+    assert (
+        format_slot(slot(relation="le", value=0.8, unit="deg", certainty="provisional"), "en")
+        == "[≤ 0.8°]"
+    )
+    assert (
+        format_slot(
+            slot(relation="range", minimum=-5, maximum=-3, unit="degC", certainty="firm"), "en"
+        )
+        == "−5–−3 °C"
+    )
+    assert (
+        format_slot(slot(relation="ge", value=25000000000, unit="Hz", certainty="tbc"), "en")
+        == "≥ 2.5 × 10¹⁰ Hz (TBC)"
+    )
+    assert (
+        format_slot(
+            slot(
+                relation="eq",
+                value=20,
+                tolerance={"plus": 0.5, "minus": 0.5},
+                unit="percent",
+                certainty="firm",
+            ),
+            "en",
+        )
+        == "(20 ± 0.5)%"
+    )
+    assert (
+        format_slot(slot(relation="eq", value=7500, unit="count", certainty="firm"), "en")
+        == "7,500"
+    )
+    assert (
+        format_slot(slot(relation="eq", value=9.8, unit="m/s^2", certainty="firm"), "en")
+        == "9.8 m/s²"
+    )

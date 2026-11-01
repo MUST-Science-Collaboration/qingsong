@@ -30,7 +30,7 @@ vague_terms = {
     ],
     "zh": ["适当", "尽量", "尽可能", "等等", "足够", "合理"],
 }
-math_or_code = re.compile(r"\$[^$\n]+\$|`[^`\n]+`")
+math_or_code = re.compile(r"\$(?=\S)[^$\n]*?(?<=\S)\$(?!\d)|`[^`\n]+`")
 markdown_link = re.compile(r"\[[^\[\]]*\]\([^)]*\)|\[\^[^\]]*\]")
 open_value_pattern = re.compile(
     r"\[[^\[\]]+\]|(?<![A-Za-z0-9])(?:TBD|TBC)(?![A-Za-z0-9])|待定|待确认"

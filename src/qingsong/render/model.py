@@ -15,35 +15,31 @@ class Numbering:
 
 
 def number_document(document: Document) -> Numbering:
-    """Section numbers (1, 2.1, 2.1.3), figure numbers per top-level section (3.1) and the
-    position of each requirement (2.1.1), as in the formal documents."""
+    """Section and requirement numbers share one counter per level (2.1, 2.1.1, 2.1.2 …), as in the
+    formal documents; figures are numbered per top-level section (3.1, 3.2 …). A requirement or figure
+    placed twice keeps its first number (the outline check reports the repeat)."""
     numbering = Numbering()
 
     def visit(blocks: list[Block], prefix: list[int], chapter: int | None) -> None:
-        section_count = 0
-        requirement_count = 0
+        count = 0
         for block in blocks:
             if block.section is not None:
-                section_count += 1
-                number = [*prefix, section_count]
+                count += 1
+                number = [*prefix, count]
                 numbering.sections[block.section.key] = ".".join(map(str, number))
                 numbering.titles[block.section.key] = block.section.title
-                visit(
-                    block.section.blocks, number, chapter if chapter is not None else section_count
+                visit(block.section.blocks, number, chapter if chapter is not None else count)
+            elif block.requirement and block.requirement not in numbering.requirements:
+                count += 1
+                numbering.requirements[block.requirement] = ".".join(map(str, [*prefix, count]))
+            elif block.figure and block.figure not in numbering.figures:
+                key = chapter if chapter is not None else 0
+                figures = sum(
+                    1 for value in numbering.figures.values() if value.startswith(f"{key}.")
                 )
-            elif block.requirement:
-                requirement_count += 1
-                numbering.requirements[block.requirement] = ".".join(
-                    map(str, [*prefix, requirement_count])
+                numbering.figures[block.figure] = (
+                    f"{key}.{figures + 1}" if key else str(figures + 1)
                 )
-            elif block.figure and chapter is not None:
-                count = (
-                    sum(
-                        1 for value in numbering.figures.values() if value.startswith(f"{chapter}.")
-                    )
-                    + 1
-                )
-                numbering.figures[block.figure] = f"{chapter}.{count}"
 
     visit(document.outline, [], None)
     return numbering
