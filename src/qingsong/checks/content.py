@@ -33,7 +33,7 @@ vague_terms = {
 math_or_code = re.compile(r"\$[^$\n]+\$|`[^`\n]+`")
 markdown_link = re.compile(r"\[[^\[\]]*\]\([^)]*\)|\[\^[^\]]*\]")
 open_value_pattern = re.compile(
-    r"\[[^\[\]]*\d[^\[\]]*\]|(?<![A-Za-z0-9])(?:TBD|TBC)(?![A-Za-z0-9])|待定|待确认"
+    r"\[[^\[\]]+\]|(?<![A-Za-z0-9])(?:TBD|TBC)(?![A-Za-z0-9])|待定|待确认"
 )
 slot_pattern = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 shall_pattern = re.compile(r"\bshall\b", re.IGNORECASE)

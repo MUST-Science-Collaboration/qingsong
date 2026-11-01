@@ -417,6 +417,23 @@ def find(text: str, vault: VaultOption = None, as_json: JsonOption = False) -> N
     )
 
 
+render_app = typer.Typer(no_args_is_help=True, help="Generate documents from the records.")
+app.add_typer(render_app, name="render")
+
+
+@render_app.command("html")
+def render_html(
+    output: Annotated[Path, typer.Argument(help="Folder for the site (replaced if it exists).")],
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Generate the static HTML site; open OUTPUT/index.html in a browser."""
+    from qingsong.render.html import render_site
+
+    index = render_site(loaded(vault), output.resolve())
+    emit({"index": str(index)}, as_json, f"wrote {index}")
+
+
 @app.command()
 def schema(record_type: Annotated[str | None, typer.Argument(metavar="TYPE")] = None) -> None:
     """Print the JSON Schema of all records, or of one record type."""

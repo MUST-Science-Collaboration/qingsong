@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site.plain(vault.config.project.names) }}{% endblock %} · qingsong</title>
+<link rel="stylesheet" href="{{ prefix }}static/site.css">
+</head>
+<body class="show-both">
+<header class="top">
+  <div class="brand"><a href="{{ prefix }}index.html">{{ vault.config.project.code }}</a>
+    <span class="brand-name">{{ site.plain(vault.config.project.names) }}</span></div>
+  <nav class="main">
+    <a href="{{ prefix }}tree.html">Product tree</a>
+    <a href="{{ prefix }}flow.html">Flow-down</a>
+    {% for document in site.documents %}<a href="{{ prefix }}documents/{{ document.id }}.html" title="{{ site.plain(document.title) }}">{{ document.id }}</a>{% endfor %}
+    <a href="{{ prefix }}registers.html">Registers</a>
+    <a href="{{ prefix }}checks.html">Checks</a>
+  </nav>
+  <div class="tools">
+    <div class="search"><input type="search" id="search" placeholder="Search ID, alias, text…" autocomplete="off"><div id="search-results" class="search-results"></div></div>
+    <div class="language-switch" role="group" aria-label="Language">
+      <button data-show="en">EN</button><button data-show="zh">中文</button><button data-show="both" class="active">EN + 中文</button>
+    </div>
+  </div>
+</header>
+<main>
+{% block body %}{% endblock %}
+</main>
+<footer>Generated {{ generated }} by qingsong {{ version }} from the record. Edit the records, never this page.</footer>
+<script>window.QINGSONG_PREFIX = "{{ prefix }}";</script>
+<script src="{{ prefix }}static/search_index.js"></script>
+<script src="{{ prefix }}static/site.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

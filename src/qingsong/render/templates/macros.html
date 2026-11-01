@@ -1,0 +1,35 @@
+{% macro badge(text, kind) %}<span class="badge {{ kind }}">{{ text }}</span>{% endmacro %}
+
+{% macro status_badges(record) %}
+{{ badge(record.maturity, "maturity-" ~ record.maturity) }}
+{% if record.lifecycle != "current" %}{{ badge(record.lifecycle, "lifecycle") }}{% endif %}
+{{ badge(record.level, "level") }}
+{% endmacro %}
+
+{% macro requirement_card(site, record, prefix, document=None, number=None) %}
+<article class="requirement" id="{{ record.id }}">
+  <header>
+    <div class="requirement-heading">
+      {% if number %}<span class="number">{{ number }}</span>{% endif %}
+      <a class="rid" href="{{ prefix }}r/{{ record.id }}.html">{{ record.id }}</a>
+      <span class="title">{{ site.text(record.title, prefix, document, block=False) }}</span>
+    </div>
+    <div class="badges">{{ status_badges(record) }}
+      {% for alias in record.aliases %}<span class="alias" title="{{ alias.kind }} ID in {{ alias.document }}">{{ alias.id }}</span>{% endfor %}
+      {% if site.by_record.get(record.id) %}<a class="badge findings" href="{{ prefix }}r/{{ record.id }}.html#findings">{{ site.by_record[record.id]|length }} check notes</a>{% endif %}
+    </div>
+  </header>
+  <section class="part statement"><h4><span class="lang en">Requirement</span><span class="lang zh">需求</span></h4>{{ site.text(record.statement, prefix, document) }}</section>
+  {% if record.values %}
+  <table class="values"><tr><th>Value</th><th>Relation</th><th>Value</th><th>Unit</th><th>Certainty</th></tr>
+  {% for name, slot in record.values.items() %}<tr><td><code>{{ name }}</code></td><td>{{ slot.relation }}</td><td>{% if slot.relation == "range" %}{{ slot.minimum }} – {{ slot.maximum }}{% else %}{{ slot.value if slot.value is not none else "TBD" }}{% endif %}{% if slot.tolerance %} (+{{ slot.tolerance.plus }}/−{{ slot.tolerance.minus }}){% endif %}</td><td>{{ slot.unit or "" }}</td><td>{{ badge(slot.certainty, "certainty-" ~ slot.certainty) }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+  {% if record.rationale %}<section class="part"><h4><span class="lang en">Rationale</span><span class="lang zh">原因</span></h4>{{ site.text(record.rationale, prefix, document) }}</section>{% endif %}
+  {% if record.notes %}<section class="part"><h4><span class="lang en">Notes</span><span class="lang zh">说明</span></h4>{{ site.text(record.notes, prefix, document) }}</section>{% endif %}
+  {% if record.suggestions %}<section class="part"><h4><span class="lang en">Suggestions</span><span class="lang zh">建议</span></h4>{{ site.text(record.suggestions, prefix, document) }}</section>{% endif %}
+  {% if record.verification %}<section class="part"><h4><span class="lang en">Verification</span><span class="lang zh">验收方式</span></h4>
+    <div class="methods">{% for method in record.verification.methods %}{{ badge(method.replace("_", " "), "method") }}{% endfor %}</div>
+    {{ site.text(record.verification.criteria, prefix, document) }}</section>{% endif %}
+</article>
+{% endmacro %}

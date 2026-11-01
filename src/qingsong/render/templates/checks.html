@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}
+{% block title %}Checks{% endblock %}
+{% block body %}
+<h1>Checks</h1>
+<p class="lead">{{ severity.error or 0 }} errors, {{ severity.warning or 0 }} warnings, {{ severity.info or 0 }} notes. The same checks run before every commit and in CI.</p>
+{% for rule_id, findings in grouped.items() %}
+<details class="rule-group" {% if findings[0].severity == "error" %}open{% endif %}><summary>{{ badge(findings[0].severity, findings[0].severity) }} <code>{{ rule_id }}</code> · {{ rules.get(rule_id, "") }} · {{ findings|length }}</summary>
+<ul class="findings">{% for finding in findings %}<li>{% if finding.record %}<a href="{{ site.href(finding.record, prefix) }}">{{ finding.record }}</a>{% else %}{{ finding.file or "" }}{% endif %}: {{ finding.message }}{% if finding.fix %} <span class="small">→ {{ finding.fix }}</span>{% endif %}</li>{% endfor %}</ul>
+</details>
+{% else %}<p>No findings.</p>{% endfor %}
+{% endblock %}

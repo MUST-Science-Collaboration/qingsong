@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "macros.html" import requirement_card, badge %}
+{% block title %}{{ document.id }}{% endblock %}
+{% macro render_blocks(blocks, depth) %}
+{% for block in blocks %}
+  {% if block.section %}
+  <section class="doc-section depth-{{ depth }}" id="{{ block.section.key }}">
+    <h{{ [depth + 1, 6]|min }}><span class="number">{{ numbering.sections[block.section.key] }}</span> {{ site.text(block.section.title, prefix, document, block=False) }}</h{{ [depth + 1, 6]|min }}>
+    {{ render_blocks(block.section.blocks, depth + 1) }}
+  </section>
+  {% elif block.text %}
+  <div class="doc-text">{{ site.text(block.text, prefix, document) }}</div>
+  {% elif block.requirement %}
+    {% set record = vault.records.get(block.requirement) %}
+    {% if record %}{{ requirement_card(site, record, prefix, document, numbering.requirements[block.requirement]) }}{% else %}<p class="broken">Missing requirement {{ block.requirement }}</p>{% endif %}
+  {% elif block.figure %}
+    {% set figure = vault.records.get(block.figure) %}
+    {% if figure %}
+    <figure class="doc-figure" id="{{ figure.id }}">
+      {% for image in figure.files %}{% if image.path.endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp')) %}<img src="{{ prefix }}images/{{ image.path }}" alt="{{ site.plain(figure.alt or figure.title) }}" loading="lazy">{% endif %}{% endfor %}
+      <figcaption>{{ site.caption(figure, numbering.figures[figure.id], prefix, document) }}<a class="rid small" href="{{ prefix }}f/{{ figure.id }}.html">{{ figure.id }}</a></figcaption>
+    </figure>
+    {% endif %}
+  {% elif block.table %}
+  <table class="doc-table">
+    {% if block.table.caption %}<caption>{{ site.text(block.table.caption, prefix, document, block=False) }}</caption>{% endif %}
+    <tr>{% for cell in block.table.header %}<th>{{ site.text(cell, prefix, document, block=False) }}</th>{% endfor %}</tr>
+    {% for row in block.table.rows %}<tr>{% for cell in row %}<td>{{ site.text(cell, prefix, document, block=False) }}</td>{% endfor %}</tr>{% endfor %}
+  </table>
+  {% elif block.definitions %}
+  <table class="doc-table definitions">
+    {% if block.definitions.caption %}<caption>{{ site.text(block.definitions.caption, prefix, document, block=False) }}</caption>{% endif %}
+    {% for key in block.definitions.terms %}{% set entry = vault.glossary.terms.get(key) %}
+    {% if entry %}<tr><th>{% if entry.text %}{{ site.text({'en': entry.text}, prefix, document, block=False) }}{% else %}{{ site.text(entry.expansion, prefix, document, block=False) }}{% endif %}</th><td>{{ site.text(entry.definition or entry.expansion, prefix, document, block=False) }}</td></tr>{% endif %}
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endfor %}
+{% endmacro %}
+{% block body %}
+<div class="document">
+<header class="doc-cover">
+  <div class="doc-number">{{ document.id }}{% if document.releases %} · v{{ document.releases[-1].version }}{% endif %}</div>
+  <h1>{{ site.text(document.title, prefix, document, block=False) }}</h1>
+  {% for alias in document.aliases %}<span class="alias">{{ alias.id }}</span>{% endfor %}
+</header>
+<details class="front"><summary>Change record, responsibilities, acronyms and references</summary>
+  <h3>Change record</h3>
+  <table class="list"><tr><th>Version</th><th>Date</th><th>Changes</th><th>By</th><th>Made with</th></tr>
+  {% for release in document.releases %}<tr><td>v{{ release.version }}</td><td>{{ release.date }}</td><td>{{ site.text(release.summary, prefix, document, block=False) }}{% if release.note %}<div class="small">{{ site.text(release.note, prefix, document, block=False) }}</div>{% endif %}</td><td>{{ release.by or "" }}</td><td>{{ "qingsong" if release.made_with_qingsong else "Word" }}</td></tr>{% endfor %}
+  </table>
+  <h3>Responsibilities</h3>
+  <table class="list">{% for role in document.front.roles %}<tr><td>{{ site.text(role.role, prefix, document, block=False) }}</td><td>{{ vault.people.people[role.person].name if role.person in vault.people.people else role.person }}</td></tr>{% endfor %}</table>
+  {% if document.front.acronyms %}<h3>Acronyms</h3>
+  <table class="list">{% for key in document.front.acronyms %}{% set entry = vault.glossary.terms.get(key) %}{% if entry %}<tr><th>{{ entry.text or key }}</th><td>{{ site.text(entry.expansion, prefix, document, block=False) }}</td></tr>{% endif %}{% endfor %}</table>{% endif %}
+  {% if document.front.reference_documents %}<h3>Reference documents</h3>
+  <table class="list">{% for source_id in document.front.reference_documents %}{% set source = vault.records.get(source_id) %}{% if source %}<tr><td><a href="{{ prefix }}registers.html#{{ source.id }}">{{ source.number or "(number TBD)" }}</a></td><td>{{ site.text(source.title, prefix, document, block=False) }}</td></tr>{% endif %}{% endfor %}</table>{% endif %}
+  {% if document.front.bibliography %}<h3>Publications cited</h3><ul class="bibliography">{% for entry in document.front.bibliography %}<li>{{ site.text({'en': entry}, prefix, document, block=False) }}</li>{% endfor %}</ul>{% endif %}
+</details>
+<nav class="toc"><h3>Contents</h3><ul>
+{% for key, number in numbering.sections.items() %}<li class="toc-depth-{{ number.count('.') }}"><a href="#{{ key }}">{{ number }} {{ site.text(numbering.titles[key], prefix, document, block=False) }}</a></li>{% endfor %}
+</ul></nav>
+{{ render_blocks(document.outline, 1) }}
+</div>
+{% endblock %}

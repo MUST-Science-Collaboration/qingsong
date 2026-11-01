@@ -12,6 +12,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "MUST Science Collaboration" }]
 keywords = ["requirements", "systems engineering", "traceability", "telescope"]
 dependencies = [
+    "jinja2>=3.1,<4",
     "pint>=0.24,<1",
     "pydantic>=2.7,<3",
     "ruamel-yaml>=0.18,<0.19",

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}
+{% block body %}
+<h1>{{ site.text(vault.config.project.names, prefix, block=False) }}</h1>
+<p class="lead">The requirement record: {{ requirements|length }} requirements, {{ documents|length }} documents. Every page here is generated from the records.</p>
+<div class="cards">
+  <a class="card {{ 'bad' if severity.error else 'good' }}" href="checks.html"><div class="big">{{ severity.error or 0 }}</div><div>errors</div><div class="small">{{ severity.warning or 0 }} warnings · {{ severity.info or 0 }} notes</div></a>
+  <a class="card" href="tree.html"><div class="big">{{ vault.nodes|length }}</div><div>nodes in the product tree</div></a>
+  <a class="card" href="flow.html"><div class="big">{{ requirements|length }}</div><div>requirements</div><div class="small">{% for name, count in maturity.items() %}{{ count }} {{ name }}{% if not loop.last %} · {% endif %}{% endfor %}</div></a>
+  <a class="card" href="registers.html#issues"><div class="big">{{ open_issues|length }}</div><div>open issues</div><div class="small">TBD, TBC, provisional values, questions</div></a>
+</div>
+<h2>Requirements by level</h2>
+<div class="level-bars">
+{% set top = (levels.values()|list|max) if levels else 1 %}
+{% for level in vault.config.levels %}
+  <div class="level-bar"><span class="level-name">{{ level.names.en }} <span class="lang zh">{{ level.names.zh }}</span></span>
+  <span class="bar"><span style="width: {{ (100 * (levels.get(level.name, 0)) / top)|round(1) }}%"></span></span><span class="count">{{ levels.get(level.name, 0) }}</span></div>
+{% endfor %}
+</div>
+<h2>Documents</h2>
+<ul class="plain">
+{% for document in documents %}<li><a href="documents/{{ document.id }}.html"><b>{{ document.id }}</b> {{ site.text(document.title, prefix, block=False) }}</a> · {{ site.numberings[document.id].requirements|length }} requirements{% if document.releases %} · last release v{{ document.releases[-1].version }} ({{ document.releases[-1].date }}){% endif %}</li>{% endfor %}
+</ul>
+<h2>Recent changes</h2>
+<table class="list"><tr><th>Date</th><th>Record</th><th>Event</th><th>Summary</th><th>By</th></tr>
+{% for event, record in events %}<tr><td>{{ event.date }}</td><td><a href="{{ site.href(record.id, prefix) }}">{{ record.id }}</a></td><td>{{ event.event }}{% if event.change_class %} ({{ event.change_class }}){% endif %}</td><td>{{ event.summary }}</td><td>{{ event.by }}{% if event.via %} via {{ event.via }}{% endif %}</td></tr>{% endfor %}
+</table>
+{% endblock %}

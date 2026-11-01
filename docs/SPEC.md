@@ -66,6 +66,7 @@ A vault is a git repository with a `qingsong.toml` file at its root.
 | `[[levels]] name`, `names` | ordered list of requirement levels, highest first (§4.2) |
 | `[top_namespaces]` | namespace → level for requirements allocated to the root, e.g. `DEMO-SCI = "science"` |
 | `[related] <name> = <path>` | optional local paths of related repositories, used by the `external` checks |
+| `tree_order` | optional display order of the top-level systems (codes); others follow alphabetically |
 
 ### 3.2 People and approval
 
@@ -257,6 +258,8 @@ Numbers sort numerically, not lexically.
 - **Sub- and superscript:** `~x~` and `^x^`, as in pandoc.
 - **Inline mathematics:** `$…$` in LaTeX.
 - **Cross-references:** `[[ID]]`. A requirement ID renders as the ID. A figure ID renders as "Figure 3.2" / "图3.2", numbered by the document being rendered (outside a document, as the figure's ID). `[[DOC#key]]` renders as the number of that section, e.g. "Section 4.1".
+
+**Open values in prose.** Bracketed text (`[7,500]`, `[five]`) marks a provisional value, as in the MUST documents; it, TBD and TBC (待定, 待确认) must be tracked by an issue. Markdown links `[text](url)` and footnotes `[^1]` are not open values.
 
 Cross-references are checked like any other reference. Numbers written by hand ("Figure 3.2", "Section 4") are avoided, because numbering belongs to documents.
 
