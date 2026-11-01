@@ -53,3 +53,8 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   - A Pydantic validator swallowed its own errors.
 - **Don't carry dependencies you don't use.** Doorstop was a dependency that nothing imported, and the tree was not Doorstop-valid.
 - **Confidential content does not belong in a public repository.** `origin` is public. Team names, emails and the FPS schedule were removed from its history on 2026-11-01, and MUST content now lives in the private record repository.
+
+## 7. Phase 0 (2026-11-01)
+
+- **Check what a cited document is before building on a summary of it.** A research summary called a project workbook (a work breakdown) a requirements document. The draft plan mapped a requirement level onto it until the file itself was checked. Open the source, or its extraction, before placing a document in the specification tree.
+- **Independent review before building.** A reviewer given the files, not the author's conclusions, found 24 problems in the first specification draft. The most serious were suspect links triggered by editorial changes, approvals not tied to the approved content, and ID collisions between branches. Review every specification change this way before implementation.

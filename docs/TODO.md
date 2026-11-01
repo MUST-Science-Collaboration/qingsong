@@ -13,8 +13,8 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R0-005 | Engine specification `SPEC.md` v0.2 and `must_req/docs/CONVENTIONS.md` | [x] Done | Independent review: 24 findings, all addressed or put to the Project Scientist |
 | R0-006 | Tag `legacy-0.1`; remove the legacy package | [x] Done | Tag local only until a push is approved |
 | R0-007 | New package skeleton, uv lock, pre-commit, CI | [x] Done (local) | Lint, format, tests, build and pre-commit pass locally; CI runs on GitHub after a push is approved |
-| R0-008 | Draft MUST tree and vault configuration in `must_req` | [x] Drafted | From the FPS and SPG breakdown workbooks |
-| R0-009 | Roadmap page (HTML) for the Project Scientist's check of levels, codes and systems | [ ] Pending | Generated from `must_req/tree/` |
+| R0-008 | Draft MUST tree and vault configuration in `must_req` | [x] Done | 82 nodes; FPS and SPG from their breakdown workbooks; committed on `must_req` branch `feature/phase0-conventions` |
+| R0-009 | Roadmap page (HTML) for the Project Scientist's check of levels, codes and systems | [x] Done | `must_req/docs/roadmap/index.html`, generated from the tree; awaiting the Project Scientist's check |
 
 ## Next: Phase 1 (core engine)
 
