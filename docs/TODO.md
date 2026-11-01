@@ -10,9 +10,9 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R0-002 | Research: tools, systems-engineering frameworks, observatory practice | [x] Done | `must_req/docs/RESEARCH.md` |
 | R0-003 | Rebuild plan and interview | [x] Done | `must_req/docs/PLAN.md`; decisions of 2026-11-01 in SPEC §16 |
 | R0-004 | Remove MUST names, emails and schedule from public history | [x] Done | filter-repo and force push, 2026-11-01 (a07af95 → 692d1af) |
-| R0-005 | Engine specification `SPEC.md` v0.2 and `must_req/docs/CONVENTIONS.md` | [x] Drafted | Independent review in progress |
+| R0-005 | Engine specification `SPEC.md` v0.2 and `must_req/docs/CONVENTIONS.md` | [x] Done | Independent review: 24 findings, all addressed or put to the Project Scientist |
 | R0-006 | Tag `legacy-0.1`; remove the legacy package | [x] Done | Tag local only until a push is approved |
-| R0-007 | New package skeleton, uv lock, pre-commit, CI | [ ] In progress | |
+| R0-007 | New package skeleton, uv lock, pre-commit, CI | [x] Done (local) | Lint, format, tests, build and pre-commit pass locally; CI runs on GitHub after a push is approved |
 | R0-008 | Draft MUST tree and vault configuration in `must_req` | [x] Drafted | From the FPS and SPG breakdown workbooks |
 | R0-009 | Roadmap page (HTML) for the Project Scientist's check of levels, codes and systems | [ ] Pending | Generated from `must_req/tree/` |
 
