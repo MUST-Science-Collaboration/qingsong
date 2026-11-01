@@ -475,6 +475,7 @@ class VaultConfig(StrictModel):
     top_namespaces: dict[str, str]
     related: dict[str, str] = Field(default_factory=dict)
     tree_order: list[str] = Field(default_factory=list)
+    documents: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def check_levels(self) -> "VaultConfig":

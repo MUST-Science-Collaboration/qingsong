@@ -18,7 +18,7 @@ from qingsong.render.model import (
     requirement_documents,
     tree_data,
 )
-from qingsong.render.text import blocks, inline
+from qingsong.render.text import blocks, inline, substitute_slots
 from qingsong.schema import Document, Figure, Requirement
 from qingsong.vault import Vault
 
@@ -119,10 +119,20 @@ class Site:
         return resolve
 
     def text(
-        self, value: dict | None, prefix: str, document: Document | None = None, block: bool = True
+        self,
+        value: dict | None,
+        prefix: str,
+        document: Document | None = None,
+        block: bool = True,
+        values: dict | None = None,
     ) -> Markup:
         if not value:
             return Markup("")
+        if values:
+            value = {
+                language: substitute_slots(text, values, language)
+                for language, text in value.items()
+            }
         resolve = self.resolver(prefix, document)
         parts = []
         for language in self.languages:

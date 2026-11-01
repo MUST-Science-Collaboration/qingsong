@@ -67,6 +67,7 @@ A vault is a git repository with a `qingsong.toml` file at its root.
 | `[top_namespaces]` | namespace → level for requirements allocated to the root, e.g. `DEMO-SCI = "science"` |
 | `[related] <name> = <path>` | optional local paths of related repositories, used by the `external` checks |
 | `tree_order` | optional display order of the top-level systems (codes); others follow alphabetically |
+| `[documents] latin_font`, `east_asian_font` | optional fonts for generated Word documents (the reference style file supplies all other styles) |
 
 ### 3.2 People and approval
 

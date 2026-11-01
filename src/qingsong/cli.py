@@ -434,6 +434,26 @@ def render_html(
     emit({"index": str(index)}, as_json, f"wrote {index}")
 
 
+@render_app.command("docx")
+def render_word(
+    document: Annotated[str, typer.Argument(help="Document ID, e.g. DEMO-INS-DET-RD.")],
+    output: Annotated[Path, typer.Argument(help="Path of the .docx file to write.")],
+    version: Annotated[
+        str | None, typer.Option(help="Version shown on the cover and header.")
+    ] = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Generate a Word document from the records (styles from templates/reference.docx)."""
+    from qingsong.render.word import render_docx
+
+    try:
+        written = render_docx(loaded(vault), document, output.resolve(), version=version)
+    except ValueError as error:
+        fail(error, as_json)
+    emit({"docx": str(written)}, as_json, f"wrote {written}")
+
+
 @app.command()
 def schema(record_type: Annotated[str | None, typer.Argument(metavar="TYPE")] = None) -> None:
     """Print the JSON Schema of all records, or of one record type."""

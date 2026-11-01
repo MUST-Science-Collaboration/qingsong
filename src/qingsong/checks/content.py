@@ -182,6 +182,18 @@ def reference_syntax(context: Context) -> Iterator[Finding]:
     for record in vault.records.values():
         for path, texts in localized_texts(record):
             for text in texts.values():
+                for doubled in re.findall(
+                    r"(?:Sections?|第)\s*\[\[[A-Za-z0-9._-]+#[A-Za-z0-9_-]+\]\]", text
+                ):
+                    yield Finding(
+                        "content.references",
+                        "warning",
+                        f"{path}: {doubled}: a section reference already reads "
+                        "'Section 4.1' / '第4.1节'",
+                        record=record.id,
+                        file=relative_file(vault, record.id),
+                        fix="drop the word before the reference",
+                    )
                 for candidate in any_double_bracket.findall(text):
                     if not reference_pattern.fullmatch(candidate):
                         yield Finding(

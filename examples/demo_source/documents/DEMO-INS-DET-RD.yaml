@@ -15,8 +15,8 @@ outline:
       title: {en: Introduction, zh: 简介}
       blocks:
         - text:
-            en: This document gives the requirements of the detector. Section [[DEMO-INS-DET-RD#performance]] lists them.
-            zh: 本文件给出探测器的需求，见第[[DEMO-INS-DET-RD#performance]]节。
+            en: This document gives the requirements of the detector; [[DEMO-INS-DET-RD#performance]] lists them.
+            zh: 本文件给出探测器的需求，见[[DEMO-INS-DET-RD#performance]]。
         - definitions:
             terms: [batch, theta_in]
   - section:

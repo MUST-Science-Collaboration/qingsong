@@ -79,3 +79,68 @@ def blocks(text: str, language: str, resolve: Resolver) -> str:
                 f"<p>{inline(' '.join(line.strip() for line in lines), language, resolve)}</p>"
             )
     return "".join(parts)
+
+
+relation_signs = {"eq": "", "le": "≤ ", "lt": "< ", "ge": "≥ ", "gt": "> ", "approx": "≈ "}
+unit_labels = {
+    "percent": "%",
+    "degC": "°C",
+    "degree": "°",
+    "deg": "°",
+    "um": "μm",
+    "micrometer": "μm",
+    "count": "",
+    "dimensionless": "",
+    "arcsec": "″",
+    "arcmin": "′",
+}
+
+
+def number(value: float) -> str:
+    return f"{value:,.10g}" if abs(value) >= 10000 else f"{value:.10g}"
+
+
+def unit_label(unit: str | None) -> str:
+    if not unit:
+        return ""
+    label = unit_labels.get(unit, unit)
+    if not label:
+        return ""
+    return label if label in ("%", "°", "″", "′") else f" {label}"
+
+
+def format_slot(slot, language: str) -> str:
+    """A value slot as it reads in a document: relation, value, tolerance, unit and certainty."""
+    if slot.certainty == "tbd":
+        return "TBD" if language == "en" else "TBD（待定）"
+    unit = unit_label(slot.unit)
+    if slot.relation == "range":
+        text = f"{number(slot.minimum)}–{number(slot.maximum)}{unit}"
+    else:
+        text = f"{relation_signs[slot.relation]}{number(slot.value)}"
+        if slot.tolerance:
+            plus, minus = slot.tolerance.plus, slot.tolerance.minus
+            text += f" ± {number(plus)}" if plus == minus else f" +{number(plus)}/−{number(minus)}"
+        text += unit
+    if slot.certainty == "provisional":
+        return f"[{text}]"
+    if slot.certainty == "tbc":
+        return f"{text} (TBC)" if language == "en" else f"{text}（待确认）"
+    return text
+
+
+slot_reference = re.compile(r"\{([a-z][a-z0-9_]*)\}")
+
+
+def substitute_slots(text: str, values: dict, language: str) -> str:
+    """Replace {slot} placeholders with formatted values; unknown names stay visible."""
+    if not values:
+        return text
+    return slot_reference.sub(
+        lambda match: (
+            format_slot(values[match.group(1)], language)
+            if match.group(1) in values
+            else match.group(0)
+        ),
+        text,
+    )

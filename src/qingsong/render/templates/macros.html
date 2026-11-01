@@ -19,7 +19,7 @@
       {% if site.by_record.get(record.id) %}<a class="badge findings" href="{{ prefix }}r/{{ record.id }}.html#findings">{{ site.by_record[record.id]|length }} check notes</a>{% endif %}
     </div>
   </header>
-  <section class="part statement"><h4><span class="lang en">Requirement</span><span class="lang zh">需求</span></h4>{{ site.text(record.statement, prefix, document) }}</section>
+  <section class="part statement"><h4><span class="lang en">Requirement</span><span class="lang zh">需求</span></h4>{{ site.text(record.statement, prefix, document, values=record["values"]) }}</section>
   {% if record.values %}
   <table class="values"><tr><th>Value</th><th>Relation</th><th>Value</th><th>Unit</th><th>Certainty</th></tr>
   {% for name, slot in record.values.items() %}<tr><td><code>{{ name }}</code></td><td>{{ slot.relation }}</td><td>{% if slot.relation == "range" %}{{ slot.minimum }} – {{ slot.maximum }}{% else %}{{ slot.value if slot.value is not none else "TBD" }}{% endif %}{% if slot.tolerance %} (+{{ slot.tolerance.plus }}/−{{ slot.tolerance.minus }}){% endif %}</td><td>{{ slot.unit or "" }}</td><td>{{ badge(slot.certainty, "certainty-" ~ slot.certainty) }}</td></tr>{% endfor %}

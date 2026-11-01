@@ -96,3 +96,13 @@ def test_long_text_with_repeated_spaces_survives_writing(demo):
     edit_yaml(requirement_file(demo, "DEMO-SCI-REQ-001"), change)
     operations.revise(demo, "DEMO-SCI-REQ-001", "editorial", "long rationale", "alice")
     assert ("change.unrecorded", "error") not in findings(demo)
+
+
+def test_a_word_before_a_section_reference_is_flagged(demo):
+    edit_yaml(
+        requirement_file(demo, "INS-DET-REQ-001"),
+        lambda data: data["rationale"].__setitem__(
+            "en", "See Section [[DEMO-INS-DET-RD#performance]]."
+        ),
+    )
+    assert ("content.references", "warning") in findings(demo)

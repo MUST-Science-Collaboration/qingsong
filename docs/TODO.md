@@ -16,6 +16,26 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R0-008 | Draft MUST tree and vault configuration in `must_req` | [x] Done | 82 nodes; FPS and SPG from their breakdown workbooks; committed on `must_req` branch `feature/phase0-conventions` |
 | R0-009 | Roadmap page (HTML) for the Project Scientist's check of levels, codes and systems | [x] Done | `must_req/docs/roadmap/index.html`, generated from the tree; awaiting the Project Scientist's check |
 
-## Next: Phase 1 (core engine)
+## Phase 1: core engine (done 2026-11-02)
 
-Schemas, vault I/O, IDs and aliases, hashing, operations, check groups `integrity`, `structure`, `change`, `content`; synthetic demo vault; 10,000-record benchmark. Starts after the Project Scientist has checked the roadmap.
+| ID | Task | Status | Notes |
+| --- | --- | --- | --- |
+| R1-001 | Schemas, strict vault I/O, IDs and aliases, stamps, operations, CLI | [x] Done | |
+| R1-002 | 35 check rules, each with a triggering fixture | [x] Done | |
+| R1-003 | Demo vault; benchmark (10,000 records: load 4.9 s, check 3.6 s) | [x] Done | SPEC §13 |
+| R1-004 | Independent code review, all findings fixed | [x] Done | 13 groups of findings |
+
+## Phase 3: HTML (first slice done 2026-11-02)
+
+| ID | Task | Status | Notes |
+| --- | --- | --- | --- |
+| R3-001 | Site: home, interactive tree, flow-down diagram, documents with figures, requirement pages, registers, checks, search, language switch | [x] Done | `qingsong render html` |
+| R3-002 | Change views between releases; review packages; N² matrix | [ ] Next | |
+
+## Phase 4: Word (first slice done 2026-11-02)
+
+| ID | Task | Status | Notes |
+| --- | --- | --- | --- |
+| R4-001 | `qingsong render docx`: MUST layout, bilingual requirements, figures, tables, TOC field, header/footer | [x] Done | pilot: 610 of 612 body units of v1.1 reproduced; 2 intended differences |
+| R4-002 | Confirm the generated file opens in Word without repair | [ ] Project Scientist | not possible unattended |
+| R4-003 | `qingsong release` with tracked changes against the previous release | [ ] Next | |
