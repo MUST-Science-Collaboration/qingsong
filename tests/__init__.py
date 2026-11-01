@@ -1,2 +1,0 @@
-"""Qingsong tests package."""
-
