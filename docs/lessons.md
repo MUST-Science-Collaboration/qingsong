@@ -165,3 +165,8 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 - **A test that mixes the real date with a fixed one is a time bomb.** It passed the day it was written
   and failed the next, because history dates must not go backwards. Every call in a test takes the
   fixed date.
+- **Generated text must not depend on the Python that generates it.** The API reference passed on
+  3.11 to 3.13 and failed CI on 3.14. Python 3.14 no longer keeps a class's annotations in its
+  `__dict__`, so the field tables vanished, and it prints `Optional[X]` as `X | None`. The builder now
+  uses `inspect.get_annotations` and writes `X | None` everywhere. Compare the output on every
+  supported version before pushing.

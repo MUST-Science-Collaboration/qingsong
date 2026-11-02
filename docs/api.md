@@ -721,7 +721,7 @@ except empty lists and absent optional values.
 | `date` | `date` | `required` |
 | `by` | `str` | `required` |
 | `event` | `Literal['created', 'imported', 'revised', 'approved', 'confirmed', 'superseded', 'withdrawn', 'renumbered', 'released', 'slotted']` | `required` |
-| `change_class` | `Optional[Literal['editorial', 'value', 'reallocate']]` | `None` |
+| `change_class` | `Literal['editorial', 'value', 'reallocate'] \| None` | `None` |
 | `summary` | `str` | `required` |
 | `decision` | `str \| None` | `None` |
 | `via` | `str \| None` | `None` |
@@ -950,7 +950,7 @@ except empty lists and absent optional values.
 | `records` | `list[str]` | `[]` |
 | `rule` | `str \| None` | `None` |
 | `proposals` | `list[Proposal] \| None` | `None` |
-| `outcome` | `Optional[Literal['fixed', 'accepted_as_written', 'answered', 'withdrawn']]` | `None` |
+| `outcome` | `Literal['fixed', 'accepted_as_written', 'answered', 'withdrawn'] \| None` | `None` |
 | `accepted` | `dict[str, Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(pattern='^([0-9a-f]{16})?$')])]] \| None` | `None` |
 | `resolution` | `dict[str, str] \| None` | `None` |
 
