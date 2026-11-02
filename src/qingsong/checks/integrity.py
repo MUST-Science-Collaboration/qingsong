@@ -314,6 +314,7 @@ def against_reference(context: Context) -> Iterator[Finding]:
         if (
             data.get("normative_hash") != record.normative_hash
             and data.get("normative_revision") == record.normative_revision
+            and not slotted_since(record, data.get("normative_hash"), data.get("revision"))
         ):
             yield Finding(
                 "integrity.against",
@@ -340,6 +341,22 @@ def against_reference(context: Context) -> Iterator[Finding]:
             file="tree",
             fix="nodes are retired (status: retired), never removed or moved",
         )
+
+
+def slotted_since(record, earlier_hash: object, earlier_revision: object) -> bool:
+    """The normative hash changed only by recorded moves of numbers into slots: the `slotted`
+    events since the reference lead, hash to hash, from the earlier hash to the current one."""
+    if not isinstance(earlier_revision, int):
+        return False
+    current = earlier_hash
+    moved = False
+    for event in record.history:
+        if event.revision <= earlier_revision or event.event != "slotted":
+            continue
+        if event.normative_hash_before != current:
+            return False
+        current, moved = event.normative_hash_after, True
+    return moved and current == record.normative_hash
 
 
 def comparable(value: object) -> object:

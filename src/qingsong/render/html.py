@@ -14,6 +14,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup
 
 from qingsong import __version__, checks, gitutil, ids
+from qingsong.checks.content import numbers_in_text, requirement_form
 from qingsong.findings import Finding
 from qingsong.hashing import field_value
 from qingsong.operations import OperationError
@@ -304,6 +305,24 @@ class Site:
             )
 
         return diff_markup(readable(old), readable(change.text.get(language, "")))
+
+    form_labels = {
+        "quantitative": {"en": "Quantitative", "zh": "定量"},
+        "qualitative": {"en": "Qualitative", "zh": "定性"},
+    }
+
+    def form(self, record: Requirement) -> str:
+        return requirement_form(record)
+
+    def numbers_in_text(self, record: Requirement) -> bool:
+        return bool(numbers_in_text(record))
+
+    def form_hint(self, record: Requirement) -> str:
+        if record.values:
+            return f"values in slots: {', '.join(record.values)}; checks and the export read them"
+        if numbers_in_text(record):
+            return "numbers are written in the text; checks and the export do not read them"
+        return "no numeric value; verified by its criteria"
 
     def is_text(self, value: Any) -> bool:
         """Bilingual text: a non-empty mapping from language codes to strings."""

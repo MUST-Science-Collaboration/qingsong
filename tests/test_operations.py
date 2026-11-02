@@ -277,7 +277,7 @@ def test_new_writes_the_text_in_the_origin_language(demo):
 
 def test_approval_binds_the_approved_wording(demo):
     def reword(data):
-        data["statement"]["en"] = data["statement"]["en"].replace("at least", "no less than")
+        data["statement"]["en"] = data["statement"]["en"].replace("transmit", "pass on")
 
     edit_yaml(requirement_file(demo, "INS-SYS-REQ-001"), reword)
     operations.revise(

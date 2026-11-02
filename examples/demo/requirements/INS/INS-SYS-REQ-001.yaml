@@ -2,8 +2,8 @@ id: INS-SYS-REQ-001
 type: requirement
 title: {en: Instrument throughput, zh: 仪器通光效率}
 statement:
-  en: The instrument shall transmit at least {throughput} of the light reaching its entrance.
-  zh: 仪器应至少传输到达其入口光线的{throughput}。
+  en: The instrument shall transmit {throughput} of the light reaching its entrance.
+  zh: 仪器应传输到达其入口光线的{throughput}。
 values:
   throughput:
     relation: ge
@@ -37,7 +37,7 @@ history:
     by: alice
     event: approved
     summary: approved as agreed (demo#1)
-stamp: 76dad92bd6d055e5
+stamp: d1b06268a1276e5e
 translation:
   title:
     source_hash: 534f5cfec246b2fb
@@ -45,7 +45,7 @@ translation:
     by: alice
     date: 2026-11-01
   statement:
-    source_hash: edf593cfd2bd9864
+    source_hash: 2c378816412b66bf
     status: reviewed
     by: alice
     date: 2026-11-01
@@ -64,4 +64,4 @@ approval:
   date: 2026-11-01
   ref: demo#1
   normative_revision: 1
-  text_hash: 97755e3e6bdcd530
+  text_hash: 1c4f83fb848e908a

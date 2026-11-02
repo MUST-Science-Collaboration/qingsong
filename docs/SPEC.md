@@ -224,38 +224,45 @@ A **quantity** (`quantities/<key>.yaml`) has:
 
 Units are parsed with `pint`.
 
-**Forms of requirement** (accepted, 2026-11-02). A requirement is **qualitative** or **quantitative**. What counts is that it is verifiable: it has a verification method and criteria, and no vague words (`content.writing`).
-- **Derived, never stored.** The form is derived from the record, so it cannot drift:
-  - a requirement with at least one value slot is *quantitative*;
-  - one without slots is *qualitative*;
-  - a qualitative statement that still contains numbers is marked *numbers in text*: readable, but not read by machines.
-- **Shown everywhere.** The HTML shows each requirement's form and lets readers filter by it. The JSON export carries `form`.
+**Forms of requirement** (accepted, 2026-11-02; details revised after an independent review). A requirement is **qualitative** or **quantitative**. What counts is that it is verifiable: it has a verification method and criteria, and no vague words (`content.writing`).
+- **Derived, never stored.** A requirement with at least one value slot is *quantitative*; one without is *qualitative*. The form is derived from the record, so it cannot drift.
+- **Shown everywhere.**
+  - The HTML marks each requirement with its form. It adds "numbers in text" when the reference-language statement still holds numbers outside slots; years are not counted.
+  - The same condition gives a note in `content.completeness` at `agreed` and above.
+  - The JSON export lists `forms`.
 - **The parse rule.** Only value slots are parsed: relation, numbers, tolerance, unit (`pint`), certainty, condition and goal. Checks and analysis codes never read numbers in prose.
-- **When to use a slot** (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references. A number left in an approved statement remains a note (`content.completeness`).
+- **When to use a slot** (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references.
 - **Goals** (optional; the Rubin model is offered, not imposed).
-  - A slot may carry `goal`: a number in the slot's unit, on the better side of a limit: at or below an `le`/`lt` limit, at or above a `ge`/`gt` limit.
-  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "（目标92.5 %）".
-  - A goal is not a requirement. Checks ignore it except for its side, and the export lists it.
-  - Other slot types do not take a goal.
-- **Provisional values** render with the brackets around the value, not the relation ("≥ [90 %]"), as in the project's documents.
+  - A slot with a limit (`le`, `lt`, `ge`, `gt`) and a value may carry `goal`: a number in the slot's unit, on the better side of the limit.
+  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "≥ [90 %]（目标92.5 %）".
+  - A goal is part of the approved content, so changing it is a `value` change.
+  - Consistency checks ignore goals.
+- **Rendering.** A provisional value has its brackets around the value and unit, not the relation ("≥ [90 %]"), as in the project's documents. There is a space before `%`, as SI requires, and none before angle symbols.
+- **A relation said twice.** A slot that carries its own relation sign, with a relation word next to it in the text ("at least {x}" reading "at least ≥ 40 %"), is a warning of `content.values`.
 
-**Converting between the forms** (accepted, 2026-11-02).
-1. **Moving numbers into slots without changing the meaning:** `qingsong slot ID --file slots.yaml --by P`.
-   - **Input.** For each slot, the file gives its fields and the literal text it replaces in each language of the statement.
-   - **The literal is parsed.** The grammar covers:
-     - a relation sign: `=`, `≤`/`<=`, `<`, `≥`/`>=`, `>`, `≈`/`~`, or none for equality;
-     - numbers with thousands separators;
-     - a range `a–b`;
-     - `± t` or `+a/−b`;
-     - a unit before or after the tolerance;
-     - square brackets for provisional;
-     - `(TBC)`/`（待确认）` and `TBD`/`待定`;
-     - an optional `(goal x)`/`（目标x）`.
-   - **The literal must mean exactly the slot:** the same relation, numbers equal after unit conversion, the same certainty and the same goal. The literal must occur exactly once in each language.
-   - **The text is rewritten.** Each literal becomes `{slot}`, so the text then reads in the standard rendering. A different spacing or unit position is possible, for example "140 μm ± 2 μm" becomes "140 ± 2 μm". The operation prints the text before and after.
-   - **Recording.** It records an `editorial` change with event `slotted`. The normative revision is unchanged, and the normative hash is rewritten. An existing approval is re-bound to the new text, because the meaning was shown to be the same. The approval keeps its person, date and reference, and the history event says why.
-   - **Checks.** `integrity.against` accepts a changed normative hash without a new normative revision only when a `slotted` event was recorded since the reference.
-2. **Changing what is required** is an ordinary `value` revision: a new normative revision, approval again, and children flagged. Examples: a qualitative "high transmission" becomes "≥ 90 %", a number is removed, or a value changes.
+**Converting between the forms** (accepted, 2026-11-02; details revised after an independent review).
+1. **Moving numbers into slots without changing the meaning:** `qingsong slot ID --file slots.yaml --by P [--dry-run]`.
+   - **Input.** For each slot, the file gives its fields and `replaces`, the literal it replaces in each language of the statement.
+   - **Accepted only when every literal:**
+     - occurs exactly once;
+     - is not part of a reference;
+     - has no relation word just outside it ("at least", "per", "不小于", "以上", …). Such a word must be included in the literal, so that it is checked;
+     - **reads the same as the slot's rendering**, up to a short, named list of formatting differences:
+       - spacing;
+       - thousands separators;
+       - relation words written out ("more than", "不小于") against their signs;
+       - `µ`/`μ`, `um`, `percent`, `deg`;
+       - a unit written after both the value and the tolerance;
+       - a unit just after the brackets of a provisional value;
+       - a tolerance group in parentheses.
+
+     There is no grammar of its own: the one renderer is the parse rule.
+   - **Refused** when the record has unrecorded changes, so nothing else can be carried into an approval.
+   - **What changes.** Only the literals change, to `{slot}`; the rest of the statement is untouched by construction. The translation's source hash follows the new text, and its review status is kept, because both languages change from one input. The normative revision is unchanged, so children, verifications and waivers are unaffected.
+   - **The approval** is re-bound to the new text only if it was current before. A stale approval stays stale.
+   - **The `slotted` event** records the normative hash before and after. `integrity.against` accepts a changed normative hash without a new normative revision only when `slotted` events since the reference lead, hash to hash, from the earlier hash to the current one. A value changed after the move is still caught.
+   - **Scope.** The move covers the statement. Numbers in the verification criteria stay in prose.
+2. **Changing what is required** is an ordinary `value` revision: a new normative revision, approval again, and children flagged. Examples: "high transmission" becomes "≥ 90 %", a number is removed, or a value changes.
 
 ### 5.3 Other record types
 

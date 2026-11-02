@@ -24,6 +24,7 @@ EventKind = Literal[
     "withdrawn",
     "renumbered",
     "released",
+    "slotted",
 ]
 NodeKind = Literal["product", "work", "context"]
 
@@ -43,6 +44,9 @@ class HistoryEvent(StrictModel):
     summary: str
     decision: str | None = None
     via: str | None = None
+    # Only for `slotted` events: the normative hash the move started from and produced.
+    normative_hash_before: str | None = None
+    normative_hash_after: str | None = None
 
 
 class Alias(StrictModel):
@@ -80,10 +84,19 @@ class ValueSlot(StrictModel):
     certainty: Certainty
     issue: str | None = None
     condition: LocalizedText | None = None
+    # Optional, as in Rubin's design specification and stretch goal (docs/SPEC.md §5.2).
+    goal: float | None = None
 
     @model_validator(mode="after")
     def check_numbers(self) -> "ValueSlot":
-        for number in (self.value, self.minimum, self.maximum):
+        if self.goal is not None:
+            if self.relation not in ("le", "lt", "ge", "gt") or self.value is None:
+                raise ValueError("a goal belongs to a limit (le, lt, ge or gt) with a value")
+            if (self.relation in ("le", "lt") and self.goal > self.value) or (
+                self.relation in ("ge", "gt") and self.goal < self.value
+            ):
+                raise ValueError("a goal lies on the better side of the limit")
+        for number in (self.value, self.minimum, self.maximum, self.goal):
             if number is not None and not math.isfinite(number):
                 raise ValueError("values must be finite numbers")
         if self.tolerance and (self.tolerance.plus < 0 or self.tolerance.minus < 0):

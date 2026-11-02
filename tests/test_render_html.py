@@ -117,7 +117,19 @@ def test_value_slots_read_as_written():
     )
     assert (
         format_slot(slot(relation="le", value=0.8, unit="deg", certainty="provisional"), "en")
-        == "[≤ 0.8°]"
+        == "≤ [0.8°]"
+    )
+    assert (
+        format_slot(
+            slot(relation="ge", value=90, unit="percent", certainty="provisional", goal=92.5), "en"
+        )
+        == "≥ [90 %] (goal 92.5 %)"
+    )
+    assert (
+        format_slot(
+            slot(relation="ge", value=90, unit="percent", certainty="firm", goal=92.5), "zh"
+        )
+        == "≥ 90 %（目标92.5 %）"
     )
     assert (
         format_slot(
@@ -140,7 +152,7 @@ def test_value_slots_read_as_written():
             ),
             "en",
         )
-        == "(20 ± 0.5)%"
+        == "20 ± 0.5 %"
     )
     assert (
         format_slot(slot(relation="eq", value=7500, unit="count", certainty="firm"), "en")

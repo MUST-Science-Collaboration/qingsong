@@ -211,6 +211,59 @@ for _record_type, _described in new_record_help.items():
 
 
 @app.command()
+def slot(
+    record_id: Annotated[str, typer.Argument(metavar="ID", help="Requirement ID.")],
+    file: Annotated[
+        Path,
+        typer.Option(
+            "--file",
+            help="YAML: slot name → its fields (quantity, relation, value, unit, certainty, …) "
+            "and replaces: {en: …, zh: …}, the text it replaces in each language.",
+        ),
+    ],
+    by: PersonOption,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Show the statements before and after; write nothing.")
+    ] = False,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Move numbers from the statement into value slots without changing the meaning (SPEC §5.2).
+
+    Refused unless each slot renders the replaced text the same way and no relation word sits
+    next to it; the approval, if current, is kept."""
+    from qingsong.slots import slot_values
+    from qingsong.vault import read_yaml
+
+    try:
+        slots = read_yaml(file.resolve())
+        record, comparisons = slot_values(
+            vault_root(vault), record_id, slots, by, via=via, dry_run=dry_run
+        )
+    except OperationError as error:
+        fail(error, as_json)
+    except Exception as error:  # an unreadable file
+        fail(OperationError(f"{file}: {error}"), as_json)
+    lines = [f"{'would move' if dry_run else 'moved'} values of {record.id}:"]
+    for language, before, after in comparisons:
+        lines += [f"  {language} before: {before}", f"  {language} after:  {after}"]
+    emit(
+        {
+            "id": record.id,
+            "revision": record.revision,
+            "dry_run": dry_run,
+            "statements": [
+                {"language": language, "before": before, "after": after}
+                for language, before, after in comparisons
+            ],
+        },
+        as_json,
+        "\n".join(lines),
+    )
+
+
+@app.command()
 def adopt(
     file: Path,
     summary: Annotated[str, typer.Option(help="Why the record was written (e.g. its source).")],

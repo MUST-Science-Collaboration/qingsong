@@ -5,6 +5,7 @@ from typing import Any
 
 from qingsong import __version__
 from qingsong.checks.consistency import Interval, allowed, convert
+from qingsong.checks.content import requirement_form
 from qingsong.ids import sort_key
 from qingsong.schema import Quantity, Requirement, ValueSlot
 from qingsong.vault import Vault
@@ -100,4 +101,9 @@ def export_vault(vault: Vault, commit: str | None, dirty: bool | None) -> dict[s
         "records": [record.model_dump(mode="json", exclude_none=True) for record in records],
         "nodes": node_entries(vault),
         "values": value_entries(vault),
+        "forms": {
+            record.id: requirement_form(record)
+            for record in records
+            if isinstance(record, Requirement) and record.lifecycle == "current"
+        },
     }

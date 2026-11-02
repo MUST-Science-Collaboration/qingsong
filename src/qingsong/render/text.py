@@ -163,7 +163,7 @@ unit_labels = {
     "arcsec": "″",
     "arcmin": "′",
 }
-attached_units = {"%", "°", "″", "′"}
+attached_units = {"°", "″", "′"}  # SI: a space before %, none before angle symbols
 superscripts = str.maketrans("0123456789-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻")
 markdown_special = re.compile(r"([\\`*_{}~^$|])")
 
@@ -205,8 +205,9 @@ def format_slot(slot, language: str) -> str:
         return "TBD" if language == "en" else "TBD（待定）"
     unit = unit_label(slot.unit)
     spaced = (unit if unit in attached_units else f" {unit}") if unit else ""
+    sign = ""
     if slot.relation == "range":
-        text = f"{number(slot.minimum)}–{number(slot.maximum)}{spaced}"
+        amount = f"{number(slot.minimum)}–{number(slot.maximum)}{spaced}"
     else:
         value = number(slot.value)
         if slot.tolerance:
@@ -215,11 +216,16 @@ def format_slot(slot, language: str) -> str:
                 f" ± {number(plus)}" if plus == minus else f" +{number(plus)}/−{number(minus)}"
             )
             value = f"({value}{tolerance})" if unit in attached_units else value + tolerance
-        text = f"{relation_signs[slot.relation]}{value}{spaced}"
+        sign = relation_signs[slot.relation]
+        amount = f"{value}{spaced}"
     if slot.certainty == "provisional":
-        text = f"[{text}]"
-    elif slot.certainty == "tbc":
+        amount = f"[{amount}]"
+    text = sign + amount
+    if slot.certainty == "tbc":
         text = f"{text} (TBC)" if language == "en" else f"{text}（待确认）"
+    if slot.goal is not None:
+        goal = f"{number(slot.goal)}{spaced}"
+        text += f" (goal {goal})" if language == "en" else f"（目标{goal}）"
     return markdown_special.sub(r"\\\1", text)
 
 

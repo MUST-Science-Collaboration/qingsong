@@ -224,3 +224,7 @@ article.change-card ul.events { margin: 6px 0; padding-left: 18px; color: var(--
 ul.change-list { padding-left: 18px; }
 ul.change-list li { margin: 4px 0; }
 @media (max-width: 640px) { .before-after { grid-template-columns: 1fr; } }
+
+/* forms of requirement */
+.badge.form-quantitative { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+.badge.form-qualitative { border-color: #d1d5db; background: #f9fafb; color: #374151; }

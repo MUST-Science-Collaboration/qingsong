@@ -54,7 +54,9 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R5-001 | `consistency` rules: conflicting values, a child looser than its parent (reversed for environmental quantities), overdue issues | [x] Done 2026-11-02 | SPEC §10; interval semantics tested |
 | R5-002 | `documents` rules: release entries well formed; release tags mark the entry; entries append-only against main | [x] Done 2026-11-02 | |
 | R5-003 | `qingsong export json`, with value intervals, for analysis codes | [x] Done 2026-11-02 | SPEC §12.3 |
-| R5-004 | Move numbers from prose into value slots without making approvals stale when the rendered text is unchanged | [ ] Design | the pilot record holds every number in prose, so the consistency rules and the export's value index have nothing to read yet |
+| R5-004 | Forms of requirement (qualitative / quantitative, marked and exported); slot goals; `qingsong slot` moves numbers into slots keeping the meaning and the approval | [x] Done 2026-11-02 | decided by the Project Scientist; design reviewed independently before coding |
+| R5-009 | Slot moves as proposals on the review page, so the approver sees each move before it is applied | [ ] Next | until then, moves are made on a content branch and reviewed in its pull request |
+| R3-007 | `qingsong serve` with a Submit button for review decisions (local only, per-session secret) | [ ] Proposed | the Project Scientist asked about submitting from the page |
 | R5-005 | `qingsong new issue|decision|waiver|interface|condition|source|verification --file draft.yaml` | [x] Done 2026-11-02 | IDs allocated per type, also against main; the draft is left as written |
 | R5-006 | N² interface matrix | [ ] Later | interfaces and conditions already appear in the registers |
 | R5-007 | CI for a record repository: check against main on every pull request, site as an artifact | [ ] Next | needs permission for the private repository |

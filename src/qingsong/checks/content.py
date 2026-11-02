@@ -11,6 +11,7 @@ from qingsong.hashing import field_value
 from qingsong.ids import any_double_bracket, reference_pattern
 from qingsong.schema import Issue, Quantity, Requirement
 from qingsong.walk import localized_texts
+from qingsong.wording import neighbour_problem
 
 vague_terms = {
     "en": [
@@ -38,6 +39,22 @@ open_value_pattern = re.compile(
 slot_pattern = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 shall_pattern = re.compile(r"\bshall\b", re.IGNORECASE)
 number_pattern = re.compile(r"(?<![\w.-])\d+(?:[.,]\d+)?(?![\w-])")
+
+
+year_pattern = re.compile(r"^(?:19|20)\d{2}$")
+
+
+def numbers_in_text(record: Requirement) -> list[str]:
+    """Numbers written in the reference-language statement rather than in value slots. Years are
+    left out: a date in a statement is context, not a value to compare."""
+    english = slot_pattern.sub(" ", prose(record.statement.get("en", "")))
+    return [number for number in number_pattern.findall(english) if not year_pattern.match(number)]
+
+
+def requirement_form(record: Requirement) -> str:
+    """Quantitative with value slots, qualitative without (docs/SPEC.md §5.2); derived, never
+    stored."""
+    return "quantitative" if record.values else "qualitative"
 
 
 def prose(text: str) -> str:
@@ -323,6 +340,22 @@ def values(context: Context) -> Iterator[Finding]:
                     record=record.id,
                     file=file,
                 )
+        for language, text in statement.items():
+            for match in slot_pattern.finditer(text):
+                slot = record.values.get(match.group(1))
+                if slot is None or slot.relation in ("eq", "range") or slot.certainty == "tbd":
+                    continue
+                word = neighbour_problem(text, match.start(), match.end(), language)
+                if word:
+                    yield Finding(
+                        "content.values",
+                        "warning",
+                        f"{{{match.group(1)}}} renders with its own relation sign, and {word!r} "
+                        f"next to it says it again ({language})",
+                        record=record.id,
+                        file=file,
+                        fix=f"remove {word!r} from the text; the slot's relation says it",
+                    )
         for name, slot in record.values.items():
             if slot.certainty != "firm" and not slot.issue:
                 yield Finding(
@@ -395,8 +428,7 @@ def completeness(context: Context) -> Iterator[Finding]:
                         record=record.id,
                         file=file,
                     )
-            english = slot_pattern.sub(" ", prose(record.statement.get("en", "")))
-            if number_pattern.search(english):
+            if numbers_in_text(record):
                 yield Finding(
                     "content.completeness",
                     "info",
