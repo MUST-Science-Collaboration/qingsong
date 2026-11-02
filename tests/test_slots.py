@@ -346,3 +346,26 @@ def test_numbers_glued_to_units_count_and_shared_literals_are_noted(demo):
     assert "650" in numbers_in_text(record)
     _, _, notes = slot_values(demo, record_id, aperture(), "alice", today=day, dry_run=True)
     assert any("verification criteria" in note for note in notes)
+
+
+def test_a_subscript_next_to_a_value_is_not_an_approximation(demo):
+    """n~d~ ≥ 20: the closing ~ of the subscript is markup, not the sign for 'approximately'."""
+    write_statement(
+        demo,
+        english.replace("over a clear aperture of 140 mm ± 2 mm", "with n~d~ 140 mm ± 2 mm"),
+        chinese.replace("140 mm ± 2 mm", "n~d~ 140 mm ± 2 mm"),
+        approve=False,
+    )
+    record, _, _ = slot_values(demo, record_id, aperture(), "alice", today=day)
+    assert "n~d~ {aperture}" in record.statement["en"]
+
+
+def test_an_approximation_sign_next_to_a_value_is_refused(demo):
+    write_statement(
+        demo,
+        english.replace("of 140 mm ± 2 mm", "of ~ 140 mm ± 2 mm"),
+        chinese.replace("140 mm ± 2 mm", "~ 140 mm ± 2 mm"),
+        approve=False,
+    )
+    with pytest.raises(OperationError, match="'~' sits next to"):
+        slot_values(demo, record_id, aperture(), "alice", today=day)

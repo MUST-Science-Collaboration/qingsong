@@ -77,6 +77,7 @@ relation_words = {
     ),
 }
 relation_signs = (">=", "<=", "≥", "≤", ">", "<", "≈", "~")
+script_markup = re.compile(r"~[^~\s]+~|\^[^^\s]+\^")
 qualifier_words = {
     "en": ("per", "each", "every", "total", "average", "mean", "median", "rms", "peak"),
     "zh": ("每", "平均", "累计", "总"),
@@ -90,8 +91,9 @@ def neighbour_problem(
     words = relation_words.get(language, ()) + (
         qualifier_words.get(language, ()) if qualifiers else ()
     )
-    before = text[max(0, start - 24) : start].casefold()
-    after = text[end : end + 24].casefold()
+    # Sub- and superscript markup (n~d~, x^2^) is part of a symbol, not an approximation sign.
+    before = script_markup.sub("x", text[max(0, start - 24) : start]).casefold()
+    after = script_markup.sub("x", text[end : end + 24]).casefold()
     stripped_before, stripped_after = before.rstrip(), after.lstrip()
     for sign in relation_signs:
         if stripped_before.endswith(sign) or stripped_after.startswith(sign):
