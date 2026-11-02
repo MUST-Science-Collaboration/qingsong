@@ -676,6 +676,12 @@ Views:
 - **Search:** in both languages.
 - **Check report.**
 - **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from `people.yaml` (a single approver is preselected). Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; it refuses until a name is chosen. The page itself never writes to the record.
+- **Submitting decisions from the page** (proposed, 2026-11-02; awaiting the Project Scientist).
+  - **Local server.** `qingsong serve` serves the site from the vault on the reader's own machine, at `127.0.0.1` only.
+  - **The button.** When the page is served this way, a Submit button applies the marked decisions. It runs the same operations as the copied commands, on a new branch (`review/<date>-<person>`), and reports each result and the remaining findings.
+  - **Safeguard.** A secret generated for each session is embedded in the served page and required with every submission. Another web page open in the same browser therefore cannot post decisions.
+  - **When the page is opened as a file** there is no server, and "Copy decisions" stays.
+  - **Later.** Submitting through GitHub (the page opening a pull request) needs a sign-in in the page; it comes later, for reviewers who install nothing.
 - **Review marks in documents:** a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.
 
 Pages follow a light, print-friendly style written for scientists and engineers.
