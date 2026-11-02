@@ -16,7 +16,7 @@ from markupsafe import Markup
 from qingsong import __version__, checks, gitutil, ids
 from qingsong.checks.content import numbers_in_text, requirement_form
 from qingsong.findings import Finding
-from qingsong.hashing import field_value
+from qingsong.hashing import field_value, proposal_hash
 from qingsong.operations import OperationError
 from qingsong.render.model import (
     children_of,
@@ -282,6 +282,9 @@ class Site:
         return [
             issue for issue in self.issues_by_record.get(record_id, []) if issue.status == "open"
         ]
+
+    def proposal_hash(self, proposal: Proposal) -> str:
+        return proposal_hash(proposal)
 
     def open_proposals(self, issue: Issue) -> list[Proposal]:
         return [proposal for proposal in issue.proposals or [] if proposal.status == "proposed"]

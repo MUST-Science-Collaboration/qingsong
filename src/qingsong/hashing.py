@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from qingsong.schema import RecordBase
+from qingsong.schema import Proposal, RecordBase
 
 stamp_excluded_fields = {"stamp", "history"}
 normative_fields: dict[str, tuple[str, ...]] = {
@@ -67,6 +67,16 @@ def review_hash(record: RecordBase) -> str:
     """Hash of a record's prose and values in every language: what an issue accepted as written
     covers (docs/SPEC.md §5.6)."""
     return short_hash(canonical_json({name: field_value(record, name) for name in review_fields}))
+
+
+def proposal_hash(proposal: Proposal) -> str:
+    """Hash of what a reviewer reads of a proposal: its summary, change class and changes. A
+    decisions file carries it, so that a proposal edited after the review page was made is not
+    decided unread (docs/SPEC.md §5.6)."""
+    content = proposal.model_dump(
+        mode="json", include={"summary", "change_class", "changes"}, exclude_none=True
+    )
+    return short_hash(canonical_json(content))
 
 
 def field_text_hashes(record: RecordBase, dotted: str) -> dict[str, str]:

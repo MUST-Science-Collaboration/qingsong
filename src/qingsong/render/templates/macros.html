@@ -3,7 +3,7 @@
 {% macro issue_label(site, kind, href=None, extra="") %}{% set names = site.kind_labels[kind] %}<{{ "a" if href else "span" }} class="label label-{{ kind }}"{% if href %} href="{{ href }}"{% endif %}><span class="lang en">{{ names.en }}</span><span class="lang zh">{{ names.zh }}</span>{{ extra }}</{{ "a" if href else "span" }}>{% endmacro %}
 
 {% macro proposal_block(site, issue, proposal, prefix, controls=True) %}
-<div class="proposal status-{{ proposal.status }}" data-key="{{ issue.id }}#{{ proposal.number }}">
+<div class="proposal status-{{ proposal.status }}" data-key="{{ issue.id }}#{{ proposal.number }}" data-hash="{{ site.proposal_hash(proposal) }}">
   <div class="proposal-head"><b>Proposal {{ proposal.number }}</b> {{ badge(proposal.status, "proposal-" ~ proposal.status) }}
     <span class="small">{{ proposal.by }}{% if proposal.via %} via {{ proposal.via }}{% endif %} · {{ proposal.date }}{% if proposal.change_class != "editorial" %} · {{ proposal.change_class }} change{% endif %}</span></div>
   <div class="proposal-summary">{{ site.text(proposal.summary, prefix, block=False) }}</div>
