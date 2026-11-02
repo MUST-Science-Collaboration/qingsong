@@ -112,8 +112,13 @@
     var a = first.split("#"), b = second.split("#");
     return a[0] === b[0] ? Number(a[1]) - Number(b[1]) : (a[0] < b[0] ? -1 : 1);
   }
-  // A JSON string is also a YAML double-quoted string, so notes need no further escaping.
-  function yaml_string(text) { return JSON.stringify(String(text)); }
+  // A JSON string is also a YAML double-quoted string once the characters YAML reads as line
+  // breaks or refuses (DEL, C1 controls, NEL, line and paragraph separators, BOM) are escaped.
+  function yaml_string(text) {
+    return JSON.stringify(String(text)).replace(/[\u007f-\u009f\u2028\u2029\ufeff]/g, function (character) {
+      return "\\u" + ("000" + character.charCodeAt(0).toString(16)).slice(-4);
+    });
+  }
   function two_digits(number) { return (number < 10 ? "0" : "") + number; }
   function local_date(moment) {
     return moment.getFullYear() + "-" + two_digits(moment.getMonth() + 1) + "-" + two_digits(moment.getDate());

@@ -476,6 +476,7 @@ decisions:
     decision: accept           # or reject
     note: "optional; the reason when rejecting"
     proposal_hash: 0123456789abcdef
+    decision_record: DEC-0001  # only to accept a change to a baselined record
 ```
 
 `qingsong issue apply FILE`:
@@ -484,11 +485,12 @@ decisions:
   - the person is in `people.yaml`; accepting needs an approver, and rejecting needs an approver or the proposal's author;
   - the issue is open and the proposal is still proposed;
   - **the proposal is the one the reviewer read:** `proposal_hash` covers its summary, change class and changes, so a proposal edited after the page was made is refused;
-  - an accepted proposal is not out of date (its base hashes still match);
-  - at most one proposal per issue is accepted, and no proposal is decided twice.
-- **Applies all or nothing.** Rejections go first, then acceptances, each through `issue reject` and `issue accept`. If any step fails, every file is restored and nothing is applied. A rejection without a note gets the reason "rejected in review".
+  - an accepted proposal is not out of date (its base hashes still match), and its records are current, have no unrecorded changes, and, when baselined, come with a `decision_record`;
+  - at most one proposal per issue is accepted, no two accepted proposals change the same field of a record, and no proposal is decided twice;
+  - on `main`, no branch named `review` blocks the review branch.
+- **Applies all or nothing.** Rejections go first, then acceptances, each through `issue reject` and `issue accept`. If any step fails, every file is restored and nothing is applied. A rejection's note becomes its reason, in Chinese if it contains Chinese characters, and "rejected in review" without a note. An acceptance's note stays in the kept file.
 - **Never writes on the main branch.** In a git vault on `main`, it starts the branch `review/<date>-<person>`; with uncommitted changes there it refuses.
-- **Keeps the file** in `reviews/<date>_<person>.yaml` (`_2`, `_3` for later sittings that day), exactly as saved. The issue histories record the decisions; the file keeps the notes and what the reviewer saw.
+- **Keeps the file** in `reviews/<date>_<person>.yaml` (`_2`, `_3` for later sittings that day), byte for byte as saved. The issue histories record the decisions; the file keeps the notes and what the reviewer saw.
 - **It commits nothing.** The approver, or an agent, commits and merges as for any change.
 
 Out of scope: a local server or a Submit button (evaluated 2026-11-02). A page that writes to the record needs a server, which §1 excludes, and a network-facing write path to secure and maintain beside the commands.

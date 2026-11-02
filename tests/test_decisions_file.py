@@ -276,3 +276,116 @@ def test_the_review_page_carries_each_proposal_hash(demo, tmp_path):
     assert 'id="save-decisions"' in page and "qingsong issue apply" in page
     script = (site / "static" / "review.js").read_text()
     assert "format: qingsong-decisions/1" in script and "proposal_hash: " in script
+
+
+def baselined(root: Path, record_id: str) -> None:
+    from qingsong.operations import load_round_trip, stamped, write_atomically
+
+    path = requirement_file(root, record_id)
+    data = load_round_trip(path)
+    data["maturity"] = "baselined"
+    write_atomically(path, stamped(data)[1])
+
+
+def test_accepts_that_change_the_same_field_are_refused_before_writing(demo, tmp_path):
+    second_proposal(demo)
+    review.raise_issue(
+        demo, "question", {"en": "Note"}, {"en": "The note."}, ["INS-DET-REQ-001"], "bob", today=day
+    )
+    change = {"record": "INS-DET-REQ-001", "field": "notes", "text": {"en": "Another note."}}
+    review.propose(demo, "ISS-0002", "bob", {"en": "another note"}, [change], today=day)
+    entries = [
+        {
+            "issue": "ISS-0001",
+            "proposal": 2,
+            "decision": "accept",
+            "hash": hash_of(demo, "ISS-0001", 2),
+        },
+        {
+            "issue": "ISS-0002",
+            "proposal": 1,
+            "decision": "accept",
+            "hash": hash_of(demo, "ISS-0002", 1),
+        },
+    ]
+    before = snapshot(demo)
+    with pytest.raises(OperationError, match="nothing applied") as raised:
+        decisions_file.apply(demo, write_decisions(tmp_path, "alice", entries), today=day)
+    assert "both change INS-DET-REQ-001 notes" in str(raised.value)
+    assert snapshot(demo) == before
+
+
+def test_a_baselined_target_needs_a_decision_record(demo, tmp_path):
+    baselined(demo, "INS-DET-REQ-001")
+    second_proposal(demo)
+    entry = {
+        "issue": "ISS-0001",
+        "proposal": 2,
+        "decision": "accept",
+        "hash": hash_of(demo, "ISS-0001", 2),
+    }
+    with pytest.raises(OperationError, match="nothing applied") as raised:
+        decisions_file.apply(demo, write_decisions(tmp_path, "alice", [entry]), today=day)
+    assert "INS-DET-REQ-001 is baselined" in str(raised.value)
+    path = write_decisions(tmp_path, "alice", [entry])
+    path.write_text(path.read_text() + "    decision_record: DEC-0009\n")
+    with pytest.raises(OperationError, match="DEC-0009 is not a decision record"):
+        decisions_file.apply(demo, path, today=day)
+    path.write_text(path.read_text().replace("DEC-0009", "DEC-0001"))
+    decisions_file.apply(demo, path, today=day)
+    record = load(demo).records["INS-DET-REQ-001"]
+    assert record.notes["en"] == "A shorter note." and record.history[-1].decision == "DEC-0001"
+
+
+def test_unrecorded_changes_in_a_target_are_refused_before_writing(demo, tmp_path):
+    second_proposal(demo)
+
+    def touch(data):
+        data["rationale"]["en"] = "Edited without recording."
+
+    edit_yaml(requirement_file(demo, "INS-DET-REQ-001"), touch)
+    entry = {
+        "issue": "ISS-0001",
+        "proposal": 2,
+        "decision": "accept",
+        "hash": hash_of(demo, "ISS-0001", 2),
+    }
+    with pytest.raises(OperationError, match="nothing applied") as raised:
+        decisions_file.apply(demo, write_decisions(tmp_path, "alice", [entry]), today=day)
+    assert "INS-DET-REQ-001 has unrecorded changes" in str(raised.value)
+
+
+def test_the_file_is_kept_byte_for_byte_and_a_chinese_reason_is_chinese(demo, tmp_path):
+    entry = {
+        "issue": "ISS-0001",
+        "proposal": 1,
+        "decision": "reject",
+        "note": "数值尚未确定",
+        "hash": hash_of(demo, "ISS-0001", 1),
+    }
+    path = tmp_path / "decisions.yaml"
+    path.write_bytes(decisions_yaml("alice", [entry]).replace("\n", "\r\n").encode("utf-8"))
+    result = decisions_file.apply(demo, path, today=day)
+    assert result.kept.read_bytes() == path.read_bytes()
+    assert load(demo).records["ISS-0001"].proposals[0].reason == {"zh": "数值尚未确定"}
+
+
+def test_a_missing_file_is_a_plain_error(demo, tmp_path):
+    with pytest.raises(OperationError, match="no decisions file"):
+        decisions_file.apply(demo, tmp_path / "missing.yaml", today=day)
+    with pytest.raises(OperationError, match="no decisions file"):
+        decisions_file.apply(demo, tmp_path, today=day)
+
+
+def test_a_branch_named_review_is_reported_before_writing(demo_repository, tmp_path):
+    root = demo_repository
+    git(root, "branch", "review")
+    entry = {
+        "issue": "ISS-0001",
+        "proposal": 1,
+        "decision": "reject",
+        "hash": hash_of(root, "ISS-0001", 1),
+    }
+    with pytest.raises(OperationError, match="a branch named review exists"):
+        decisions_file.apply(root, write_decisions(tmp_path, "alice", [entry]), today=day)
+    assert not (root / "reviews").exists()
