@@ -146,6 +146,8 @@ def raise_from_checks(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> list[RecordBase]:
+    """Raise issues for check warnings that no issue tracks yet: one per finding, or with `group`
+    one per rule covering all its records. Kind and title come from the rule."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -515,6 +517,7 @@ def reject(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Reject a proposal (an approver) or withdraw it (its author), with a reason."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -547,6 +550,8 @@ def close(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Close an issue without accepting a proposal: answered, withdrawn, or fixed by a separate
+    recorded revision. Approvers only."""
     today = today_date(today)
     vault = load(root)
     require_approver(vault, person)

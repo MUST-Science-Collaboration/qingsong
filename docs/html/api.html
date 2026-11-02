@@ -1,0 +1,5322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API reference · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a class="here" href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#how-the-code-is-organised">How the code is organised</a></li>
+<li class="level-2"><a href="#what-every-change-must-preserve">What every change must preserve</a></li>
+<li class="level-2"><a href="#extending-qingsong">Extending qingsong</a></li>
+<li class="level-2"><a href="#commands">Commands</a></li>
+<li class="level-3"><a href="#qingsong-check">qingsong check</a></li>
+<li class="level-3"><a href="#qingsong-rules">qingsong rules</a></li>
+<li class="level-3"><a href="#qingsong-init">qingsong init</a></li>
+<li class="level-3"><a href="#qingsong-slot">qingsong slot</a></li>
+<li class="level-3"><a href="#qingsong-adopt">qingsong adopt</a></li>
+<li class="level-3"><a href="#qingsong-revise">qingsong revise</a></li>
+<li class="level-3"><a href="#qingsong-supersede">qingsong supersede</a></li>
+<li class="level-3"><a href="#qingsong-withdraw">qingsong withdraw</a></li>
+<li class="level-3"><a href="#qingsong-approve">qingsong approve</a></li>
+<li class="level-3"><a href="#qingsong-confirm">qingsong confirm</a></li>
+<li class="level-3"><a href="#qingsong-renumber">qingsong renumber</a></li>
+<li class="level-3"><a href="#qingsong-show">qingsong show</a></li>
+<li class="level-3"><a href="#qingsong-list">qingsong list</a></li>
+<li class="level-3"><a href="#qingsong-find">qingsong find</a></li>
+<li class="level-3"><a href="#qingsong-schema">qingsong schema</a></li>
+<li class="level-3"><a href="#qingsong-new-requirement">qingsong new requirement</a></li>
+<li class="level-3"><a href="#qingsong-new-issue">qingsong new issue</a></li>
+<li class="level-3"><a href="#qingsong-new-decision">qingsong new decision</a></li>
+<li class="level-3"><a href="#qingsong-new-waiver">qingsong new waiver</a></li>
+<li class="level-3"><a href="#qingsong-new-interface">qingsong new interface</a></li>
+<li class="level-3"><a href="#qingsong-new-condition">qingsong new condition</a></li>
+<li class="level-3"><a href="#qingsong-new-source">qingsong new source</a></li>
+<li class="level-3"><a href="#qingsong-new-verification">qingsong new verification</a></li>
+<li class="level-3"><a href="#qingsong-issue-raise">qingsong issue raise</a></li>
+<li class="level-3"><a href="#qingsong-issue-propose">qingsong issue propose</a></li>
+<li class="level-3"><a href="#qingsong-issue-accept">qingsong issue accept</a></li>
+<li class="level-3"><a href="#qingsong-issue-reject">qingsong issue reject</a></li>
+<li class="level-3"><a href="#qingsong-issue-close">qingsong issue close</a></li>
+<li class="level-3"><a href="#qingsong-issue-apply">qingsong issue apply</a></li>
+<li class="level-3"><a href="#qingsong-render-html">qingsong render html</a></li>
+<li class="level-3"><a href="#qingsong-render-docx">qingsong render docx</a></li>
+<li class="level-3"><a href="#qingsong-release-prepare">qingsong release prepare</a></li>
+<li class="level-3"><a href="#qingsong-release-tag">qingsong release tag</a></li>
+<li class="level-3"><a href="#qingsong-release-changes">qingsong release changes</a></li>
+<li class="level-3"><a href="#qingsong-export-json">qingsong export json</a></li>
+<li class="level-2"><a href="#check-rules">Check rules</a></li>
+<li class="level-2"><a href="#modules-records-and-the-vault">Modules: records and the vault</a></li>
+<li class="level-3"><a href="#qingsongschema">qingsong.schema</a></li>
+<li class="level-3"><a href="#qingsongvault">qingsong.vault</a></li>
+<li class="level-3"><a href="#qingsongids">qingsong.ids</a></li>
+<li class="level-3"><a href="#qingsonghashing">qingsong.hashing</a></li>
+<li class="level-3"><a href="#qingsongfindings">qingsong.findings</a></li>
+<li class="level-3"><a href="#qingsongwalk">qingsong.walk</a></li>
+<li class="level-2"><a href="#modules-checks">Modules: checks</a></li>
+<li class="level-3"><a href="#qingsongchecks">qingsong.checks</a></li>
+<li class="level-3"><a href="#qingsongchecksintegrity">qingsong.checks.integrity</a></li>
+<li class="level-3"><a href="#qingsongchecksstructure">qingsong.checks.structure</a></li>
+<li class="level-3"><a href="#qingsongcheckschange">qingsong.checks.change</a></li>
+<li class="level-3"><a href="#qingsongcheckscontent">qingsong.checks.content</a></li>
+<li class="level-3"><a href="#qingsongchecksconsistency">qingsong.checks.consistency</a></li>
+<li class="level-3"><a href="#qingsongchecksdocuments">qingsong.checks.documents</a></li>
+<li class="level-2"><a href="#modules-changing-the-record">Modules: changing the record</a></li>
+<li class="level-3"><a href="#qingsongoperations">qingsong.operations</a></li>
+<li class="level-3"><a href="#qingsongreview">qingsong.review</a></li>
+<li class="level-3"><a href="#qingsongdecisions_file">qingsong.decisions_file</a></li>
+<li class="level-3"><a href="#qingsongslots">qingsong.slots</a></li>
+<li class="level-3"><a href="#qingsongwording">qingsong.wording</a></li>
+<li class="level-3"><a href="#qingsongrelease">qingsong.release</a></li>
+<li class="level-3"><a href="#qingsonggitutil">qingsong.gitutil</a></li>
+<li class="level-2"><a href="#modules-outputs">Modules: outputs</a></li>
+<li class="level-3"><a href="#qingsongrendermodel">qingsong.render.model</a></li>
+<li class="level-3"><a href="#qingsongrendertext">qingsong.render.text</a></li>
+<li class="level-3"><a href="#qingsongrenderhtml">qingsong.render.html</a></li>
+<li class="level-3"><a href="#qingsongrenderword">qingsong.render.word</a></li>
+<li class="level-3"><a href="#qingsongexport">qingsong.export</a></li>
+</ol></aside>
+<main>
+<h1 id="api-reference">API reference</h1>
+<p>This is the reference for people and agents who change qingsong itself. To <em>use</em> qingsong on a project's
+requirements, read <a href="howto.html">How to use qingsong</a>; for the design and its reasons, read the
+<a href="spec.html">specification</a>.</p>
+<p>The first part, written by hand, explains how the code is organised, what every change must preserve,
+and how to extend it. The second part is generated from the code by <code>tools/build_docs.py</code>: every
+command, every check rule, and every module with its classes and functions. Do not edit the second
+part; change the docstrings and rebuild.</p>
+<h2 id="how-the-code-is-organised">How the code is organised</h2>
+<p>The package lives in <code>src/qingsong/</code>. It has four layers. Each layer uses only the ones before it, and
+the command line sits on top.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Layer</th>
+<th>Modules</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Records and the vault</td>
+<td><code>schema</code>, <code>vault</code>, <code>ids</code>, <code>hashing</code>, <code>findings</code>, <code>walk</code></td>
+<td>Pydantic models of every record type; strict loading of a vault into memory; ID syntax and file paths; stamps and text hashes; the <code>Finding</code> a check reports</td>
+</tr>
+<tr>
+<td>Checks</td>
+<td><code>checks</code> and its six rule modules</td>
+<td>Rules that read a loaded vault and report findings. They never write.</td>
+</tr>
+<tr>
+<td>Changing the record</td>
+<td><code>operations</code>, <code>review</code>, <code>decisions_file</code>, <code>slots</code>, <code>wording</code>, <code>release</code>, <code>gitutil</code></td>
+<td>Every change to a record file, each one recorded: new records, revisions, approvals, lifecycle changes, issues and proposals, decisions files, slot moves, releases. <code>gitutil</code> reads earlier states through git.</td>
+</tr>
+<tr>
+<td>Outputs</td>
+<td><code>render.model</code>, <code>render.text</code>, <code>render.html</code>, <code>render.word</code>, <code>export</code></td>
+<td>The HTML site, Word documents and the JSON export, all generated from a loaded vault</td>
+</tr>
+<tr>
+<td>Command line</td>
+<td><code>cli</code></td>
+<td>Typer commands. Each one parses its options, calls one function of the layers above, and prints text or JSON.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>A command, end to end.</strong> <code>qingsong revise ID --class value --summary S --by P</code>:</p>
+<ol>
+<li><code>cli.revise</code> finds the vault root and calls <code>operations.revise</code>.</li>
+<li><code>operations.revise</code> loads the vault (<code>vault.load</code>) and checks the request. For example, it refuses
+<code>editorial</code> when the values changed.</li>
+<li>It edits the record's YAML through <code>operations.edit</code>. That reads the file with comments kept,
+applies the change, and passes it to <code>finish</code>.</li>
+<li><code>finish</code> validates the result against the schema, writes the normative hash and the stamp, writes
+the file atomically, and reads it back to check that the stamp holds.</li>
+<li>The command prints the new revision, or a JSON object with <code>--json</code>.</li>
+</ol>
+<p><code>qingsong check</code> is the read side: <code>vault.load</code> collects load findings, <code>checks.run</code> runs every rule,
+and issues that track a rule's findings are attached to them.</p>
+<h2 id="what-every-change-must-preserve">What every change must preserve</h2>
+<p>These invariants are what make the record trustworthy. Tests guard each of them.</p>
+<ul>
+<li><strong>Strict reading.</strong> Unknown fields, unreadable files and missing references are errors. Nothing is
+filled in by default when a file is read (<code>schema.StrictModel</code> forbids extra fields).</li>
+<li><strong>Every write is recorded.</strong> Record files change only through <code>operations</code> (<code>edit</code>, <code>finish</code>,
+<code>write_atomically</code>). Each change bumps <code>revision</code>, appends to <code>history</code> and rewrites <code>stamp</code>. A hand
+edit without a recorded event fails <code>change.unrecorded</code>.</li>
+<li><strong>History is append-only, and identity is permanent.</strong> An ID never changes once it is on the main
+branch. A record is superseded or withdrawn, never deleted. <code>integrity.against</code> compares with an
+earlier state to enforce this.</li>
+<li><strong>Files keep their form.</strong> YAML is read and written with ruamel.yaml in round-trip mode, so comments,
+key order and literal blocks survive an edit.</li>
+<li><strong>Refusals name the fix.</strong> An operation that cannot proceed raises <code>OperationError</code> with a message
+that says what to do. The command line prints it and exits with status 2, or prints
+<code>{&quot;error&quot;: …}</code> with <code>--json</code>. <code>qingsong check</code> exits with status 1 when any error is found.</li>
+<li><strong>No hidden state.</strong> The vault root is passed explicitly, or found from the working directory by
+<code>vault.find_root</code>. Nothing writes environment variables or global caches.</li>
+<li><strong>Dates are parameters.</strong> Every operation takes <code>today</code>. Tests pass a fixed date to every call in a
+test. History dates must not go backwards (<code>change.history</code>), so mixing a fixed date with the real
+date fails on another day.</li>
+<li><strong>New schema fields default to <code>None</code>.</strong> The stamp covers every field that is not <code>None</code>. A new field
+with any other default, such as an empty list, would change the stamp of every existing record.</li>
+</ul>
+<h2 id="extending-qingsong">Extending qingsong</h2>
+<p><strong>A new check rule.</strong></p>
+<ol>
+<li>Choose the group module in <code>src/qingsong/checks/</code>: <code>integrity</code>, <code>structure</code>, <code>change</code>, <code>content</code>,
+<code>consistency</code> or <code>documents</code>.</li>
+<li>Write a function that takes a <code>checks.Context</code> and yields <code>Finding(rule, severity, message, record, file, fix)</code>. Register it with <code>@rule(&quot;group.name&quot;, &quot;one-line summary&quot;)</code>. Use <code>checks.by_maturity</code>
+when the severity depends on the requirement's maturity.</li>
+<li>Add a fixture to <code>tests/test_rules.py</code> that triggers the rule. Every rule must have one.</li>
+<li>Add the rule to the catalogue in the <a href="spec.html#10-checks-accepted-principle-proposed-catalogue">specification</a>,
+then rebuild the docs so that it appears in the rule list below.</li>
+</ol>
+<p><strong>A new record type.</strong></p>
+<ol>
+<li>Add a model to <code>schema.py</code>, with <code>type: Literal[&quot;…&quot;]</code>, deriving from <code>RecordBase</code>.</li>
+<li>Add it to <code>Record</code>, <code>record_classes</code> and <code>record_folders</code> (its folder). Add its ID pattern to
+<code>ids.id_patterns</code>.</li>
+<li>Add its fields' references to <code>walk.py</code>, so that reference checks and renumbering see them.</li>
+<li>Describe it in the specification (§5.3), and add the checks and fixtures it needs.</li>
+</ol>
+<p><strong>A new command.</strong></p>
+<ol>
+<li>Add a Typer function to <code>cli.py</code>. Use the shared options <code>VaultOption</code>, <code>JsonOption</code>,
+<code>PersonOption</code> and <code>ViaOption</code>.</li>
+<li>Call one function of the layers above. Catch <code>OperationError</code> and pass it to <code>fail</code>. Print with
+<code>emit</code>, or with <code>done</code> for a single record.</li>
+<li>The function's docstring becomes the command's help and its entry in the command list below.
+Add the command to the specification (§11), and to <a href="howto.html">How to use qingsong</a> if people or
+agents use it day to day.</li>
+</ol>
+<p><strong>Tests.</strong> <code>uv run pytest</code>. Tests build the fictional DEMO vault from <code>examples/demo_source</code> with
+<code>examples/build_demo.py</code>, through the fixtures <code>demo</code> (a folder) and <code>demo_repository</code> (a git
+repository with its own git identity). They never touch a real vault.</p>
+<p><strong>Documentation.</strong> After changing a docstring, a command, a rule or any Markdown document, run
+<code>uv run python tools/build_docs.py</code>. <code>tests/test_docs.py</code> fails while the generated files are out
+of date.</p>
+<!-- Generated reference: tools/build_docs.py writes everything below this line. Do not edit it by hand. -->
+<h2 id="commands">Commands</h2>
+<p>Generated from the command-line interface. Every command also accepts <code>--vault PATH</code> (default: the nearest folder holding <code>qingsong.toml</code>), <code>--json</code> (machine-readable output; <code>init</code> and <code>rules</code> take only <code>--json</code>) and <code>--help</code>. <code>--by</code> names a person in <code>people.yaml</code>; <code>--via</code> names the agent acting for them.</p>
+<h3 id="qingsong-check"><code>qingsong check</code></h3>
+<p>Run the consistency checks; exit 1 if any error is found.</p>
+<pre><code class="language-bash">qingsong check [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--against</code></td>
+<td></td>
+<td>Git reference to compare with, e.g. origin/main.</td>
+</tr>
+<tr>
+<td><code>--rule</code></td>
+<td></td>
+<td>Run only these rules.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-rules"><code>qingsong rules</code></h3>
+<p>List the check rules.</p>
+<pre><code class="language-bash">qingsong rules [OPTIONS]
+</code></pre>
+<h3 id="qingsong-init"><code>qingsong init</code></h3>
+<p>Create an empty vault.</p>
+<pre><code class="language-bash">qingsong init PATH [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PATH</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--code</code></td>
+<td>yes</td>
+<td>Project code, e.g. DEMO.</td>
+</tr>
+<tr>
+<td><code>--name</code></td>
+<td>yes</td>
+<td>Project name in English.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-slot"><code>qingsong slot</code></h3>
+<p>Move numbers from the statement into value slots without changing the meaning (SPEC §5.2).</p>
+<pre><code class="language-bash">qingsong slot ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td>Requirement ID.</td>
+</tr>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>YAML: slot name → its fields (quantity, relation, value, unit, certainty, …) and replaces: {en: …, zh: …}, the text it replaces in each language.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td></td>
+<td>Show the statements before and after; write nothing.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-adopt"><code>qingsong adopt</code></h3>
+<p>Take a hand-written record file into the record (adds history and stamp).</p>
+<pre><code class="language-bash">qingsong adopt FILE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FILE</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--summary</code></td>
+<td>yes</td>
+<td>Why the record was written (e.g. its source).</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--event</code></td>
+<td></td>
+<td>created or imported.</td>
+</tr>
+<tr>
+<td><code>--translation</code></td>
+<td></td>
+<td>Status of the second-language text: machine or reviewed.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-revise"><code>qingsong revise</code></h3>
+<p>Record a change made to a record file.</p>
+<pre><code class="language-bash">qingsong revise ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--class</code></td>
+<td>yes</td>
+<td>editorial, value or reallocate.</td>
+</tr>
+<tr>
+<td><code>--summary</code></td>
+<td>yes</td>
+<td>What changed and why.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--decision</code></td>
+<td></td>
+<td>Decision record, required for baselined.</td>
+</tr>
+<tr>
+<td><code>--translation</code></td>
+<td></td>
+<td>unchanged, updated or reviewed.</td>
+</tr>
+<tr>
+<td><code>--to-draft</code></td>
+<td></td>
+<td>Promote a concept requirement to draft.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-supersede"><code>qingsong supersede</code></h3>
+<p>Mark a record as superseded by one or more successors.</p>
+<pre><code class="language-bash">qingsong supersede ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--with</code></td>
+<td>yes</td>
+<td>Successor ID (repeat for a split).</td>
+</tr>
+<tr>
+<td><code>--summary</code></td>
+<td>yes</td>
+<td>Why.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--decision</code></td>
+<td></td>
+<td>Decision record.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-withdraw"><code>qingsong withdraw</code></h3>
+<p>Withdraw a record; its ID is retired for good.</p>
+<pre><code class="language-bash">qingsong withdraw ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--reason</code></td>
+<td>yes</td>
+<td>Why the record is no longer needed.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--decision</code></td>
+<td></td>
+<td>Decision record.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-approve"><code>qingsong approve</code></h3>
+<p>Record an approver's maturity decision.</p>
+<pre><code class="language-bash">qingsong approve ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--to</code></td>
+<td>yes</td>
+<td>agreed, or draft to reopen.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--ref</code></td>
+<td>yes</td>
+<td>Pull request or meeting where the approval was given.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-confirm"><code>qingsong confirm</code></h3>
+<p>Clear a suspect link after reviewing the child against its changed parent.</p>
+<pre><code class="language-bash">qingsong confirm CHILD PARENT [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CHILD</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>PARENT</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-renumber"><code>qingsong renumber</code></h3>
+<p>Move a record that has not reached main to a free number, rewriting references.</p>
+<pre><code class="language-bash">qingsong renumber OLD NEW [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OLD</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NEW</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--unmerged</code></td>
+<td></td>
+<td>Required: the record is not yet on main.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-show"><code>qingsong show</code></h3>
+<p>Show one record.</p>
+<pre><code class="language-bash">qingsong show ID [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ID</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-list"><code>qingsong list</code></h3>
+<p>List records, optionally filtered.</p>
+<pre><code class="language-bash">qingsong list [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--type</code></td>
+<td></td>
+<td>Record type.</td>
+</tr>
+<tr>
+<td><code>--node</code></td>
+<td></td>
+<td>Allocated node reference.</td>
+</tr>
+<tr>
+<td><code>--maturity</code></td>
+<td></td>
+<td>Maturity.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-find"><code>qingsong find</code></h3>
+<p>Find records whose ID, aliases or texts contain TEXT (any language).</p>
+<pre><code class="language-bash">qingsong find TEXT [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TEXT</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-schema"><code>qingsong schema</code></h3>
+<p>Print the JSON Schema of all records, or of one record type.</p>
+<pre><code class="language-bash">qingsong schema TYPE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TYPE</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-requirement"><code>qingsong new requirement</code></h3>
+<p>Allocate the next requirement ID in a namespace and write a concept requirement.</p>
+<pre><code class="language-bash">qingsong new requirement [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--namespace</code></td>
+<td>yes</td>
+<td>Namespace, e.g. INS-DET or DEMO-SRV.</td>
+</tr>
+<tr>
+<td><code>--title</code></td>
+<td>yes</td>
+<td>Title in the reference language.</td>
+</tr>
+<tr>
+<td><code>--statement</code></td>
+<td>yes</td>
+<td>Statement in the reference language.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--level</code></td>
+<td></td>
+<td>Level; default from the namespace.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-issue"><code>qingsong new issue</code></h3>
+<p>Create an issue, numbered across the project (ISS-NNNN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new issue [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-decision"><code>qingsong new decision</code></h3>
+<p>Create a decision, numbered across the project (DEC-NNNN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new decision [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-waiver"><code>qingsong new waiver</code></h3>
+<p>Create a waiver, numbered across the project (WVR-NNNN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new waiver [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-interface"><code>qingsong new interface</code></h3>
+<p>Create an interface, numbered within the system of its owner_end (IFC-SYS-NNN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new interface [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-condition"><code>qingsong new condition</code></h3>
+<p>Create a condition of a context node, numbered per node (NODE-COND-NNN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new condition [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-source"><code>qingsong new source</code></h3>
+<p>Create a source document, named by --slug (SRC-slug) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new source [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-new-verification"><code>qingsong new verification</code></h3>
+<p>Create a verification of a requirement, numbered per requirement (VER-ID-NN) from a draft file; the draft is left as it is.</p>
+<pre><code class="language-bash">qingsong new verification [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--file</code></td>
+<td>yes</td>
+<td>Draft YAML: every field except id and bookkeeping.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--slug</code></td>
+<td></td>
+<td>Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-raise"><code>qingsong issue raise</code></h3>
+<p>Raise issues: from the check findings, or one written by hand.</p>
+<pre><code class="language-bash">qingsong issue raise [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--from-checks</code></td>
+<td></td>
+<td>Raise issues for untracked check warnings.</td>
+</tr>
+<tr>
+<td><code>--rule</code></td>
+<td></td>
+<td>With --from-checks: only these rules. By hand: the rule tracked.</td>
+</tr>
+<tr>
+<td><code>--group</code></td>
+<td></td>
+<td>With --from-checks: one issue per rule for all its records.</td>
+</tr>
+<tr>
+<td><code>--kind</code></td>
+<td></td>
+<td>Label of a hand-raised issue.</td>
+</tr>
+<tr>
+<td><code>--title</code></td>
+<td></td>
+<td>Title (English).</td>
+</tr>
+<tr>
+<td><code>--title-zh</code></td>
+<td></td>
+<td>Title (Chinese).</td>
+</tr>
+<tr>
+<td><code>--description</code></td>
+<td></td>
+<td>Description (English).</td>
+</tr>
+<tr>
+<td><code>--description-zh</code></td>
+<td></td>
+<td>Description (Chinese).</td>
+</tr>
+<tr>
+<td><code>--record</code></td>
+<td></td>
+<td>Record concerned (repeat).</td>
+</tr>
+<tr>
+<td><code>--owner</code></td>
+<td></td>
+<td>Person who owns the issue.</td>
+</tr>
+<tr>
+<td><code>--due</code></td>
+<td></td>
+<td>Due date or named event.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-propose"><code>qingsong issue propose</code></h3>
+<p>Add a proposed fix to an open issue.</p>
+<pre><code class="language-bash">qingsong issue propose ISSUE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISSUE</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--file</code></td>
+<td></td>
+<td>YAML with summary {en, zh}, change_class and changes.</td>
+</tr>
+<tr>
+<td><code>--keep</code></td>
+<td></td>
+<td>Propose to keep the text as written.</td>
+</tr>
+<tr>
+<td><code>--summary</code></td>
+<td></td>
+<td>With --keep: why (English).</td>
+</tr>
+<tr>
+<td><code>--summary-zh</code></td>
+<td></td>
+<td>With --keep: why (Chinese).</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-accept"><code>qingsong issue accept</code></h3>
+<p>Accept a proposal (approvers only): apply its changes and close the issue.</p>
+<pre><code class="language-bash">qingsong issue accept ISSUE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISSUE</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--proposal</code></td>
+<td>yes</td>
+<td>Number of the proposal to accept.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--decision</code></td>
+<td></td>
+<td>Decision record, required for baselined targets.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-reject"><code>qingsong issue reject</code></h3>
+<p>Reject a proposal (an approver), or withdraw it (its author).</p>
+<pre><code class="language-bash">qingsong issue reject ISSUE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISSUE</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--proposal</code></td>
+<td>yes</td>
+<td>Number of the proposal to reject.</td>
+</tr>
+<tr>
+<td><code>--reason</code></td>
+<td>yes</td>
+<td>Why (English).</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--reason-zh</code></td>
+<td></td>
+<td>Why (Chinese).</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-close"><code>qingsong issue close</code></h3>
+<p>Close an issue without accepting a proposal (approvers only).</p>
+<pre><code class="language-bash">qingsong issue close ISSUE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISSUE</code></td>
+<td>yes</td>
+<td></td>
+</tr>
+<tr>
+<td><code>--outcome</code></td>
+<td>yes</td>
+<td>answered, withdrawn or fixed.</td>
+</tr>
+<tr>
+<td><code>--resolution</code></td>
+<td>yes</td>
+<td>How it was resolved (English).</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--resolution-zh</code></td>
+<td></td>
+<td>How (Chinese).</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-issue-apply"><code>qingsong issue apply</code></h3>
+<p>Apply a decisions file from the review page: all its decisions, or none.</p>
+<pre><code class="language-bash">qingsong issue apply FILE [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FILE</code></td>
+<td>yes</td>
+<td>Decisions file saved from the review page.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-render-html"><code>qingsong render html</code></h3>
+<p>Generate the static HTML site; open OUTPUT/index.html in a browser.</p>
+<pre><code class="language-bash">qingsong render html OUTPUT [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OUTPUT</code></td>
+<td>yes</td>
+<td>Folder for the site (replaced if it exists).</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-render-docx"><code>qingsong render docx</code></h3>
+<p>Generate a Word document from the records (styles from templates/reference.docx).</p>
+<pre><code class="language-bash">qingsong render docx DOCUMENT OUTPUT [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCUMENT</code></td>
+<td>yes</td>
+<td>Document ID, e.g. DEMO-INS-DET-RD.</td>
+</tr>
+<tr>
+<td><code>OUTPUT</code></td>
+<td>yes</td>
+<td>Path of the .docx file to write.</td>
+</tr>
+<tr>
+<td><code>--version</code></td>
+<td></td>
+<td>Version shown on the cover and header.</td>
+</tr>
+<tr>
+<td><code>--update-fields</code></td>
+<td></td>
+<td>Ask Word to update all fields on opening (page numbers in the table of contents); Word then shows a prompt.</td>
+</tr>
+<tr>
+<td><code>--release</code></td>
+<td></td>
+<td>Render the document as issued: the vault at the tag of this release.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-release-prepare"><code>qingsong release prepare</code></h3>
+<p>Write the release entry on a branch, for review; prints the changes since the last release.</p>
+<pre><code class="language-bash">qingsong release prepare DOCUMENT VERSION [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCUMENT</code></td>
+<td>yes</td>
+<td>Document ID.</td>
+</tr>
+<tr>
+<td><code>VERSION</code></td>
+<td>yes</td>
+<td>New version, e.g. 1.2.</td>
+</tr>
+<tr>
+<td><code>--by</code></td>
+<td>yes</td>
+<td>Person ID (people.yaml) making the change.</td>
+</tr>
+<tr>
+<td><code>--summary-en</code></td>
+<td>yes</td>
+<td>What this release changes (English).</td>
+</tr>
+<tr>
+<td><code>--summary-zh</code></td>
+<td>yes</td>
+<td>What this release changes (Chinese).</td>
+</tr>
+<tr>
+<td><code>--note-en</code></td>
+<td></td>
+<td>Optional note (English).</td>
+</tr>
+<tr>
+<td><code>--note-zh</code></td>
+<td></td>
+<td>Optional note (Chinese).</td>
+</tr>
+<tr>
+<td><code>--date</code></td>
+<td></td>
+<td>Date of the release decision (YYYY-MM-DD); default today.</td>
+</tr>
+<tr>
+<td><code>--via</code></td>
+<td></td>
+<td>Agent acting for the person, if any.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-release-tag"><code>qingsong release tag</code></h3>
+<p>Tag a merged release at the commit that brought it to the main branch (local tag only).</p>
+<pre><code class="language-bash">qingsong release tag DOCUMENT VERSION [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCUMENT</code></td>
+<td>yes</td>
+<td>Document ID.</td>
+</tr>
+<tr>
+<td><code>VERSION</code></td>
+<td>yes</td>
+<td>Released version.</td>
+</tr>
+<tr>
+<td><code>--at</code></td>
+<td></td>
+<td>Only for a release made before qingsong: the commit where the record was verified against the issued document.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-release-changes"><code>qingsong release changes</code></h3>
+<p>Summarise what changed in a document between two states.</p>
+<pre><code class="language-bash">qingsong release changes DOCUMENT [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCUMENT</code></td>
+<td>yes</td>
+<td>Document ID.</td>
+</tr>
+<tr>
+<td><code>--since</code></td>
+<td></td>
+<td>A release version or a git reference; default: the last tagged release.</td>
+</tr>
+<tr>
+<td><code>--until</code></td>
+<td></td>
+<td>A git reference; default: the working tree.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="qingsong-export-json"><code>qingsong export json</code></h3>
+<p>All records, the tree and an index of value slots, as one JSON file (SPEC §12.3).</p>
+<pre><code class="language-bash">qingsong export json [OPTIONS]
+</code></pre>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Argument or option</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--output</code></td>
+<td></td>
+<td>File to write; default: standard output.</td>
+</tr>
+<tr>
+<td><code>--at</code></td>
+<td></td>
+<td>Export the vault at this git reference.</td>
+</tr>
+<tr>
+<td><code>--release</code></td>
+<td></td>
+<td>Export the state of a release, written DOC/VERSION.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="check-rules">Check rules</h2>
+<p>Generated from the rule registry; <code>qingsong rules</code> prints the same list. Severities often depend on the record's maturity. The rules marked <em>(load)</em> report problems found while reading the vault.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Rule</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>change.approval</code></td>
+<td>agreed and baselined requirements carry a current approval by an approver</td>
+</tr>
+<tr>
+<td><code>change.history</code></td>
+<td>history is complete and in order</td>
+</tr>
+<tr>
+<td><code>change.stale_evidence</code></td>
+<td>verifications and waivers refer to the current normative revision</td>
+</tr>
+<tr>
+<td><code>change.stale_proposal</code></td>
+<td>open proposals still match the text they would replace</td>
+</tr>
+<tr>
+<td><code>change.suspect_link</code></td>
+<td>links are reviewed after their target changed</td>
+</tr>
+<tr>
+<td><code>change.translation</code></td>
+<td>translations are tracked, current, and reviewed where required</td>
+</tr>
+<tr>
+<td><code>change.unrecorded</code></td>
+<td>every change is recorded (the stamp matches the content)</td>
+</tr>
+<tr>
+<td><code>consistency.child_looser</code></td>
+<td>a child allows no values its parent excludes (same quantity)</td>
+</tr>
+<tr>
+<td><code>consistency.conflict</code></td>
+<td>requirements on one quantity leave a value that meets them all</td>
+</tr>
+<tr>
+<td><code>consistency.issue_due</code></td>
+<td>open issues are not past their due date</td>
+</tr>
+<tr>
+<td><code>content.bilingual</code></td>
+<td>required fields exist in both languages from draft maturity upward</td>
+</tr>
+<tr>
+<td><code>content.completeness</code></td>
+<td>rationale and verification are present according to maturity</td>
+</tr>
+<tr>
+<td><code>content.evidence</code></td>
+<td>a 'compliant' verification names evidence</td>
+</tr>
+<tr>
+<td><code>content.languages</code></td>
+<td>texts use the configured languages, are not empty, and exist in the origin language</td>
+</tr>
+<tr>
+<td><code>content.open_values</code></td>
+<td>provisional, TBD and TBC values are tracked by an open issue</td>
+</tr>
+<tr>
+<td><code>content.references</code></td>
+<td>[[…]] references are well formed</td>
+</tr>
+<tr>
+<td><code>content.values</code></td>
+<td>value slots are used, tracked, and have valid units matching their quantity</td>
+</tr>
+<tr>
+<td><code>content.writing</code></td>
+<td>one 'shall' per statement; no vague terms</td>
+</tr>
+<tr>
+<td><code>documents.release</code></td>
+<td>release entries are well formed, in order, and made by approvers</td>
+</tr>
+<tr>
+<td><code>documents.release_tag</code></td>
+<td>release tags mark a commit that holds the same release entry</td>
+</tr>
+<tr>
+<td><code>integrity.against</code></td>
+<td>compared with an earlier version: nothing removed, retyped, rewritten or reversed</td>
+</tr>
+<tr>
+<td><code>integrity.config</code></td>
+<td>the configuration file qingsong.toml is valid <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>integrity.duplicate_id</code></td>
+<td>an ID is defined by one file only</td>
+</tr>
+<tr>
+<td><code>integrity.figure_file</code></td>
+<td>figure images exist next to their record and match their sha256</td>
+</tr>
+<tr>
+<td><code>integrity.id_syntax</code></td>
+<td>every ID follows the pattern of its record type</td>
+</tr>
+<tr>
+<td><code>integrity.missing_file</code></td>
+<td>people.yaml and glossary.yaml exist <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>integrity.path_mismatch</code></td>
+<td>each file is stored where its ID says <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>integrity.proposal</code></td>
+<td>issues name known rules; proposals name known records and fields</td>
+</tr>
+<tr>
+<td><code>integrity.schema</code></td>
+<td>every record matches its schema; no unknown fields <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>integrity.unresolved_reference</code></td>
+<td>every referenced record, node, person, quantity and term exists</td>
+</tr>
+<tr>
+<td><code>integrity.yaml_syntax</code></td>
+<td>every file is valid YAML <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>structure.alias</code></td>
+<td>aliases do not collide with IDs or overlap within a document</td>
+</tr>
+<tr>
+<td><code>structure.allocation</code></td>
+<td>a requirement is allocated to one active product node</td>
+</tr>
+<tr>
+<td><code>structure.cycle</code></td>
+<td>derives_from has no cycles</td>
+</tr>
+<tr>
+<td><code>structure.ends</code></td>
+<td>interfaces join two different nodes; conditions belong to context nodes</td>
+</tr>
+<tr>
+<td><code>structure.justification</code></td>
+<td>a parentless requirement is justified (otherwise TBJ)</td>
+</tr>
+<tr>
+<td><code>structure.level</code></td>
+<td>levels are configured, ordered downward, and match the namespace</td>
+</tr>
+<tr>
+<td><code>structure.lifecycle</code></td>
+<td>superseded records name successors; links point to current records</td>
+</tr>
+<tr>
+<td><code>structure.namespace</code></td>
+<td>an ID's namespace exists in the tree or configuration</td>
+</tr>
+<tr>
+<td><code>structure.node_code</code></td>
+<td>node codes are valid, not reserved, and unique within their system <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>structure.outline</code></td>
+<td>each requirement and figure appears once in a document outline; section keys are unique</td>
+</tr>
+<tr>
+<td><code>structure.tree_parent</code></td>
+<td>top-level branches hang from the root <em>(load)</em></td>
+</tr>
+<tr>
+<td><code>structure.tree_root</code></td>
+<td>the tree has exactly one root file <em>(load)</em></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="modules-records-and-the-vault">Modules: records and the vault</h2>
+<h3 id="qingsongschema"><code>qingsong.schema</code></h3>
+<p>Source: <a href="../../src/qingsong/schema.py"><code>src/qingsong/schema.py</code></a></p>
+<p>Record schemas (docs/SPEC.md §4–§5). Unknown fields are errors; nothing is defaulted on reading
+except empty lists and absent optional values.</p>
+<p><strong>Types</strong></p>
+<ul>
+<li><code>LocalizedText</code>: <code>dict[str, str]</code></li>
+<li><code>Maturity</code>: <code>Literal['concept', 'draft', 'agreed', 'baselined']</code></li>
+<li><code>Lifecycle</code>: <code>Literal['current', 'superseded', 'withdrawn']</code></li>
+<li><code>Certainty</code>: <code>Literal['firm', 'provisional', 'tbc', 'tbd']</code></li>
+<li><code>VerificationMethod</code>: <code>Literal['test', 'analysis', 'inspection', 'demonstration', 'review_of_design']</code></li>
+<li><code>ChangeClass</code>: <code>Literal['editorial', 'value', 'reallocate']</code></li>
+<li><code>EventKind</code>: <code>Literal['created', 'imported', 'revised', 'approved', 'confirmed', 'superseded', 'withdrawn', 'renumbered', 'released', 'slotted']</code></li>
+<li><code>NodeKind</code>: <code>Literal['product', 'work', 'context']</code></li>
+<li><code>TextHash</code>: <code>str</code> (pattern <code>^([0-9a-f]{16})?$</code>)</li>
+<li><code>IssueKind</code>: <code>Literal['tbd', 'tbc', 'provisional', 'tbj', 'wording', 'translation', 'question', 'conflict']</code></li>
+<li><code>Record</code>: <code>Requirement | Figure | Condition | Quantity | Issue | Decision | Source | Interface | VerificationRecord | Waiver | Baseline | Document</code> (chosen by <code>type</code>)</li>
+</ul>
+<p><strong>Classes</strong></p>
+<h4 id="class-strictmodel-basemodel">class <code>StrictModel</code> (BaseModel)</h4>
+<h4 id="class-historyevent-strictmodel">class <code>HistoryEvent</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td><code>Literal['created', 'imported', 'revised', 'approved', 'confirmed', 'superseded', 'withdrawn', 'renumbered', 'released', 'slotted']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>change_class</code></td>
+<td><code>Optional[Literal['editorial', 'value', 'reallocate']]</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>decision</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>via</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>normative_hash_before</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>normative_hash_after</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-alias-strictmodel">class <code>Alias</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['legacy', 'vendor', 'external']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>document</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>from_version</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>to_version</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-link-strictmodel">class <code>Link</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>normative_revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-sourcecitation-strictmodel">class <code>SourceCitation</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>locator</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-tolerance-strictmodel">class <code>Tolerance</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plus</code></td>
+<td><code>float</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>minus</code></td>
+<td><code>float</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-valueslot-strictmodel">class <code>ValueSlot</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quantity</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>relation</code></td>
+<td><code>Literal['eq', 'le', 'lt', 'ge', 'gt', 'range', 'approx']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><code>float | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>minimum</code></td>
+<td><code>float | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>maximum</code></td>
+<td><code>float | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>tolerance</code></td>
+<td><code>Tolerance | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>unit</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>certainty</code></td>
+<td><code>Literal['firm', 'provisional', 'tbc', 'tbd']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>issue</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>condition</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td><code>float | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>check_numbers(self) -&gt; 'ValueSlot'</code></li>
+</ul>
+<h4 id="class-verification-strictmodel">class <code>Verification</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>methods</code></td>
+<td><code>list[Literal['test', 'analysis', 'inspection', 'demonstration', 'review_of_design']]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>criteria</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-approval-strictmodel">class <code>Approval</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>ref</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>normative_revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>text_hash</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-translationstate-strictmodel">class <code>TranslationState</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source_hash</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Literal['machine', 'reviewed']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-variant-strictmodel">class <code>Variant</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>relation</code></td>
+<td><code>Literal['vendor_stated', 'proposed', 'rejected']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>statement</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td><code>dict[str, ValueSlot]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-recordbase-strictmodel">class <code>RecordBase</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>lifecycle</code></td>
+<td><code>Literal['current', 'superseded', 'withdrawn']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>superseded_by</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>aliases</code></td>
+<td><code>list[Alias]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>normative_revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>normative_hash</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td><code>list[HistoryEvent]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>stamp</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-requirement-recordbase">class <code>Requirement</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['requirement']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>statement</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td><code>dict[str, ValueSlot]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>rationale</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>notes</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>suggestions</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>justification</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>justified_by</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>allocated_to</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>interface</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>derives_from</code></td>
+<td><code>list[Link]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>constrained_by</code></td>
+<td><code>list[Link]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>issues</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>sources</code></td>
+<td><code>list[SourceCitation]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>verification</code></td>
+<td><code>Verification | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>maturity</code></td>
+<td><code>Literal['concept', 'draft', 'agreed', 'baselined']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>approval</code></td>
+<td><code>Approval | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>text_origin</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>translation</code></td>
+<td><code>dict[str, TranslationState]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>variants</code></td>
+<td><code>list[Variant]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-figurefile-strictmodel">class <code>FigureFile</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>sha256</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>plain_name(cls, path: str) -&gt; str</code></li>
+</ul>
+<h4 id="class-provenance-strictmodel">class <code>Provenance</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>script</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>repository</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-figure-recordbase">class <code>Figure</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['figure']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>caption</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>alt</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>files</code></td>
+<td><code>list[FigureFile]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>provenance</code></td>
+<td><code>Provenance | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>text_origin</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>translation</code></td>
+<td><code>dict[str, TranslationState]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-condition-recordbase">class <code>Condition</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['condition']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td><code>dict[str, ValueSlot]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>evidence_basis</code></td>
+<td><code>Literal['measured', 'modelled', 'assumed']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>sources</code></td>
+<td><code>list[SourceCitation]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-quantity-recordbase">class <code>Quantity</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['quantity']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>symbol</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>dimension</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>unit</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kpp</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>environmental</code></td>
+<td><code>bool | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-proposedchange-strictmodel">class <code>ProposedChange</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td><code>Literal['title', 'statement', 'rationale', 'notes', 'suggestions', 'criteria']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>base</code></td>
+<td><code>dict[str, Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(pattern='^([0-9a-f]{16})?$')])]]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-proposal-strictmodel">class <code>Proposal</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>number</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>via</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>change_class</code></td>
+<td><code>Literal['editorial', 'value', 'reallocate']</code></td>
+<td><code>'editorial'</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Literal['proposed', 'accepted', 'rejected']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>changes</code></td>
+<td><code>list[ProposedChange]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-issue-recordbase">class <code>Issue</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['issue']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['tbd', 'tbc', 'provisional', 'tbj', 'wording', 'translation', 'question', 'conflict']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Literal['open', 'closed']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>owner</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>due</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>closure_plan</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>records</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>rule</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>proposals</code></td>
+<td><code>list[Proposal] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>outcome</code></td>
+<td><code>Optional[Literal['fixed', 'accepted_as_written', 'answered', 'withdrawn']]</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>accepted</code></td>
+<td><code>dict[str, Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(pattern='^([0-9a-f]{16})?$')])]] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>resolution</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-decision-recordbase">class <code>Decision</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['decision']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>statement</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>rationale</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>records</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-source-recordbase">class <code>Source</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['source']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['project_document', 'standard', 'publication', 'vendor_document', 'dataset']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>number</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>sha256</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>location</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-interface-recordbase">class <code>Interface</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['interface']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>owner_end</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>other_end</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td><code>dict[str, ValueSlot]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-evidence-strictmodel">class <code>Evidence</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['file', 'source', 'analysis', 'report']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>reference</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-verificationrecord-recordbase">class <code>VerificationRecord</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['verification']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>requirement</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>requirement_normative_revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td><code>Literal['test', 'analysis', 'inspection', 'demonstration', 'review_of_design']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Literal['planned', 'predicted', 'compliant', 'partially_compliant', 'non_compliant', 'waived']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>evidence</code></td>
+<td><code>list[Evidence]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-waiver-recordbase">class <code>Waiver</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['waiver']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>requirement</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>requirement_normative_revision</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>approver</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>expires</code></td>
+<td><code>date | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-baseline-recordbase">class <code>Baseline</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['baseline']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>review</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>records</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-role-strictmodel">class <code>Role</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>role</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>person</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-release-strictmodel">class <code>Release</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>by</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>made_with_qingsong</code></td>
+<td><code>bool</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>engine</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-frontmatter-strictmodel">class <code>FrontMatter</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>roles</code></td>
+<td><code>list[Role]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>reference_documents</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>bibliography</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>acronyms</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-tableblock-strictmodel">class <code>TableBlock</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>caption</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td><code>list[dict[str, str]]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>rows</code></td>
+<td><code>list[list[dict[str, str]]]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>check_widths(self) -&gt; 'TableBlock'</code></li>
+</ul>
+<h4 id="class-definitionsblock-strictmodel">class <code>DefinitionsBlock</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terms</code></td>
+<td><code>list[str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>caption</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-block-strictmodel">class <code>Block</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>section</code></td>
+<td><code>Section | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>requirement</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>figure</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td><code>TableBlock | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>definitions</code></td>
+<td><code>DefinitionsBlock | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>exactly_one(self) -&gt; 'Block'</code></li>
+</ul>
+<h4 id="class-section-strictmodel">class <code>Section</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>blocks</code></td>
+<td><code>list[Block]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-document-recordbase">class <code>Document</code> (RecordBase)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td><code>Literal['document']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>front</code></td>
+<td><code>FrontMatter</code></td>
+<td><code>FrontMatter(roles=[], reference_documents=[], bibliography=[], acronyms=[])</code></td>
+</tr>
+<tr>
+<td><code>outline</code></td>
+<td><code>list[Block]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>releases</code></td>
+<td><code>list[Release]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-node-strictmodel">class <code>Node</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>names</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['product', 'work', 'context']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Literal['active', 'placeholder', 'retired']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>structural_code</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>text_origin</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>owners</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>design_stage</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td><code>list[Node]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-treefile-node">class <code>TreeFile</code> (Node)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parent</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-person-strictmodel">class <code>Person</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>organization</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>github</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>languages</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>approver</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-peoplefile-strictmodel">class <code>PeopleFile</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>people</code></td>
+<td><code>dict[str, Person]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>check_ids(cls, people: dict[str, Person]) -&gt; dict[str, Person]</code></li>
+</ul>
+<h4 id="class-glossaryentry-strictmodel">class <code>GlossaryEntry</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><code>Literal['acronym', 'term', 'symbol']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>expansion</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>definition</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-glossaryfile-strictmodel">class <code>GlossaryFile</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>terms</code></td>
+<td><code>dict[str, GlossaryEntry]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-projectconfig-strictmodel">class <code>ProjectConfig</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>names</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-languageconfig-strictmodel">class <code>LanguageConfig</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reference</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>second</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>default_text_origin</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>bilingual_fields</code></td>
+<td><code>list[str]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-levelconfig-strictmodel">class <code>LevelConfig</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>names</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-vaultconfig-strictmodel">class <code>VaultConfig</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>project</code></td>
+<td><code>ProjectConfig</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>languages</code></td>
+<td><code>LanguageConfig</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>levels</code></td>
+<td><code>list[LevelConfig]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>top_namespaces</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>related</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>tree_order</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>documents</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>check_levels(self) -&gt; 'VaultConfig'</code></li>
+<li>property <code>level_rank</code></li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="plain"><code>plain</code></h4>
+<pre><code class="language-python">def plain(data: Any) -&gt; Any
+</code></pre>
+<p>Convert ruamel containers to plain Python containers.</p>
+<h3 id="qingsongvault"><code>qingsong.vault</code></h3>
+<p>Source: <a href="../../src/qingsong/vault.py"><code>src/qingsong/vault.py</code></a></p>
+<p>Vault discovery, strict loading and round-trip saving (docs/SPEC.md §3, §6.1).</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-vaultnotfounderror-exception">class <code>VaultNotFoundError</code> (Exception)</h4>
+<h4 id="class-nodeinfo">class <code>NodeInfo</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node</code></td>
+<td><code>Node</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>reference</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>system</code></td>
+<td><code>str | None</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>depth</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>parent</code></td>
+<td><code>str | None</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>property <code>requirement_namespace</code></li>
+</ul>
+<h4 id="class-vault">class <code>Vault</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>root</code></td>
+<td><code>Path</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td><code>VaultConfig | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>nodes</code></td>
+<td><code>dict[str, NodeInfo]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>root_node</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>people</code></td>
+<td><code>PeopleFile | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>glossary</code></td>
+<td><code>GlossaryFile | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>records</code></td>
+<td><code>dict[str, RecordBase]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>files</code></td>
+<td><code>dict[str, Path]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>duplicates</code></td>
+<td><code>list[tuple[str, Path]]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>load_findings</code></td>
+<td><code>list[Finding]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>relative(self, path: Path) -&gt; str</code></li>
+<li><code>by_type(self, record_type: str) -&gt; list[RecordBase]</code></li>
+<li><code>namespaces(self) -&gt; dict[str, str]</code>
+Requirement namespace → node reference it belongs to.</li>
+<li><code>is_approver(self, person: str) -&gt; bool</code></li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="find_root"><code>find_root</code></h4>
+<pre><code class="language-python">def find_root(start: Path | None = None) -&gt; Path
+</code></pre>
+<p>The nearest folder, from <code>start</code> upward, that holds qingsong.toml.</p>
+<h4 id="load"><code>load</code></h4>
+<pre><code class="language-python">def load(root: Path) -&gt; Vault
+</code></pre>
+<p>Load a whole vault strictly. Nothing is defaulted; every unreadable file or schema violation
+becomes a load finding, reported by the check.</p>
+<h4 id="vault_at"><code>vault_at</code></h4>
+<pre><code class="language-python">def vault_at(root: Path, ref: str) -&gt; Iterator[Vault]
+</code></pre>
+<p>The vault as stored at a git reference, loaded from a temporary copy of the raw stored files
+(docs/SPEC.md §5.5). Raises gitutil.GitError when the reference cannot be read.</p>
+<h4 id="save_record"><code>save_record</code></h4>
+<pre><code class="language-python">def save_record(
+    path: Path,
+    updates: dict[str, Any],
+    removals: tuple[str, ...] = (),
+) -&gt; None
+</code></pre>
+<p>Apply top-level updates to a record file, keeping comments, key order and quoting.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>read_yaml(path: Path) -&gt; Any</code></li>
+<li><code>round_trip_yaml() -&gt; YAML</code></li>
+<li><code>describe_validation_error(error: ValidationError) -&gt; str</code></li>
+<li><code>load_config(vault: Vault) -&gt; None</code></li>
+<li><code>load_tree(vault: Vault) -&gt; None</code></li>
+<li><code>register_branch(vault: Vault, node: Node, system: str | None, depth: int, parent: str | None, file: str) -&gt; None</code></li>
+<li><code>load_people_and_glossary(vault: Vault) -&gt; None</code></li>
+<li><code>load_records(vault: Vault) -&gt; None</code></li>
+<li><code>load_record_file(vault: Vault, path: Path, expected_type: str) -&gt; None</code></li>
+<li><code>write_new_record(path: Path, data: dict[str, Any]) -&gt; None</code></li>
+<li><code>expected_path(vault: Vault, record: RecordBase) -&gt; Path</code></li>
+</ul>
+<h3 id="qingsongids"><code>qingsong.ids</code></h3>
+<p>Source: <a href="../../src/qingsong/ids.py"><code>src/qingsong/ids.py</code></a></p>
+<p>Identifier syntax, namespaces and file paths (docs/SPEC.md §4.3, §5.3, §6).</p>
+<p><strong>Functions</strong></p>
+<h4 id="sort_key"><code>sort_key</code></h4>
+<pre><code class="language-python">def sort_key(record_id: str) -&gt; tuple
+</code></pre>
+<p>Order IDs with their numbers compared as numbers (REQ-9 before REQ-10).</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>id_matches(record_type: str, record_id: str) -&gt; bool</code></li>
+<li><code>namespace_of(record_type: str, record_id: str) -&gt; str | None</code></li>
+<li><code>number_of(record_type: str, record_id: str) -&gt; int | None</code></li>
+<li><code>format_id(record_type: str, namespace: str | None, number: int) -&gt; str</code></li>
+<li><code>relative_path(record_type: str, record_id: str) -&gt; Path</code></li>
+<li><code>references_in_text(text: str) -&gt; list[tuple[str, str | None]]</code></li>
+</ul>
+<h3 id="qingsonghashing"><code>qingsong.hashing</code></h3>
+<p>Source: <a href="../../src/qingsong/hashing.py"><code>src/qingsong/hashing.py</code></a></p>
+<p>Stamps and text hashes (docs/SPEC.md §7, §8.2).</p>
+<p><strong>Functions</strong></p>
+<h4 id="normative_hash_of"><code>normative_hash_of</code></h4>
+<pre><code class="language-python">def normative_hash_of(record: RecordBase) -&gt; str
+</code></pre>
+<p>Hash of the fields whose change can never be editorial (values, level, verification method…).</p>
+<h4 id="review_hash"><code>review_hash</code></h4>
+<pre><code class="language-python">def review_hash(record: RecordBase) -&gt; str
+</code></pre>
+<p>Hash of a record's prose and values in every language: what an issue accepted as written
+covers (docs/SPEC.md §5.6).</p>
+<h4 id="proposal_hash"><code>proposal_hash</code></h4>
+<pre><code class="language-python">def proposal_hash(proposal: Proposal) -&gt; str
+</code></pre>
+<p>Hash of what a reviewer reads of a proposal: its summary, change class and changes. A
+decisions file carries it, so that a proposal edited after the review page was made is not
+decided unread (docs/SPEC.md §5.6).</p>
+<h4 id="field_text_hashes"><code>field_text_hashes</code></h4>
+<pre><code class="language-python">def field_text_hashes(record: RecordBase, dotted: str) -&gt; dict[str, str]
+</code></pre>
+<p>Hash of each language's text of one field; the base of a proposed change.</p>
+<h4 id="approved_text_hash"><code>approved_text_hash</code></h4>
+<pre><code class="language-python">def approved_text_hash(record: RecordBase, language: str) -&gt; str
+</code></pre>
+<p>Hash of the approved wording: statement and verification criteria in the reference language.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>short_hash(data: bytes) -&gt; str</code></li>
+<li><code>canonical_json(data: Any) -&gt; bytes</code></li>
+<li><code>stamp_of(record: RecordBase) -&gt; str</code></li>
+<li><code>text_hash(text: str) -&gt; str</code></li>
+<li><code>file_sha256(path: Path) -&gt; str</code></li>
+<li><code>field_value(record: RecordBase, dotted: str) -&gt; Any</code></li>
+</ul>
+<h3 id="qingsongfindings"><code>qingsong.findings</code></h3>
+<p>Source: <a href="../../src/qingsong/findings.py"><code>src/qingsong/findings.py</code></a></p>
+<p>Check results (docs/SPEC.md §10).</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-finding">class <code>Finding</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rule</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>severity</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>record</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>issue</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>as_dict(self) -&gt; dict</code></li>
+<li><code>line(self) -&gt; str</code></li>
+</ul>
+<h3 id="qingsongwalk"><code>qingsong.walk</code></h3>
+<p>Source: <a href="../../src/qingsong/walk.py"><code>src/qingsong/walk.py</code></a></p>
+<p>Walk records for localized texts and references.</p>
+<p><strong>Functions</strong></p>
+<h4 id="localized_texts"><code>localized_texts</code></h4>
+<pre><code class="language-python">def localized_texts(
+    model: BaseModel,
+    path: str = '',
+) -&gt; Iterator[tuple[str, dict[str, str]]]
+</code></pre>
+<p>Yield (field path, {language: text}) for every localized text inside a model.</p>
+<h4 id="text_references"><code>text_references</code></h4>
+<pre><code class="language-python">def text_references(model: BaseModel) -&gt; Iterator[tuple[str, str, str | None]]
+</code></pre>
+<p>Yield (field path, target ID, section key) for every [[…]] reference in localized texts.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>is_localized(annotation: object) -&gt; bool</code></li>
+<li><code>nested_texts(value: object, path: str) -&gt; Iterator[tuple[str, dict[str, str]]]</code></li>
+</ul>
+<h2 id="modules-checks">Modules: checks</h2>
+<h3 id="qingsongchecks"><code>qingsong.checks</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/__init__.py"><code>src/qingsong/checks/__init__.py</code></a></p>
+<p>Check registry and runner (docs/SPEC.md §10).</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-context">class <code>Context</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vault</code></td>
+<td><code>Vault</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>against</code></td>
+<td><code>str | None</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-rule">class <code>Rule</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rule_id</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>function</code></td>
+<td><code>Callable[[Context], Iterable[Finding]]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Functions</strong></p>
+<h4 id="run"><code>run</code></h4>
+<pre><code class="language-python">def run(
+    vault: Vault,
+    against: str | None = None,
+    selected: set[str] | None = None,
+) -&gt; list[Finding]
+</code></pre>
+<p>Run the rules (all, or the <code>selected</code> ones) on a loaded vault and return every finding,
+sorted by severity. With <code>against</code>, the integrity rules also compare with that git reference.
+Findings tracked by an issue name it; findings on records accepted as written become notes.</p>
+<h4 id="apply_review"><code>apply_review</code></h4>
+<pre><code class="language-python">def apply_review(vault: Vault, findings: list[Finding]) -&gt; list[Finding]
+</code></pre>
+<p>Findings that an issue covers (docs/SPEC.md §5.6): an open issue tracking the rule on the
+record is named; an acceptance as written turns the finding into a note while the record's
+review hash is unchanged.</p>
+<h4 id="all_rule_summaries"><code>all_rule_summaries</code></h4>
+<pre><code class="language-python">def all_rule_summaries() -&gt; dict[str, str]
+</code></pre>
+<p>Every rule ID, including those reported while loading, with its one-line summary.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>rule(rule_id: str, summary: str) -&gt; Callable</code></li>
+<li><code>by_maturity(maturity: str | None, concept: str, draft: str, agreed: str, baselined: str) -&gt; str</code></li>
+<li><code>relative_file(vault: Vault, record_id: str) -&gt; str | None</code></li>
+</ul>
+<h3 id="qingsongchecksintegrity"><code>qingsong.checks.integrity</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/integrity.py"><code>src/qingsong/checks/integrity.py</code></a></p>
+<p>Integrity rules: identifiers, paths, references, and comparison with an earlier version.</p>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>integrity.duplicate_id</code> (<code>duplicate_ids</code>): an ID is defined by one file only.</li>
+<li><code>integrity.id_syntax</code> (<code>id_syntax</code>): every ID follows the pattern of its record type.</li>
+<li><code>integrity.path_mismatch</code> (<code>path_mismatch</code>): each file is stored where its ID says.</li>
+<li><code>integrity.unresolved_reference</code> (<code>unresolved_references</code>): every referenced record, node, person, quantity and term exists.</li>
+<li><code>integrity.against</code> (<code>against_reference</code>): compared with an earlier version: nothing removed, retyped, rewritten or reversed.</li>
+<li><code>integrity.figure_file</code> (<code>figure_files</code>): figure images exist next to their record and match their sha256.</li>
+<li><code>integrity.proposal</code> (<code>proposals</code>): issues name known rules; proposals name known records and fields.</li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="references"><code>references</code></h4>
+<pre><code class="language-python">def references(vault: Vault) -&gt; Iterator[tuple[str, str, str, str | None]]
+</code></pre>
+<p>Yield (record ID, field, target, expected kind) for every reference held in a record.</p>
+<h4 id="slotted_since"><code>slotted_since</code></h4>
+<pre><code class="language-python">def slotted_since(record, earlier_hash: object, earlier_revision: object) -&gt; bool
+</code></pre>
+<p>The normative hash changed only by recorded moves of numbers into slots: the <code>slotted</code>
+events since the reference lead, hash to hash, from the earlier hash to the current one.</p>
+<h4 id="changed_releases"><code>changed_releases</code></h4>
+<pre><code class="language-python">def changed_releases(document: Document, earlier: list, ref: str) -&gt; Iterator[Finding]
+</code></pre>
+<p>Release entries are append-only; a release made before qingsong may gain its tag.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>section_keys(document: Document) -&gt; set[str]</code></li>
+<li><code>document_references(document: Document) -&gt; Iterator[tuple[str, str, str, str | None]]</code></li>
+<li><code>records_at(root: Path, ref: str) -&gt; dict[str, dict]</code></li>
+<li><code>nodes_at(root: Path, ref: str) -&gt; set[str]</code></li>
+<li><code>collect_node_references(node: dict, system: str | None, depth: int, found: set[str]) -&gt; None</code></li>
+<li><code>comparable(value: object) -&gt; object</code></li>
+<li><code>plain_event(event: dict) -&gt; dict</code></li>
+</ul>
+<h3 id="qingsongchecksstructure"><code>qingsong.checks.structure</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/structure.py"><code>src/qingsong/checks/structure.py</code></a></p>
+<p>Structure rules: tree codes, allocation, levels, flow-down, lifecycle links, aliases.</p>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>structure.node_code</code> (<code>node_codes</code>): node codes are valid, not reserved, and unique within their system.</li>
+<li><code>structure.allocation</code> (<code>allocation</code>): a requirement is allocated to one active product node.</li>
+<li><code>structure.namespace</code> (<code>namespace_known</code>): an ID's namespace exists in the tree or configuration.</li>
+<li><code>structure.level</code> (<code>levels</code>): levels are configured, ordered downward, and match the namespace.</li>
+<li><code>structure.justification</code> (<code>justification</code>): a parentless requirement is justified (otherwise TBJ).</li>
+<li><code>structure.cycle</code> (<code>cycles</code>): derives_from has no cycles.</li>
+<li><code>structure.lifecycle</code> (<code>lifecycle</code>): superseded records name successors; links point to current records.</li>
+<li><code>structure.alias</code> (<code>aliases</code>): aliases do not collide with IDs or overlap within a document.</li>
+<li><code>structure.ends</code> (<code>ends</code>): interfaces join two different nodes; conditions belong to context nodes.</li>
+<li><code>structure.outline</code> (<code>outline</code>): each requirement and figure appears once in a document outline; section keys are unique.</li>
+</ul>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>requirements(context: Context) -&gt; Iterator[Requirement]</code></li>
+<li><code>version_key(version: str | None) -&gt; tuple</code></li>
+<li><code>ranges_overlap(start_a: str | None, end_a: str | None, start_b: str | None, end_b: str | None) -&gt; bool</code></li>
+<li><code>outline_counts(blocks, counts: dict[str, int]) -&gt; dict[str, int]</code></li>
+<li><code>section_keys(blocks, keys: list[str]) -&gt; list[str]</code></li>
+</ul>
+<h3 id="qingsongcheckschange"><code>qingsong.checks.change</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/change.py"><code>src/qingsong/checks/change.py</code></a></p>
+<p>Change-control rules: stamps, history, suspect links, approvals, translations, stale evidence.</p>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>change.unrecorded</code> (<code>unrecorded</code>): every change is recorded (the stamp matches the content).</li>
+<li><code>change.history</code> (<code>history</code>): history is complete and in order.</li>
+<li><code>change.suspect_link</code> (<code>suspect_links</code>): links are reviewed after their target changed.</li>
+<li><code>change.approval</code> (<code>approvals</code>): agreed and baselined requirements carry a current approval by an approver.</li>
+<li><code>change.translation</code> (<code>translations</code>): translations are tracked, current, and reviewed where required.</li>
+<li><code>change.stale_evidence</code> (<code>stale_evidence</code>): verifications and waivers refer to the current normative revision.</li>
+<li><code>change.stale_proposal</code> (<code>stale_proposals</code>): open proposals still match the text they would replace.</li>
+</ul>
+<h3 id="qingsongcheckscontent"><code>qingsong.checks.content</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/content.py"><code>src/qingsong/checks/content.py</code></a></p>
+<p>Content rules: languages, writing rules (INCOSE-derived), references, open values, value slots,
+completeness and evidence.</p>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>content.languages</code> (<code>languages</code>): texts use the configured languages, are not empty, and exist in the origin language.</li>
+<li><code>content.bilingual</code> (<code>bilingual</code>): required fields exist in both languages from draft maturity upward.</li>
+<li><code>content.writing</code> (<code>writing</code>): one 'shall' per statement; no vague terms.</li>
+<li><code>content.references</code> (<code>reference_syntax</code>): [[…]] references are well formed.</li>
+<li><code>content.open_values</code> (<code>open_values</code>): provisional, TBD and TBC values are tracked by an open issue.</li>
+<li><code>content.values</code> (<code>values</code>): value slots are used, tracked, and have valid units matching their quantity.</li>
+<li><code>content.completeness</code> (<code>completeness</code>): rationale and verification are present according to maturity.</li>
+<li><code>content.evidence</code> (<code>evidence</code>): a 'compliant' verification names evidence.</li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="numbers_in_text"><code>numbers_in_text</code></h4>
+<pre><code class="language-python">def numbers_in_text(record: Requirement) -&gt; list[str]
+</code></pre>
+<p>Numbers written in the reference-language statement rather than in value slots. Years are
+left out: a date in a statement is context, not a value to compare.</p>
+<h4 id="requirement_form"><code>requirement_form</code></h4>
+<pre><code class="language-python">def requirement_form(record: Requirement) -&gt; str
+</code></pre>
+<p>Quantitative with value slots, qualitative without (docs/SPEC.md §5.2); derived, never
+stored.</p>
+<h4 id="prose"><code>prose</code></h4>
+<pre><code class="language-python">def prose(text: str) -&gt; str
+</code></pre>
+<p>Text with references, mathematics, code, links and footnotes removed.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>requirements(context: Context) -&gt; Iterator[Requirement]</code></li>
+<li><code>tracking_issues(context: Context, record: Requirement) -&gt; list[str]</code></li>
+<li><code>parse_unit(text: str)</code></li>
+</ul>
+<h3 id="qingsongchecksconsistency"><code>qingsong.checks.consistency</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/consistency.py"><code>src/qingsong/checks/consistency.py</code></a></p>
+<p>Consistency rules: values that cannot all hold, children looser than their parents, overdue
+issues (docs/SPEC.md §10, &quot;Consistency rules in detail&quot;).</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-interval">class <code>Interval</code></h4>
+<p>The values a slot allows, in its quantity's unit.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>low</code></td>
+<td><code>float</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>high</code></td>
+<td><code>float</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>low_open</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>high_open</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>intersection(self, other: 'Interval') -&gt; 'Interval | None'</code></li>
+<li><code>within(self, other: 'Interval') -&gt; bool</code></li>
+<li><code>describe(self, unit: str) -&gt; str</code></li>
+</ul>
+<h4 id="class-constraint">class <code>Constraint</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>requirement</code></td>
+<td><code>Requirement</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>quantity</code></td>
+<td><code>Quantity</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>condition</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>interval</code></td>
+<td><code>Interval</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>slots</code></td>
+<td><code>tuple[str, ...]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>certainties</code></td>
+<td><code>tuple[str, ...]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>describe(self) -&gt; str</code></li>
+</ul>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>consistency.conflict</code> (<code>conflicts</code>): requirements on one quantity leave a value that meets them all.</li>
+<li><code>consistency.child_looser</code> (<code>child_looser</code>): a child allows no values its parent excludes (same quantity).</li>
+<li><code>consistency.issue_due</code> (<code>issue_due</code>): open issues are not past their due date.</li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="convert"><code>convert</code></h4>
+<pre><code class="language-python">def convert(number: float, unit: str | None, quantity: Quantity) -&gt; float | None
+</code></pre>
+<p>A number in the slot's unit, expressed in the quantity's unit; None if it cannot be.</p>
+<h4 id="allowed"><code>allowed</code></h4>
+<pre><code class="language-python">def allowed(slot: ValueSlot, quantity: Quantity) -&gt; Interval | None
+</code></pre>
+<p>The interval a slot allows, or None when it is not comparable.</p>
+<h4 id="condition_key"><code>condition_key</code></h4>
+<pre><code class="language-python">def condition_key(slot: ValueSlot, reference: str) -&gt; str
+</code></pre>
+<p>The condition as compared: the reference-language text, normalised; a condition written
+only in another language is kept apart from both the unconditioned and the referenced ones.</p>
+<h4 id="constraints"><code>constraints</code></h4>
+<pre><code class="language-python">def constraints(vault: Vault) -&gt; Iterator[Constraint | tuple[Requirement, str, str]]
+</code></pre>
+<p>Per current requirement and (quantity, condition): the combined interval of its slots.
+A requirement whose own slots on one quantity allow no value is yielded as a problem tuple.</p>
+<h4 id="ancestor_sets"><code>ancestor_sets</code></h4>
+<pre><code class="language-python">def ancestor_sets(vault: Vault) -&gt; dict[str, set[str]]
+</code></pre>
+<p>Each node reference with itself and all its ancestors.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>same(first: float, second: float) -&gt; bool</code></li>
+<li><code>condition_label(condition: str) -&gt; str</code></li>
+<li><code>listed(names: list[str], limit: int = 5) -&gt; str</code></li>
+</ul>
+<h3 id="qingsongchecksdocuments"><code>qingsong.checks.documents</code></h3>
+<p>Source: <a href="../../src/qingsong/checks/documents.py"><code>src/qingsong/checks/documents.py</code></a></p>
+<p>Document rules: release entries and their tags (docs/SPEC.md §5.5, §10).</p>
+<p><strong>Check rules</strong></p>
+<ul>
+<li><code>documents.release</code> (<code>release_entries</code>): release entries are well formed, in order, and made by approvers.</li>
+<li><code>documents.release_tag</code> (<code>release_tags</code>): release tags mark a commit that holds the same release entry.</li>
+</ul>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>documents(context: Context) -&gt; Iterator[Document]</code></li>
+<li><code>release_problems(context: Context, document: Document) -&gt; Iterator[tuple[str, str | None]]</code></li>
+</ul>
+<h2 id="modules-changing-the-record">Modules: changing the record</h2>
+<h3 id="qingsongoperations"><code>qingsong.operations</code></h3>
+<p>Source: <a href="../../src/qingsong/operations.py"><code>src/qingsong/operations.py</code></a></p>
+<p>Recorded changes: adopt, new, revise, supersede, withdraw, approve, confirm, renumber, init
+(docs/SPEC.md §8, §9, §11). Every operation validates the result, rewrites the stamp, writes the
+file atomically and reads it back to verify the stamp.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-operationerror-exception">class <code>OperationError</code> (Exception)</h4>
+<p><strong>Functions</strong></p>
+<h4 id="translation_entries"><code>translation_entries</code></h4>
+<pre><code class="language-python">def translation_entries(
+    vault: Vault,
+    record: RecordBase,
+    status: str,
+    person: str | None,
+    today: date,
+    existing: dict[str, Any] | None = None,
+) -&gt; dict[str, Any]
+</code></pre>
+<p>Translation state for bilingual fields present in both languages.</p>
+<p>With <code>existing</code>, entries whose source hash is still current are kept as they are; only stale
+or missing entries are (re)written. A review (<code>status</code> reviewed) also marks current machine
+entries as reviewed by the person; current reviews by others are kept.</p>
+<h4 id="literal_blocks"><code>literal_blocks</code></h4>
+<pre><code class="language-python">def literal_blocks(value: Any) -&gt; Any
+</code></pre>
+<p>Write new multi-line texts as literal blocks (|-) instead of quoted strings with escapes.
+Texts that a literal block cannot hold exactly (control or separator characters such as tab,
+vertical tab, carriage return, U+0085 and U+2028, trailing spaces, leading indentation or a
+final newline) are left as they are.</p>
+<h4 id="stamped"><code>stamped</code></h4>
+<pre><code class="language-python">def stamped(data: CommentedMap) -&gt; tuple[RecordBase, str]
+</code></pre>
+<p>Write normative hash and stamp into the data; return the record and its serialized text.</p>
+<p>The text is parsed again and must give the same stamp, so that nothing is lost in writing.</p>
+<h4 id="adopt"><code>adopt</code></h4>
+<pre><code class="language-python">def adopt(
+    root: Path,
+    file: Path,
+    person: str,
+    summary: str,
+    event: str = 'imported',
+    translation: str = 'machine',
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Take a hand-written record file (without bookkeeping fields) into the record.</p>
+<h4 id="numbers_in_use"><code>numbers_in_use</code></h4>
+<pre><code class="language-python">def numbers_in_use(vault: Vault, record_type: str, namespace: str | None) -&gt; set[int]
+</code></pre>
+<p>Numbers used in the working tree (loaded or not) and on every main reference.</p>
+<h4 id="new_requirement"><code>new_requirement</code></h4>
+<pre><code class="language-python">def new_requirement(
+    root: Path,
+    namespace: str,
+    title: str,
+    statement: str,
+    person: str,
+    level: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Allocate the next ID; title and statement are given in the node's origin language.</p>
+<h4 id="draft_identity"><code>draft_identity</code></h4>
+<pre><code class="language-python">def draft_identity(
+    vault: Vault,
+    record_type: str,
+    data: CommentedMap,
+    slug: str | None,
+) -&gt; str
+</code></pre>
+<p>The ID a new record of this type receives (docs/SPEC.md §5.3, §6.1).</p>
+<h4 id="new_from_draft"><code>new_from_draft</code></h4>
+<pre><code class="language-python">def new_from_draft(
+    root: Path,
+    record_type: str,
+    draft: Path,
+    person: str,
+    slug: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Allocate an ID for a draft file (all fields but the ID and bookkeeping), write the record
+where its ID says, and record its creation. The draft file itself is left untouched.</p>
+<h4 id="revise"><code>revise</code></h4>
+<pre><code class="language-python">def revise(
+    root: Path,
+    record_id: str,
+    change_class: str,
+    summary: str,
+    person: str,
+    decision: str | None = None,
+    translation: str = 'unchanged',
+    to_draft: bool = False,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Record a change already made to a record's file: bump the revision (and the normative
+revision for a 'value' change), rewrite the stamp, and append a history event. Refuses
+'editorial' when values, the level or the verification methods changed (<code>normative_hash</code>), a
+baselined requirement without a decision record, and an agreed one without a reason.</p>
+<h4 id="supersede"><code>supersede</code></h4>
+<pre><code class="language-python">def supersede(
+    root: Path,
+    old_id: str,
+    successors: list[str],
+    summary: str,
+    person: str,
+    decision: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Mark a record as superseded by one or more current successors of the same type (several for a
+split). An agreed or baselined requirement needs a decision record.</p>
+<h4 id="withdraw"><code>withdraw</code></h4>
+<pre><code class="language-python">def withdraw(
+    root: Path,
+    record_id: str,
+    reason: str,
+    person: str,
+    decision: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Withdraw a record: it stays in the vault with lifecycle 'withdrawn' and its ID is retired. An
+agreed or baselined requirement needs a decision record.</p>
+<h4 id="approve"><code>approve</code></h4>
+<pre><code class="language-python">def approve(
+    root: Path,
+    record_id: str,
+    to: str,
+    person: str,
+    ref: str,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Record an approver's maturity decision on a requirement: 'agreed' records what was approved
+(normative revision and text hash); 'draft' reopens an agreed or baselined requirement.
+Agents call it only on an approver's instruction.</p>
+<h4 id="confirm"><code>confirm</code></h4>
+<pre><code class="language-python">def confirm(
+    root: Path,
+    child_id: str,
+    parent_id: str,
+    person: str,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Clear a suspect link: record that the child was reviewed against its parent's current
+normative revision.</p>
+<h4 id="renumber"><code>renumber</code></h4>
+<pre><code class="language-python">def renumber(
+    root: Path,
+    old_id: str,
+    new_id: str,
+    person: str,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Move a record that has not reached main to a free ID, rewriting every reference.</p>
+<p>All changes are prepared and verified in memory before any file is written.</p>
+<h4 id="init_vault"><code>init_vault</code></h4>
+<pre><code class="language-python">def init_vault(path: Path, code: str, name: str) -&gt; Path
+</code></pre>
+<p>Create an empty vault at PATH: configuration, people, glossary, root tree file and the record
+folders.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>today_date(today: date | None) -&gt; date</code></li>
+<li><code>require_person(vault: Vault, person: str) -&gt; None</code></li>
+<li><code>require_record(vault: Vault, record_id: str) -&gt; RecordBase</code></li>
+<li><code>require_current(record: RecordBase) -&gt; None</code></li>
+<li><code>require_recorded(record: RecordBase) -&gt; None</code></li>
+<li><code>validate(data: dict[str, Any]) -&gt; RecordBase</code></li>
+<li><code>languages_of(vault: Vault) -&gt; tuple[str, str]</code></li>
+<li><code>translation_fields(vault: Vault, record_type: str) -&gt; list[str]</code></li>
+<li><code>history_event(revision: int, today: date, person: str, event: str, summary: str, change_class: str | None = None, decision: str | None = None, via: str | None = None) -&gt; dict[str, Any]</code></li>
+<li><code>load_round_trip(path: Path) -&gt; CommentedMap</code></li>
+<li><code>serialize(data: CommentedMap) -&gt; str</code></li>
+<li><code>write_atomically(path: Path, text: str, exclusive: bool = False) -&gt; None</code></li>
+<li><code>finish(path: Path, data: CommentedMap, exclusive: bool = False) -&gt; RecordBase</code></li>
+<li><code>edit(vault: Vault, record_id: str, change: Callable[[CommentedMap, RecordBase], None], allow_unrecorded: bool = False) -&gt; RecordBase</code></li>
+<li><code>allocate_number(vault: Vault, record_type: str, namespace: str | None) -&gt; int</code></li>
+<li><code>expected_level(vault: Vault, namespace: str) -&gt; str</code></li>
+<li><code>text_origin_for(vault: Vault, node_reference: str) -&gt; str</code></li>
+</ul>
+<h3 id="qingsongreview"><code>qingsong.review</code></h3>
+<p>Source: <a href="../../src/qingsong/review.py"><code>src/qingsong/review.py</code></a></p>
+<p>Review items (docs/SPEC.md §5.6): issues raised from check findings, proposed fixes, and the
+approver's decisions. Every change goes through the recorded operations of <code>operations</code>.</p>
+<p><strong>Functions</strong></p>
+<h4 id="untracked_findings"><code>untracked_findings</code></h4>
+<pre><code class="language-python">def untracked_findings(vault: Vault, rules: set[str] | None = None) -&gt; list[Finding]
+</code></pre>
+<p>Warnings on records that no open issue tracks and no acceptance covers.</p>
+<h4 id="raise_from_checks"><code>raise_from_checks</code></h4>
+<pre><code class="language-python">def raise_from_checks(
+    root: Path,
+    person: str,
+    rules: set[str] | None = None,
+    group: bool = False,
+    owner: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; list[RecordBase]
+</code></pre>
+<p>Raise issues for check warnings that no issue tracks yet: one per finding, or with <code>group</code>
+one per rule covering all its records. Kind and title come from the rule.</p>
+<h4 id="raise_issue"><code>raise_issue</code></h4>
+<pre><code class="language-python">def raise_issue(
+    root: Path,
+    kind: str,
+    title: dict[str, str],
+    description: dict[str, str],
+    records: list[str],
+    person: str,
+    owner: str | None = None,
+    due: str | None = None,
+    via: str | None = None,
+    rule: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>An issue written by hand. With <code>rule</code>, it tracks that rule's findings on its records,
+for example several records grouped under one proposed fix.</p>
+<h4 id="checked_changes"><code>checked_changes</code></h4>
+<pre><code class="language-python">def checked_changes(
+    vault: Vault,
+    changes: Iterable[dict[str, Any]],
+) -&gt; list[dict[str, Any]]
+</code></pre>
+<p>Validate proposed changes against the current records and add their base hashes.</p>
+<h4 id="propose"><code>propose</code></h4>
+<pre><code class="language-python">def propose(
+    root: Path,
+    issue_id: str,
+    person: str,
+    summary: dict[str, str],
+    changes: list[dict[str, Any]],
+    change_class: str = 'editorial',
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Add a proposed fix to an open issue. Without changes, it proposes keeping the text.</p>
+<h4 id="set_field"><code>set_field</code></h4>
+<pre><code class="language-python">def set_field(data: CommentedMap, field: str, language: str, text: str) -&gt; None
+</code></pre>
+<p>Set one language of a prose field. A new top-level field goes after the prose field that
+precedes it in the reading order, so the file keeps its usual layout.</p>
+<h4 id="accept"><code>accept</code></h4>
+<pre><code class="language-python">def accept(
+    root: Path,
+    issue_id: str,
+    number: int,
+    person: str,
+    decision: str | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; list[RecordBase]
+</code></pre>
+<p>Apply an accepted proposal and close its issue. Every target is checked before any file
+is written, and written files are restored if a later step fails.</p>
+<h4 id="reject"><code>reject</code></h4>
+<pre><code class="language-python">def reject(
+    root: Path,
+    issue_id: str,
+    number: int,
+    person: str,
+    reason: dict[str, str],
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Reject a proposal (an approver) or withdraw it (its author), with a reason.</p>
+<h4 id="close"><code>close</code></h4>
+<pre><code class="language-python">def close(
+    root: Path,
+    issue_id: str,
+    outcome: str,
+    resolution: dict[str, str],
+    person: str,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; RecordBase
+</code></pre>
+<p>Close an issue without accepting a proposal: answered, withdrawn, or fixed by a separate
+recorded revision. Approvers only.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>require_issue(vault: Vault, issue_id: str, open_only: bool = True) -&gt; Issue</code></li>
+<li><code>require_approver(vault: Vault, person: str) -&gt; None</code></li>
+<li><code>write_new_issue(vault: Vault, data: dict[str, Any], number: int) -&gt; RecordBase</code></li>
+<li><code>issue_skeleton(kind: str, title: dict[str, str], description: dict[str, str], records: list[str], person: str, today: date, rule: str | None = None, owner: str | None = None, due: str | None = None, via: str | None = None) -&gt; dict[str, Any]</code></li>
+<li><code>find_proposal(issue: Issue, number: int) -&gt; Proposal</code></li>
+<li><code>stale_changes(vault: Vault, proposal: Proposal) -&gt; list[str]</code></li>
+<li><code>close_issue_data(data: CommentedMap, old: Issue, outcome: str, resolution: dict[str, str], person: str, today: date, via: str | None, accepted_number: int | None = None, accepted_hashes: dict[str, str] | None = None) -&gt; None</code></li>
+</ul>
+<h3 id="qingsongdecisions_file"><code>qingsong.decisions_file</code></h3>
+<p>Source: <a href="../../src/qingsong/decisions_file.py"><code>src/qingsong/decisions_file.py</code></a></p>
+<p>Decisions files (docs/SPEC.md §5.6): one reviewer's decisions on proposed fixes, saved from the
+review page and applied all or nothing through <code>review.reject</code> and <code>review.accept</code>.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-reviewdecision-strictmodel">class <code>ReviewDecision</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>issue</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>proposal</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>decision</code></td>
+<td><code>Literal['accept', 'reject']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td><code>str</code></td>
+<td><code>''</code></td>
+</tr>
+<tr>
+<td><code>proposal_hash</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>decision_record</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-decisionsfile-strictmodel">class <code>DecisionsFile</code> (StrictModel)</h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format</code></td>
+<td><code>Literal['qingsong-decisions/1']</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>project</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>decided_by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>saved</code></td>
+<td><code>datetime | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>decisions</code></td>
+<td><code>list[ReviewDecision]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-applieddecision">class <code>AppliedDecision</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>decision</code></td>
+<td><code>ReviewDecision</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>written</code></td>
+<td><code>list[RecordBase]</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-applied">class <code>Applied</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>decided_by</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>branch</code></td>
+<td><code>str | None</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>started_branch</code></td>
+<td><code>bool</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kept</code></td>
+<td><code>Path</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>applied</code></td>
+<td><code>list[AppliedDecision]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Functions</strong></p>
+<h4 id="problems_with"><code>problems_with</code></h4>
+<pre><code class="language-python">def problems_with(vault: Vault, decisions: DecisionsFile) -&gt; list[str]
+</code></pre>
+<p>Every reason the file cannot be applied, found without writing anything.</p>
+<h4 id="target_problems"><code>target_problems</code></h4>
+<pre><code class="language-python">def target_problems(vault: Vault, entry: ReviewDecision, proposal: Proposal) -&gt; list[str]
+</code></pre>
+<p>What <code>review.accept</code> would refuse in the records it writes.</p>
+<h4 id="apply"><code>apply</code></h4>
+<pre><code class="language-python">def apply(
+    root: Path,
+    path: Path,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; Applied
+</code></pre>
+<p>Apply a decisions file: check every decision, then apply them all or none. On the main
+branch the changes move to a new review branch. Nothing is committed.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>read_decisions(path: Path) -&gt; DecisionsFile</code></li>
+<li><code>kept_path(root: Path, person: str, today: date) -&gt; Path</code></li>
+<li><code>review_branch_name(root: Path, person: str, today: date) -&gt; str</code></li>
+<li><code>language_of(text: str) -&gt; str</code></li>
+</ul>
+<h3 id="qingsongslots"><code>qingsong.slots</code></h3>
+<p>Source: <a href="../../src/qingsong/slots.py"><code>src/qingsong/slots.py</code></a></p>
+<p>Moving numbers from a requirement's prose into value slots without changing its meaning
+(docs/SPEC.md §5.2, &quot;Converting between the forms&quot;).</p>
+<p>A move is accepted only when the slot renders the replaced literal the same way, up to a short,
+named list of formatting differences, and when no relation word sits just outside the literal.
+The rest of the statement is untouched by construction. The approval is re-bound only if it was
+current before, and the history event records the normative hash before and after, which is
+what <code>integrity.against</code> accepts.</p>
+<p><strong>Functions</strong></p>
+<h4 id="glued"><code>glued</code></h4>
+<pre><code class="language-python">def glued(text: str, start: int, end: int) -&gt; str | None
+</code></pre>
+<p>The character that ties the span to a larger expression, if any.</p>
+<h4 id="display"><code>display</code></h4>
+<pre><code class="language-python">def display(text: str) -&gt; str
+</code></pre>
+<p>Rendered slot text as a reader sees it: Markdown escapes removed.</p>
+<h4 id="normalized"><code>normalized</code></h4>
+<pre><code class="language-python">def normalized(text: str) -&gt; str
+</code></pre>
+<p>The comparison form of a literal or a rendered slot.</p>
+<h4 id="protected_spans"><code>protected_spans</code></h4>
+<pre><code class="language-python">def protected_spans(text: str) -&gt; list[tuple[int, int]]
+</code></pre>
+<p>References, links, footnotes, code and mathematics: never rewritten by a move.</p>
+<h4 id="slot_values"><code>slot_values</code></h4>
+<pre><code class="language-python">def slot_values(
+    root: Path,
+    record_id: str,
+    slots: dict[str, Any],
+    person: str,
+    via: str | None = None,
+    today: date | None = None,
+    dry_run: bool = False,
+) -&gt; tuple[Requirement, list[tuple[str, str, str]], list[str]]
+</code></pre>
+<p>Move numbers into slots. Returns the record and, per language, the statement before and
+after. Refuses, with every reason, unless each move provably keeps the meaning.</p>
+<h4 id="rebind_accepted_wording"><code>rebind_accepted_wording</code></h4>
+<pre><code class="language-python">def rebind_accepted_wording(
+    root: Path,
+    record_id: str,
+    old_review: str,
+    new_review: str,
+    person: str,
+    via: str | None,
+    today: date,
+) -&gt; list[str]
+</code></pre>
+<p>Carry an &quot;accepted as written&quot; decision over a move, as the approval is carried: only where
+it covered the record's text before the move (docs/SPEC.md §5.2, §5.6).</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>overlaps(first: tuple[int, int], second: tuple[int, int]) -&gt; bool</code></li>
+</ul>
+<h3 id="qingsongwording"><code>qingsong.wording</code></h3>
+<p>Source: <a href="../../src/qingsong/wording.py"><code>src/qingsong/wording.py</code></a></p>
+<p>Words next to a number or a value slot (docs/SPEC.md §5.2).</p>
+<p>Relation words say what a number is: a limit, a range, an approximation. Any comparative (&quot;longer
+than&quot;, &quot;长于&quot;) counts, through &quot;than&quot; and &quot;于&quot;. Qualifiers say what it
+counts: per item, in total, on average. The slot move refuses a literal with either kind just
+outside it, so that the slot's data says what the sentence says. The check for a relation said
+twice (&quot;at least ≥ 40 %&quot;) uses the relation words only.</p>
+<p><strong>Functions</strong></p>
+<h4 id="neighbour_problem"><code>neighbour_problem</code></h4>
+<pre><code class="language-python">def neighbour_problem(
+    text: str,
+    start: int,
+    end: int,
+    language: str,
+    qualifiers: bool = True,
+) -&gt; str | None
+</code></pre>
+<p>A relation word (and, with <code>qualifiers</code>, a qualifier) right before or after the span.</p>
+<h3 id="qingsongrelease"><code>qingsong.release</code></h3>
+<p>Source: <a href="../../src/qingsong/release.py"><code>src/qingsong/release.py</code></a></p>
+<p>Releases of documents and their change summaries (docs/SPEC.md §5.5).</p>
+<p>A release is prepared on a branch (<code>prepare</code>), reviewed and merged like any other change, and then
+tagged at the commit of the main branch that first contains it (<code>tag_release</code>). The change summary
+(<code>changes</code>) compares a document between two states of the vault.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-recordchange">class <code>RecordChange</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>fields</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>before</code></td>
+<td><code>dict[str, Any]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>after</code></td>
+<td><code>dict[str, Any]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>events</code></td>
+<td><code>list[dict[str, Any]]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>maturity</code></td>
+<td><code>list[str | None] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>lifecycle</code></td>
+<td><code>list[str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>superseded_by</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>aliases_added</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>aliases_removed</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>history_rewritten</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-sectionchange">class <code>SectionChange</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td><code>str | None</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>title_before</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>title_after</code></td>
+<td><code>dict[str, str] | None</code></td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>blocks_before</code></td>
+<td><code>list[dict]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>blocks_after</code></td>
+<td><code>list[dict]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-changesummary">class <code>ChangeSummary</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>document</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>since</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>since_ref</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>until</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>approximate</code></td>
+<td><code>bool</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>added</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>removed</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>moved</code></td>
+<td><code>dict[str, list[str]]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>moved_within</code></td>
+<td><code>dict[str, list[str | None]]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>revised</code></td>
+<td><code>list[RecordChange]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>bookkeeping</code></td>
+<td><code>list[RecordChange]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>sections</code></td>
+<td><code>list[SectionChange]</code></td>
+<td><code>[]</code></td>
+</tr>
+<tr>
+<td><code>front_matter</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>is_empty(self) -&gt; bool</code></li>
+<li><code>as_dict(self) -&gt; dict[str, Any]</code></li>
+<li><code>bookkeeping_groups(self) -&gt; dict[str, list[str]]</code>
+Bookkeeping changes grouped by what happened: note → record IDs.</li>
+<li><code>lines(self) -&gt; list[str]</code></li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="outline_records"><code>outline_records</code></h4>
+<pre><code class="language-python">def outline_records(blocks: list[Block]) -&gt; list[str]
+</code></pre>
+<p>Requirement and figure IDs in outline order.</p>
+<h4 id="kept_order"><code>kept_order</code></h4>
+<pre><code class="language-python">def kept_order(order: list[str], accounted: set[str]) -&gt; list[str]
+</code></pre>
+<p>A section's block order without the records already reported as added, removed or moved.</p>
+<h4 id="outline_places"><code>outline_places</code></h4>
+<pre><code class="language-python">def outline_places(blocks: list[Block], key: str | None = None) -&gt; dict[str, str | None]
+</code></pre>
+<p>Record ID → key of the section that holds it (None outside any section).</p>
+<h4 id="section_contents"><code>section_contents</code></h4>
+<pre><code class="language-python">def section_contents(
+    blocks: list[Block],
+    key: str | None = None,
+    title: Any = None,
+    found: dict | None = None,
+) -&gt; dict[str | None, dict]
+</code></pre>
+<p>Section key → its title, its own text, table and definitions blocks, and the order of all
+its blocks (records by ID, sections by key, others by content). Blocks outside any section
+are kept under the key None; a repeated key gets a suffix (structure.outline reports it).</p>
+<h4 id="release_blockers"><code>release_blockers</code></h4>
+<pre><code class="language-python">def release_blockers(vault: Vault, document: Document) -&gt; list[str]
+</code></pre>
+<p>Why the document cannot be released from this state: errors on the document or on the
+records of its outline, integrity errors anywhere, and translations not reviewed.</p>
+<h4 id="prepare"><code>prepare</code></h4>
+<pre><code class="language-python">def prepare(
+    root: Path,
+    document_id: str,
+    version: str,
+    person: str,
+    summary: dict[str, str],
+    release_date: date | None = None,
+    note: dict[str, str] | None = None,
+    via: str | None = None,
+    today: date | None = None,
+) -&gt; Document
+</code></pre>
+<p>Write the release entry (step 1 of §5.5). Refuses with every reason at once.</p>
+<h4 id="find_release_commit"><code>find_release_commit</code></h4>
+<pre><code class="language-python">def find_release_commit(root: Path, document_path: str, version: str) -&gt; str
+</code></pre>
+<p>The commit on the main branch's first-parent history that first contains the release.</p>
+<h4 id="tag_release"><code>tag_release</code></h4>
+<pre><code class="language-python">def tag_release(
+    root: Path,
+    document_id: str,
+    version: str,
+    at: str | None = None,
+) -&gt; tuple[str, str]
+</code></pre>
+<p>Create the release tag (step 2 of §5.5); return the tag and the commit it marks.</p>
+<p>A release made with qingsong is tagged at the commit that introduced it. A release made before
+qingsong is tagged at the commit given with <code>at</code>, where the record was verified against the
+issued document.</p>
+<h4 id="resolve_since"><code>resolve_since</code></h4>
+<pre><code class="language-python">def resolve_since(
+    root: Path,
+    document: Document,
+    since: str | None,
+    until_commit: str | None = None,
+) -&gt; tuple[str, str, bool]
+</code></pre>
+<p>(git reference, label, approximate) of the earlier state to compare with. With an end
+commit, only states strictly before it qualify as the default.</p>
+<h4 id="changes"><code>changes</code></h4>
+<pre><code class="language-python">def changes(
+    root: Path,
+    document_id: str,
+    since: str | None = None,
+    until: str | None = None,
+) -&gt; ChangeSummary
+</code></pre>
+<p>Summarise what changed in a document between two states: by default from its latest tagged
+release to the working tree; <code>since</code> and <code>until</code> take a version or a git reference.</p>
+<h4 id="summaries_since_last_release"><code>summaries_since_last_release</code></h4>
+<pre><code class="language-python">def summaries_since_last_release(root: Path, later: Vault) -&gt; 'dict[str, ChangeSummary | str]'
+</code></pre>
+<p>For every document of a working-tree vault: its changes since its last tagged release, or
+why there is none. Each earlier state is read once, however many documents share it.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>parse_version(version: str) -&gt; tuple[int, ...]</code></li>
+<li><code>tag_name(document_id: str, version: str) -&gt; str</code></li>
+<li><code>require_document(vault: Vault, document_id: str) -&gt; Document</code></li>
+<li><code>on_main(root: Path, document_path: str, version: str) -&gt; bool</code></li>
+<li><code>has_release(text: str | None, version: str) -&gt; bool</code></li>
+<li><code>compact_ids(record_ids: list[str]) -&gt; str</code></li>
+<li><code>status_lines(change: RecordChange, prefix: str = '               ') -&gt; list[str]</code></li>
+<li><code>dump(record: RecordBase, name: str) -&gt; Any</code></li>
+<li><code>compare_record(old: RecordBase, new: RecordBase) -&gt; RecordChange | None</code></li>
+<li><code>compare(document_id: str, earlier: Vault, later: Vault, since: str, since_ref: str, until: str, approximate: bool) -&gt; ChangeSummary</code></li>
+<li><code>changes_between(root: Path, document_id: str, later: Vault, since: str | None, until_label: str, until_commit: str | None) -&gt; ChangeSummary</code></li>
+</ul>
+<h3 id="qingsonggitutil"><code>qingsong.gitutil</code></h3>
+<p>Source: <a href="../../src/qingsong/gitutil.py"><code>src/qingsong/gitutil.py</code></a></p>
+<p>Read earlier versions of a vault through the git command line (docs/SPEC.md §6.1).</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-giterror-exception">class <code>GitError</code> (Exception)</h4>
+<p><strong>Functions</strong></p>
+<h4 id="main_refs"><code>main_refs</code></h4>
+<pre><code class="language-python">def main_refs(root: Path) -&gt; list[str]
+</code></pre>
+<p>Every main reference that exists (remote and local), so that neither is overlooked.</p>
+<h4 id="commit_of"><code>commit_of</code></h4>
+<pre><code class="language-python">def commit_of(root: Path, ref: str) -&gt; str | None
+</code></pre>
+<p>The commit a reference points to, or None if it does not exist.</p>
+<h4 id="head_commit"><code>head_commit</code></h4>
+<pre><code class="language-python">def head_commit(root: Path) -&gt; str | None
+</code></pre>
+<p>The commit checked out, or None outside a git repository.</p>
+<h4 id="is_dirty"><code>is_dirty</code></h4>
+<pre><code class="language-python">def is_dirty(root: Path) -&gt; bool
+</code></pre>
+<p>Uncommitted changes, untracked files included, inside the vault folder.</p>
+<h4 id="current_branch"><code>current_branch</code></h4>
+<pre><code class="language-python">def current_branch(root: Path) -&gt; str | None
+</code></pre>
+<p>The checked-out branch; None for a detached HEAD or outside a repository.</p>
+<h4 id="switch_to_new_branch"><code>switch_to_new_branch</code></h4>
+<pre><code class="language-python">def switch_to_new_branch(root: Path, name: str) -&gt; None
+</code></pre>
+<p>Start a branch at HEAD and check it out; uncommitted changes come along.</p>
+<h4 id="uncommitted_paths"><code>uncommitted_paths</code></h4>
+<pre><code class="language-python">def uncommitted_paths(root: Path) -&gt; list[Path]
+</code></pre>
+<p>Absolute paths of uncommitted changes, untracked files included, inside the vault folder.</p>
+<h4 id="first_parent_history"><code>first_parent_history</code></h4>
+<pre><code class="language-python">def first_parent_history(root: Path, ref: str, relative_path: str) -&gt; list[tuple[str, str]]
+</code></pre>
+<p>(commit, the file's path in it) for the commits on the first-parent history of REF that
+touched the file, oldest first. Renames are followed.</p>
+<h4 id="export_tree"><code>export_tree</code></h4>
+<pre><code class="language-python">def export_tree(root: Path, ref: str, target: Path) -&gt; None
+</code></pre>
+<p>Write the vault folder as stored at REF into TARGET, from the raw objects: no checkout, no
+archive filters and no line-ending conversion (docs/SPEC.md §5.5).</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>run_git(root: Path, *arguments: str) -&gt; CompletedProcess</code></li>
+<li><code>is_repository(root: Path) -&gt; bool</code></li>
+<li><code>ref_exists(root: Path, ref: str) -&gt; bool</code></li>
+<li><code>files_at(root: Path, ref: str, folder: str) -&gt; list[str]</code></li>
+<li><code>read_at(root: Path, ref: str, relative_path: str) -&gt; str | None</code></li>
+<li><code>branch_exists(root: Path, name: str) -&gt; bool</code></li>
+<li><code>tag_exists(root: Path, tag: str) -&gt; bool</code></li>
+<li><code>create_tag(root: Path, tag: str, commit: str, message: str) -&gt; None</code></li>
+<li><code>is_ancestor(root: Path, commit: str, ref: str) -&gt; bool</code></li>
+</ul>
+<h2 id="modules-outputs">Modules: outputs</h2>
+<h3 id="qingsongrendermodel"><code>qingsong.render.model</code></h3>
+<p>Source: <a href="../../src/qingsong/render/model.py"><code>src/qingsong/render/model.py</code></a></p>
+<p>What the renderers need from a vault: document numbering, links, trees and graphs.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-numbering">class <code>Numbering</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sections</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>figures</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>requirements</code></td>
+<td><code>dict[str, str]</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>titles</code></td>
+<td><code>dict[str, dict[str, str]]</code></td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Functions</strong></p>
+<h4 id="number_document"><code>number_document</code></h4>
+<pre><code class="language-python">def number_document(document: Document) -&gt; Numbering
+</code></pre>
+<p>Section and requirement numbers share one counter per level (2.1, 2.1.1, 2.1.2 …), as in the
+formal documents; figures are numbered per top-level section (3.1, 3.2 …). A requirement or figure
+placed twice keeps its first number (the outline check reports the repeat).</p>
+<h4 id="tree_data"><code>tree_data</code></h4>
+<pre><code class="language-python">def tree_data(vault: Vault) -&gt; dict | None
+</code></pre>
+<p>The product tree as nested dicts, with requirement counts per node and subtree.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>documents_of(vault: Vault) -&gt; list[Document]</code></li>
+<li><code>requirement_documents(vault: Vault) -&gt; dict[str, list[str]]</code></li>
+<li><code>children_of(vault: Vault) -&gt; dict[str, list[str]]</code></li>
+</ul>
+<h3 id="qingsongrendertext"><code>qingsong.render.text</code></h3>
+<p>Source: <a href="../../src/qingsong/render/text.py"><code>src/qingsong/render/text.py</code></a></p>
+<p>The text format of docs/SPEC.md §5.4 (a Markdown subset), shared by the HTML and Word renderers.</p>
+<p>Block level: paragraphs, bullet lists (<code>- </code>) and numbered lists (<code>1. </code>), nested by indentation.
+Inline: <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, <code>~sub~</code>, <code>^sup^</code>, <code>$math$</code>, <code>[text](url)</code>, <code>[[ID]]</code>
+and <code>[[DOC#key]]</code> references, and backslash escapes. Open values (bracketed text, TBD, TBC, 待定, 待确认) are marked.
+The inline rules follow pandoc where the two could differ: emphasis, sub- and superscript and math
+need non-space characters inside their markers, so &quot;2 * 3&quot;, &quot;~45 m&quot; and &quot;$5&quot; stay as written.</p>
+<p><strong>Types</strong></p>
+<ul>
+<li><code>Resolver</code>: <code>Callable[[str, str | None, str], tuple[str, str | None]]</code></li>
+</ul>
+<p><strong>Classes</strong></p>
+<h4 id="class-listitem">class <code>ListItem</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>level</code></td>
+<td><code>int</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>ordered</code></td>
+<td><code>bool</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="class-block">class <code>Block</code></h4>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><code>str</code></td>
+<td><code>required</code></td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>str</code></td>
+<td><code>''</code></td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td><code>list[ListItem]</code></td>
+<td><code>[]</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Functions</strong></p>
+<h4 id="parse_blocks"><code>parse_blocks</code></h4>
+<pre><code class="language-python">def parse_blocks(text: str) -&gt; list[Block]
+</code></pre>
+<p>Paragraphs and lists. A list may start right after a paragraph line, items continue on
+indented lines, blank lines between items keep one list, and indentation nests items.</p>
+<h4 id="number"><code>number</code></h4>
+<pre><code class="language-python">def number(value: float) -&gt; str
+</code></pre>
+<p>Plain decimal notation with a thousands separator, a true minus sign, and a power of ten
+only for extreme magnitudes.</p>
+<h4 id="format_slot"><code>format_slot</code></h4>
+<pre><code class="language-python">def format_slot(slot, language: str) -&gt; str
+</code></pre>
+<p>A value slot as it reads in a document: relation, value, tolerance, unit and certainty.
+The result is escaped so that it is never read as markup.</p>
+<h4 id="substitute_slots"><code>substitute_slots</code></h4>
+<pre><code class="language-python">def substitute_slots(text: str, values: dict, language: str) -&gt; str
+</code></pre>
+<p>Replace {slot} placeholders with formatted values; unknown names stay visible.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>inline(text: str, language: str, resolve: Callable[[str, str | None, str], tuple[str, str | None]]) -&gt; str</code></li>
+<li><code>blocks(text: str, language: str, resolve: Callable[[str, str | None, str], tuple[str, str | None]]) -&gt; str</code></li>
+<li><code>unit_label(unit: str | None) -&gt; str</code></li>
+</ul>
+<h3 id="qingsongrenderhtml"><code>qingsong.render.html</code></h3>
+<p>Source: <a href="../../src/qingsong/render/html.py"><code>src/qingsong/render/html.py</code></a></p>
+<p>Static HTML site (docs/SPEC.md §12.1): works offline from a folder; no external resources.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-site">class <code>Site</code></h4>
+<ul>
+<li><code>href(self, record_id: str, prefix: str) -&gt; str</code></li>
+<li><code>resolver(self, prefix: str, document: Document | None)</code></li>
+<li><code>text(   self,   value: dict | None,   prefix: str,   document: Document | None = None,   block: bool = True,   values: dict | None = None, ) -&gt; Markup</code></li>
+<li><code>caption(   self,   figure: Figure,   number: str | None,   prefix: str,   document: Document | None, ) -&gt; Markup</code>
+One block per language: the numbered label followed by the caption in that language.</li>
+<li><code>slot_text(self, slot) -&gt; str</code></li>
+<li><code>issue_state(self, issue: Issue) -&gt; str</code></li>
+<li><code>open_issues_of(self, record_id: str) -&gt; list[Issue]</code></li>
+<li><code>proposal_hash(self, proposal: Proposal) -&gt; str</code></li>
+<li><code>open_proposals(self, issue: Issue) -&gt; list[Proposal]</code></li>
+<li><code>issue_documents(self, issue: Issue) -&gt; list[str]</code></li>
+<li><code>record_link(self, record_id: str, prefix: str) -&gt; str</code>
+A requirement inside a document opens at its place in the document.</li>
+<li><code>change_diff(self, change: ProposedChange, language: str) -&gt; Markup</code>
+The difference as a reader sees it: references shown by their labels.</li>
+<li><code>form(self, record: Requirement) -&gt; str</code></li>
+<li><code>numbers_in_text(self, record: Requirement) -&gt; bool</code></li>
+<li><code>form_hint(self, record: Requirement) -&gt; str</code></li>
+<li><code>is_text(self, value: Any) -&gt; bool</code>
+Bilingual text: a non-empty mapping from language codes to strings.</li>
+<li><code>field_diff(   self,   before: Any,   after: Any,   language: str,   values_before: dict | None = None,   values_after: dict | None = None, ) -&gt; Markup</code>
+Word-level difference of one language of a changed text field. With value slots given,
+the texts are compared as a reader sees them, with the values filled in.</li>
+<li><code>filled(self, text: str, values: dict, language: str) -&gt; str</code></li>
+<li><code>as_text(self, value: Any) -&gt; str</code></li>
+<li><code>blocks_text(self, blocks: list[dict], language: str) -&gt; str</code>
+The readable text of a section's own blocks, for a before/after difference.</li>
+<li><code>blocks_diff(self, before: list[dict], after: list[dict], language: str) -&gt; Markup</code></li>
+<li><code>plain(self, value: dict | None, language: str = 'en') -&gt; str</code></li>
+<li><code>render(self, template: str, target: str, prefix: str, **context) -&gt; None</code></li>
+<li><code>build(self) -&gt; Path</code></li>
+<li><code>copy_images(self) -&gt; None</code></li>
+<li><code>flow_data(self, requirements: list[Requirement]) -&gt; dict</code></li>
+<li><code>write_search_index(self, requirements: list[Requirement]) -&gt; None</code></li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="diff_markup"><code>diff_markup</code></h4>
+<pre><code class="language-python">def diff_markup(old: str, new: str) -&gt; Markup
+</code></pre>
+<p>Word-level difference (character level for Chinese): deleted text struck, new text marked.</p>
+<h4 id="script_json"><code>script_json</code></h4>
+<pre><code class="language-python">def script_json(data) -&gt; str
+</code></pre>
+<p>JSON that is safe inside a <script> element.</p>
+<h4 id="change_summaries"><code>change_summaries</code></h4>
+<pre><code class="language-python">def change_summaries(vault: Vault) -&gt; 'dict[str, ChangeSummary | str]'
+</code></pre>
+<p>Each document's changes since its last tagged release, or why there is no summary.</p>
+<h4 id="render_site"><code>render_site</code></h4>
+<pre><code class="language-python">def render_site(vault: Vault, output: Path) -&gt; Path
+</code></pre>
+<p>Write the static HTML site into <code>output</code> (replaced) and return the path of its index page.</p>
+<h3 id="qingsongrenderword"><code>qingsong.render.word</code></h3>
+<p>Source: <a href="../../src/qingsong/render/word.py"><code>src/qingsong/render/word.py</code></a></p>
+<p>Word output (docs/SPEC.md §12.2): a formal document generated from the records.</p>
+<p>The layout follows the MUST requirement documents: cover, change record, responsibilities, table of
+contents, acronyms, reference documents, publications, then numbered sections with bilingual
+requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
+captions in both languages, and tables. A reference document (<code>templates/reference.docx</code> in the vault)
+supplies the styles; its body is discarded.</p>
+<p><strong>Classes</strong></p>
+<h4 id="class-wordrenderer">class <code>WordRenderer</code></h4>
+<ul>
+<li><code>clear_body(self) -&gt; None</code></li>
+<li><code>bullet_numbering(self) -&gt; int | None</code>
+A numbering instance for bullet lists, based on the template's first bullet definition.</li>
+<li><code>label(self, target: str, key: str | None, language: str) -&gt; str</code>
+The same labels as the HTML site: sections and figures are numbered by the document
+that holds them, also when that is another document.</li>
+<li><code>font(self, run, monospace: bool = False) -&gt; None</code></li>
+<li><code>runs(   self,   paragraph,   text: str,   language: str,   bold: bool = False,   italic: bool = False, ) -&gt; None</code></li>
+<li><code>add_run(   self,   paragraph,   text: str,   bold: bool = False,   italic: bool = False,   subscript: bool = False,   superscript: bool = False,   monospace: bool = False, )</code></li>
+<li><code>paragraph(   self,   text: str = '',   language: str = 'en',   style: str | None = None,   level: int | None = None,   bold: bool = False,   align = None, )</code></li>
+<li><code>style_names(self) -&gt; set[str]</code></li>
+<li><code>bulletize(self, paragraph, level: int) -&gt; None</code></li>
+<li><code>localized_paragraphs(   self,   value: dict | None,   level: int | None,   languages = ('en', 'zh'), ) -&gt; None</code>
+Each language's paragraphs in turn; list items become bullets one level deeper (numbered
+items keep their number as text).</li>
+<li><code>bilingual_title(self, value: dict) -&gt; str</code></li>
+<li><code>table(   self,   header: list[str],   rows: list[list[str]],   languages: list[str] | None = None, )</code></li>
+<li><code>cover(self) -&gt; None</code></li>
+<li><code>front_matter(self) -&gt; None</code></li>
+<li><code>table_of_contents(self) -&gt; None</code>
+A paragraph that marks where the table of contents goes; <code>fill_table_of_contents</code>
+replaces it once every heading is known.</li>
+<li><code>fill_table_of_contents(self) -&gt; None</code>
+A TOC field whose result already lists every heading of levels 1 to 3, each linked to a
+bookmark on its heading. Word shows it as it is, without asking to update fields when the
+document opens. Page numbers appear when the field is updated (F9, or Update Field); with
+<code>update_fields_on_open</code>, Word instead rebuilds the table on opening, after asking.</li>
+<li><code>request_field_update(self) -&gt; None</code></li>
+<li><code>page_break(self) -&gt; None</code></li>
+<li><code>heading(self, text: str, level: int) -&gt; None</code></li>
+<li><code>outline(self, blocks: list[Block], depth: int) -&gt; None</code></li>
+<li><code>requirement(self, record: Requirement, depth: int) -&gt; None</code></li>
+<li><code>figure(self, record: Figure) -&gt; None</code></li>
+<li><code>caption_paragraphs(self, caption: dict) -&gt; None</code></li>
+<li><code>definitions(self, terms: list[str]) -&gt; None</code></li>
+<li><code>header_and_footer(self) -&gt; None</code></li>
+<li><code>properties(self) -&gt; None</code>
+Document properties: the document number, title, version and, for an issued copy, the
+release tag (docs/SPEC.md §5.5).</li>
+<li><code>render(self, output: Path) -&gt; Path</code></li>
+</ul>
+<p><strong>Functions</strong></p>
+<h4 id="check_package"><code>check_package</code></h4>
+<pre><code class="language-python">def check_package(path: Path) -&gt; list[str]
+</code></pre>
+<p>Problems that make Word report unreadable content: directory entries in the ZIP package and
+non-integer table widths.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None, update_fields_on_open: bool = False, tag: str | None = None) -&gt; Path</code></li>
+</ul>
+<h3 id="qingsongexport"><code>qingsong.export</code></h3>
+<p>Source: <a href="../../src/qingsong/export.py"><code>src/qingsong/export.py</code></a></p>
+<p>JSON export of the record, with an index of value slots (docs/SPEC.md §12.3).</p>
+<p><strong>Functions</strong></p>
+<h4 id="export_vault"><code>export_vault</code></h4>
+<pre><code class="language-python">def export_vault(vault: Vault, commit: str | None, dirty: bool | None) -&gt; dict[str, Any]
+</code></pre>
+<p>The JSON export (SPEC §12.3): header, every record, the flattened tree, and one entry per
+value slot of a current requirement with its interval.</p>
+<p><strong>Helpers</strong></p>
+<ul>
+<li><code>bound(number: float) -&gt; float | None</code></li>
+<li><code>interval_entry(interval: Interval | None) -&gt; dict[str, Any] | None</code></li>
+<li><code>canonical_entry(slot: ValueSlot, quantity: Quantity | None) -&gt; dict[str, Any] | None</code></li>
+<li><code>value_entries(vault: Vault) -&gt; list[dict[str, Any]]</code></li>
+<li><code>node_entries(vault: Vault) -&gt; list[dict[str, Any]]</code></li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>docs/api.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

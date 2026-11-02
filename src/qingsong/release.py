@@ -647,6 +647,8 @@ def resolve_since(
 def changes(
     root: Path, document_id: str, since: str | None = None, until: str | None = None
 ) -> ChangeSummary:
+    """Summarise what changed in a document between two states: by default from its latest tagged
+    release to the working tree; `since` and `until` take a version or a git reference."""
     try:
         if until is None:
             return changes_between(root, document_id, load(root), since, "the working tree", None)

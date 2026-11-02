@@ -487,6 +487,10 @@ def revise(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Record a change already made to a record's file: bump the revision (and the normative
+    revision for a 'value' change), rewrite the stamp, and append a history event. Refuses
+    'editorial' when values, the level or the verification methods changed (`normative_hash`), a
+    baselined requirement without a decision record, and an agreed one without a reason."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -553,6 +557,8 @@ def supersede(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Mark a record as superseded by one or more current successors of the same type (several for a
+    split). An agreed or baselined requirement needs a decision record."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -593,6 +599,8 @@ def withdraw(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Withdraw a record: it stays in the vault with lifecycle 'withdrawn' and its ID is retired. An
+    agreed or baselined requirement needs a decision record."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -622,6 +630,9 @@ def approve(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Record an approver's maturity decision on a requirement: 'agreed' records what was approved
+    (normative revision and text hash); 'draft' reopens an agreed or baselined requirement.
+    Agents call it only on an approver's instruction."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -671,6 +682,8 @@ def confirm(
     via: str | None = None,
     today: datetime.date | None = None,
 ) -> RecordBase:
+    """Clear a suspect link: record that the child was reviewed against its parent's current
+    normative revision."""
     today = today_date(today)
     vault = load(root)
     require_person(vault, person)
@@ -788,6 +801,8 @@ default_levels = [
 
 
 def init_vault(path: Path, code: str, name: str) -> Path:
+    """Create an empty vault at PATH: configuration, people, glossary, root tree file and the record
+    folders."""
     path = path.resolve()
     if (path / "qingsong.toml").exists():
         raise OperationError(f"{path} is already a vault")

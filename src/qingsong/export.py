@@ -90,6 +90,8 @@ def node_entries(vault: Vault) -> list[dict[str, Any]]:
 
 
 def export_vault(vault: Vault, commit: str | None, dirty: bool | None) -> dict[str, Any]:
+    """The JSON export (SPEC §12.3): header, every record, the flattened tree, and one entry per
+    value slot of a current requirement with its interval."""
     records = sorted(vault.records.values(), key=lambda record: sort_key(record.id))
     return {
         "format": export_format,

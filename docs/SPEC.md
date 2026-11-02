@@ -1,6 +1,6 @@
 # qingsong: specification
 
-Version 0.2 (rebuild), 2026-11-01, revised after the first independent review.
+Version 0.2 (rebuild). Written 2026-11-01; last revised 2026-11-03.
 
 This document is the architecture source of truth for the qingsong engine.
 - **Accepted:** decisions of the Project Scientist, dated in §16.
@@ -13,7 +13,7 @@ The first project to use qingsong is the MUST telescope. Its record repository i
 qingsong keeps a project's requirements as the **authoritative engineering record** and generates every human-readable form of it.
 
 - **The record.** Each requirement, interface, decision and related item is a small structured text file in a git repository, the **vault**.
-- **Who edits.** AI agents do most of the editing. Authorized people review and approve through pull requests.
+- **Who edits.** AI agents do most of the editing. Authorized people review and approve: on the review page, by approving records, and by permitting each merge.
 - **What is generated.** Documents, mainly a static HTML site and Word files for formal distribution, are produced from the record and never edited by hand.
 
 Out of scope:
@@ -80,7 +80,7 @@ A vault is a git repository with a `qingsong.toml` file at its root.
 - `approver: true` for authorized members of the vault repository.
 
 Approvals are enforced on two layers:
-- **The git host** protects the main branch, requires a review and requires the check to pass.
+- **The git host** may protect the main branch, requiring a review and a passing check. A vault may also leave protection off and merge only on an approver's explicit permission; the check then runs in pre-commit and in CI.
 - **qingsong** records each approval and checks that it came from an approver.
 
 Proposed hardening:
@@ -213,15 +213,16 @@ values:
 
 How each certainty is rendered:
 - `eq` with a tolerance: `100 ± 2 µm`.
-- `provisional`: in brackets, `[≤ 3 e⁻/pix/h]`.
+- `provisional`: the value and unit in brackets, `≤ [3 e⁻/pix/h]`.
 - `tbc`: the value followed by "(TBC)".
 - `tbd`: "TBD", with no value needed.
 
 A **quantity** (`quantities/<key>.yaml`) has:
-- a dotted key;
-- names `{en, zh}`, a symbol, a dimension and a canonical unit;
-- optionally `kpp: true`, which marks a Key Performance Parameter and gets stricter change control;
-- optional links to analysis records in other repositories.
+- a dotted key as its ID;
+- a title `{en, zh}`, an optional symbol, a dimension and a canonical unit;
+- optionally `kpp: true`, which marks a Key Performance Parameter (stricter change control is planned);
+- optionally `environmental: true`, for a condition to be withstood (§10);
+- an optional description `{en, zh}`. Links to analysis records in other repositories are planned.
 
 Units are parsed with `pint`.
 
@@ -557,14 +558,14 @@ Content is edited in the file. `qingsong revise <ID> --class <class> --summary "
 - it rewrites `stamp`;
 - it appends a history event with the date, the person, the class, the summary and, where required, a decision.
 
-`revise` compares the file with its version on the main branch. It refuses `editorial` when values, the level or the verification method changed.
+`revise` compares the record with its stored `normative_hash`. It refuses `editorial` when values, the level or the verification methods changed, and `reallocate` when anything but the allocation changed in them.
 
 | Class | Example | `normative_revision` | Effect |
 |---|---|---|---|
 | `editorial` | wording, punctuation, translation, rationale | unchanged | children unaffected |
 | `value` | value, tolerance, condition or criteria changed; same intent | +1 | children, verifications and waivers become stale; the approval becomes stale |
 | `reallocate` | `allocated_to` changed | unchanged | documents affected; the ID is unchanged |
-| `intent` | the requirement asks for something different | — | new ID; `qingsong supersede OLD --by NEW` |
+| `intent` | the requirement asks for something different | — | new ID; `qingsong supersede OLD --with NEW` |
 | `split` / `merge` | one becomes several, or several become one | — | new IDs; originals superseded and pointing to all successors |
 | `withdraw` | no longer needed | — | `qingsong withdraw ID --reason … --decision …`; the ID is retired |
 
@@ -609,7 +610,7 @@ Transitions:
 
 | From | To | How |
 |---|---|---|
-| `concept` | `draft` | `revise`, when the draft criteria are met |
+| `concept` | `draft` | `revise --to-draft`, when the draft criteria are met |
 | `draft` | `agreed` | `qingsong approve ID --to agreed --by P --ref R`; P must be an approver |
 | `agreed` | `baselined` | baseline creation (Phase 6); before then, `baselined` is not used |
 | `agreed` / `baselined` | `draft` | `approve --to draft` (reopen), by an approver |
@@ -629,14 +630,17 @@ A `value` revision of an `agreed` or `baselined` requirement leaves its maturity
 - `--json` prints a list of `{rule, severity, record, file, message, fix}` objects, and the command exits non-zero on any error.
 - Every rule has a test fixture that triggers it.
 
-| Group | Rules (initial) |
-|---|---|
-| `integrity` | YAML and schema; ID syntax (§5.3); duplicate IDs; file path matches ID; unresolved references; against REF: IDs removed or retyped, nodes removed or moved, history rewritten, lifecycle reversed |
-| `structure` | One allocation, to a `product` node. Level order of `derives_from`. Level against namespace. Parentless below `science` without `justified_by` (TBJ). Cycles. Superseded without successors. Link to a withdrawn or superseded target. Interfaces with two endpoints. Node codes unique within a system and not reserved. Alias overlap or collision. |
-| `change` | Unrecorded change (stamp). Suspect links. Stale approval, verification or waiver. Expired waiver. Baselined change without decision. Approval by a non-approver. Stale or unreviewed translation. |
-| `content` | Exactly one "shall". Vague terms (English and Chinese lists). Bare numbers in a statement (at `agreed` and above). Units valid and matching the quantity's dimension. Tolerance, rationale and verification present according to maturity. Required bilingual fields. |
-| `consistency` | One quantity with conflicting values in current requirements under the same conditions. A child limit looser than its parent's. An environmental range not covering its parent's. An issue past its due point. TBD in a baselined requirement. |
-| `documents` | Each current requirement in a namespace that some document scopes appears in exactly one document's outline. Acronyms resolve to the glossary. Release entries are well formed (§5.5). A release is blocked while errors exist. |
+The full list of rules, with one line each, is printed by `qingsong rules` and generated into the [API reference](api.md#check-rules).
+
+| Group | Implemented | Planned |
+|---|---|---|
+| `integrity` | YAML and schema; configuration; ID syntax (§5.3); duplicate IDs; file path matches ID; required files; figure files and hashes; unresolved references, including a document's acronyms in the glossary; proposals; against REF: IDs removed or retyped, nodes removed or moved, history or release entries rewritten, lifecycle reversed | |
+| `structure` | One allocation, to an active `product` node. Level order of `derives_from`, and level against namespace. Parentless below `science` without `justified_by` (TBJ). Cycles. Superseded without successors; links to withdrawn or superseded targets. Interface and condition ends. Tree root and parents; node codes valid, unique within a system and not reserved. Namespaces. Alias overlap or collision. Each requirement and figure once in a document outline; section keys unique. | |
+| `change` | Unrecorded change (stamp). History complete and in order. Suspect links. Stale approval, verification or waiver; expired waiver. Approval by a non-approver. Stale or unreviewed translation. Stale proposals. | A recorded change to a baselined requirement without a decision (`revise` refuses one now). |
+| `content` | Languages. Exactly one "shall"; vague terms (English and Chinese lists). References well formed. Open values tracked. Slots valid and tracked, units valid and matching the quantity's dimension, a relation said twice. Rationale and verification present according to maturity; numbers left in the text of a quantitative requirement (a note). Required bilingual fields. Evidence for `compliant`. | |
+| `consistency` | One quantity with conflicting values in current requirements under the same condition. A child looser than its parent; an environmental range not covering its parent's. An issue past its due date. (TBD in a baselined requirement is a `content.open_values` error.) | |
+| `documents` | Release entries well formed (§5.5); release tags mark a commit holding the entry. | Each current requirement in a namespace that some document scopes appears in a document's outline. |
+| `external` | | Sources carry sha256 and a path. Cited analysis records and files exist when the related repositories are configured. |
 
 **Consistency rules in detail** (proposed, 2026-11-02; revised after an independent review the same day).
 
@@ -667,11 +671,10 @@ Open and closed ends are respected: `< 3` and `≥ 3` share no value, while `≤
 - `consistency.issue_due` (warning): an open issue whose `due` is a date (`YYYY-MM-DD`) before the day of the check. A due point that is a named event is not checked.
 
 TBD in a baselined requirement is already an error of `content.open_values`.
-| `external` | Sources carry sha256 and a path. Cited analysis records and files exist when the related repositories are configured. |
 
 ## 11. Commands (proposed)
 
-All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent directory containing `qingsong.toml`. All commands accept `--json`.
+The generated [command reference](api.md#commands) lists every option. All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent directory containing `qingsong.toml`. All commands accept `--json`.
 
 | Command | Purpose | Phase |
 |---|---|---|
@@ -681,7 +684,8 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong new TYPE --file DRAFT` | allocate an ID for a draft issue, decision, waiver, interface, condition, source or verification, and take it in | 5 |
 | `qingsong revise ID --class C --summary S [--decision D]` | record a change (§8.1) | 1 |
 | `qingsong adopt FILE --summary S` | take a hand-written record file in: adds revision, history and stamp | 1 |
-| `qingsong supersede OLD --with NEW…`, `qingsong withdraw ID --reason R` | lifecycle changes | 1 |
+| `qingsong supersede OLD --with NEW… --summary S`, `qingsong withdraw ID --reason R` | lifecycle changes | 1 |
+| `qingsong slot ID --file SLOTS [--dry-run]` | move numbers from the statement into value slots without changing the meaning (§5.2) | 5 |
 | `qingsong rules` | list the check rules | 1 |
 | `qingsong approve ID --to M --by P --ref R` | record a maturity change | 1 |
 | `qingsong confirm CHILD PARENT` | clear a suspect link after review | 1 |
@@ -690,12 +694,12 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong schema [TYPE]` | print the JSON Schema for editors and agents | 1 |
 | `qingsong issue raise`, `propose`, `accept`, `reject`, `close` | review items and proposed fixes (§5.6) | 3 |
 | `qingsong issue apply FILE` | apply a decisions file from the review page, all or nothing (§5.6) | 3 |
-| `qingsong import docx FILE --document DOC` | draft records from a Word requirement table, with source locators | 2 |
-| `qingsong render html OUT`, `qingsong serve` | HTML site (§12.1) | 3 |
+| `qingsong import docx FILE --document DOC` | draft records from a Word requirement table, with source locators. Not built: the first import used a script of the record repository. | later |
+| `qingsong render html OUT` | HTML site (§12.1) | 3 |
 | `qingsong render docx DOC [--release V]` | Word output, current or as issued (§12.2) | 4 |
 | `qingsong release prepare DOC V`, `release tag DOC V`, `release changes DOC` | releases and change summaries (§5.5) | 4 |
 | `qingsong baseline create NAME --review REF` | baselines | 6 |
-| `qingsong export json` | all records and an index of value slots (§12.3) | 5 |
+| `qingsong export json [--output FILE] [--at REF \| --release DOC/V]` | all records and an index of value slots (§12.3) | 5 |
 | `qingsong export reqif` | exchange with other requirement tools | later |
 
 ## 12. Outputs (accepted principle; proposed design)
@@ -721,7 +725,7 @@ Views:
 
 Pages follow a light, print-friendly style written for scientists and engineers.
 
-GitHub Pages is not used for private vaults: its sites are public unless the host offers private publishing. The site is distributed as a CI artifact, or opened locally with `qingsong serve`.
+GitHub Pages is not used for private vaults: its sites are public unless the host offers private publishing. The site is distributed as a CI artifact, or generated and opened locally from its folder.
 
 ### 12.2 Word
 
@@ -761,24 +765,38 @@ The engine is a small core of its own. Doorstop is not used: it has untyped link
 
 ```
 src/qingsong/
-  schema/        pydantic models; JSON Schema generation
-  vault.py       discovery, load and save (ruamel.yaml round trip, preserving comments and order)
-  ids.py         namespaces, allocation, aliases
-  hashing.py     stamps
-  operations.py  new, revise, supersede, withdraw, approve, confirm, renumber, release
-  checks/        rule registry and rules
-  render/        html/ (Jinja2), docx/ (python-docx)
-  importers/     Word requirement tables
-  cli.py         Typer
+  schema.py          pydantic models of every record type; JSON Schema generation
+  vault.py           discovery, strict loading, reading earlier states (vault_at)
+  ids.py             ID syntax, namespaces and file paths
+  hashing.py         stamps, normative, text, review and proposal hashes
+  findings.py        the result a check reports
+  walk.py            texts and references inside records
+  checks/            rule registry and the integrity, structure, change, content,
+                     consistency and documents rules
+  operations.py      new, adopt, revise, supersede, withdraw, approve, confirm, renumber, init
+  review.py          issues, proposals, accept, reject, close
+  decisions_file.py  decisions files from the review page (issue apply)
+  slots.py           moving numbers into slots; wording.py: relation words and qualifiers
+  release.py         releases and change summaries
+  gitutil.py         git plumbing
+  export.py          JSON export
+  render/            model.py, text.py (the text format), html.py (Jinja2), word.py (python-docx)
+  cli.py             Typer
+tools/
+  benchmark.py       load and check time on a synthetic vault
+  build_docs.py      HTML pages, the docs index and the generated API reference
 ```
+
+The [API reference](api.md) describes the layers, the invariants and every module.
 
 - **Python and tooling.** Python 3.11–3.14; build with `uv_build`; dependencies through `uv` only.
 - **Runtime dependencies,** added as the phases need them: pydantic, ruamel.yaml, typer, jinja2, pint, python-docx.
-- **Development dependencies:** pytest, ruff, pre-commit. Ruff is the single source of truth for lint and format, with pep8-naming rules on.
+- **Development dependencies:** pytest, ruff, pre-commit, markdown-it-py (documentation). Ruff is the single source of truth for lint and format, with pep8-naming rules on.
 - **Tests** build synthetic vaults in temporary directories only. They never read or write a real vault and never set environment variables globally.
   - Every check rule has a fixture that must trigger it.
   - The defect classes found in the 2026-11-01 review of the earlier version are regression tests: duplicate IDs, unreadable files, dangling links, deleted files and silent defaults.
-- **CI** (GitHub Actions) runs `uv sync --locked`, `ruff check`, `ruff format --check` and `pytest`. Failures are never masked.
+- **CI** (GitHub Actions) runs `uv sync --locked`, `ruff check`, `ruff format --check` and `pytest`. The tests include a check that the generated documentation is current. Failures are never masked.
+- **Documentation.** The Markdown files are the sources. `tools/build_docs.py` generates their HTML pages in `docs/html/`, the entrance `docs/index.html`, and the reference part of `docs/api.md` from the code.
 - **Performance.** Load and check time is measured on a synthetic vault of 10,000 records in Phase 1, and the measurement is recorded here. A cache is introduced only if the measurement shows a need.
   - Measured 2026-11-02 (`tools/benchmark.py`, Apple silicon, Python 3.13): loading 10,000 requirements takes 4.9 s with the C YAML parser (19.9 s with the pure-Python parser), and all checks take 3.6 s. 500 records: about 0.5 s in total. No cache is needed at MUST's expected size (hundreds to a few thousand records).
 - **Writing YAML by hand.** A text that starts with `[` or `{` must be quoted, or YAML reads it as a list or a mapping: `zh: "[[ID]]的…"`. `adopt` reports this case explicitly.

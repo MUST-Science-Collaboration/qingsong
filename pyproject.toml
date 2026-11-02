@@ -24,7 +24,12 @@ dependencies = [
 qingsong = "qingsong.cli:app"
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "ruff>=0.14,<1", "pre-commit>=4,<5"]
+dev = [
+    "pytest>=8,<10",
+    "ruff>=0.14,<1",
+    "pre-commit>=4,<5",
+    "markdown-it-py>=3,<5",
+]
 
 [tool.uv]
 environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]

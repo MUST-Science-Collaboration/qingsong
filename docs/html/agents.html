@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent instructions · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a class="here" href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#authority-and-workflow">Authority and workflow</a></li>
+<li class="level-2"><a href="#confidentiality">Confidentiality</a></li>
+<li class="level-2"><a href="#code">Code</a></li>
+<li class="level-2"><a href="#tests">Tests</a></li>
+<li class="level-2"><a href="#documentation">Documentation</a></li>
+</ol></aside>
+<main>
+<h1 id="agent-instructions">Agent instructions</h1>
+<p>Standing rules for human and agent contributors. The architecture and accepted decisions are in <a href="spec.html">docs/SPEC.md</a>; open work is tracked in <a href="todo.html">docs/TODO.md</a>; safeguards learned from mistakes are in <a href="lessons.html">docs/lessons.md</a>.</p>
+<h2 id="authority-and-workflow">Authority and workflow</h2>
+<ul>
+<li>Never work on <code>main</code>. Pushing, merging, deleting branches, tagging releases and publishing require explicit permission in the current request.</li>
+<li><code>docs/SPEC.md</code> is the source of truth. Interview the user before implementing new or complex features, and distinguish proposals from accepted decisions.</li>
+<li>Review <code>docs/lessons.md</code> at session start; record each new mistake there with its date and rationale.</li>
+<li>Review three to five comparable files before writing new code; for nontrivial changes, consider whether a simpler design meets the requirement.</li>
+<li>Validate at small scale before full runs. Measure performance; never invent benchmark results.</li>
+<li>Create local commits after verified milestones.</li>
+</ul>
+<h2 id="confidentiality">Confidentiality</h2>
+<ul>
+<li>This repository is <strong>public</strong>. It must never contain MUST project content: no MUST requirement records, subsystem codes, names, schedules, documents or values. The MUST record lives in the private repository <code>MUST-Science-Collaboration/must_req</code>.</li>
+<li>Examples, fixtures and documentation use the fictional project DEMO only.</li>
+</ul>
+<h2 id="code">Code</h2>
+<ul>
+<li>English for code, documentation, commits and logs.</li>
+<li><code>snake_case</code> for identifiers and file names, with specific, complete words; never camelCase. No comments that merely repeat a name.</li>
+<li><code>uv</code> only for environments and dependencies (never pip, Poetry or Conda). Ruff, run through pre-commit, is the single source of truth for lint and format.</li>
+<li>Python 3.11–3.14. Package code lives in <code>src/qingsong/</code>.</li>
+</ul>
+<h2 id="tests">Tests</h2>
+<ul>
+<li>Tests build synthetic vaults in temporary directories. They never read or write a real vault, never change the working directory globally, and never set environment variables outside a test's own scope.</li>
+<li>Pass a fixed <code>today</code> to every operation a test calls. A test that mixes a fixed date with the real date fails on another day.</li>
+<li>Every check rule has a fixture that triggers it. Failures are never masked in CI.</li>
+</ul>
+<h2 id="documentation">Documentation</h2>
+<ul>
+<li>The Markdown files are the sources: <code>README.md</code>, <code>AGENTS.md</code> and <code>docs/*.md</code>. Never edit the HTML in <code>docs/html/</code> or <code>docs/index.html</code>, or the generated part of <code>docs/api.md</code>.</li>
+<li>After changing a document, a docstring, a command or a check rule, run <code>uv run python tools/build_docs.py</code> and commit the result. <code>tests/test_docs.py</code> fails while anything generated is out of date.</li>
+<li>Keep <code>docs/howto.md</code> true: run every example in it on a copy of the demo vault after changing a command it shows.</li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>AGENTS.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

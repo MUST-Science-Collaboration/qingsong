@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qingsong TODO · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a class="here" href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#phase-0-specification-and-reset-done-2026-11-01">Phase 0: specification and reset (done 2026-11-01)</a></li>
+<li class="level-2"><a href="#phase-1-core-engine-done-2026-11-02">Phase 1: core engine (done 2026-11-02)</a></li>
+<li class="level-2"><a href="#phase-2-first-real-vault-done-2026-11-02-in-the-record-repository">Phase 2: first real vault (done 2026-11-02, in the record repository)</a></li>
+<li class="level-2"><a href="#phase-3-html-first-slice-done-2026-11-02">Phase 3: HTML (first slice done 2026-11-02)</a></li>
+<li class="level-2"><a href="#phase-4-word-and-releases-first-slice-done-2026-11-02">Phase 4: Word and releases (first slice done 2026-11-02)</a></li>
+<li class="level-2"><a href="#phase-5-upper-levels-and-expansion-engine-side">Phase 5: upper levels and expansion (engine side)</a></li>
+<li class="level-2"><a href="#documentation-done-2026-11-03">Documentation (done 2026-11-03)</a></li>
+</ol></aside>
+<main>
+<h1 id="qingsong-todo">qingsong TODO</h1>
+<p>The architecture is in <a href="spec.html">SPEC.md</a>. The rebuild plan and the project-specific conventions of the first user live in its private record repository (<code>docs/PLAN.md</code>, <code>docs/CONVENTIONS.md</code>), because they contain project-internal structure. The task list of the earlier version 0.1 is archived in <a href="journal-2026-02_legacy_todo.html">journal/2026-02_legacy_todo.md</a>.</p>
+<p>Status: <code>[x]</code> done, <code>[ ]</code> open, <code>[~]</code> partly done. &quot;Next&quot; items come first in their phase.</p>
+<h2 id="phase-0-specification-and-reset-done-2026-11-01">Phase 0: specification and reset (done 2026-11-01)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R0-001</td>
+<td>Review of the legacy build</td>
+<td>[x] Done</td>
+<td>Lessons in <code>lessons.md</code> §6</td>
+</tr>
+<tr>
+<td>R0-002</td>
+<td>Research: tools, systems-engineering frameworks, observatory practice</td>
+<td>[x] Done</td>
+<td>in the record repository (<code>docs/RESEARCH.md</code>)</td>
+</tr>
+<tr>
+<td>R0-003</td>
+<td>Rebuild plan and interview</td>
+<td>[x] Done</td>
+<td>in the record repository (<code>docs/PLAN.md</code>); decisions of 2026-11-01 in SPEC §16</td>
+</tr>
+<tr>
+<td>R0-004</td>
+<td>Remove project names, emails and schedule from public history</td>
+<td>[x] Done</td>
+<td>filter-repo and force push, 2026-11-01 (a07af95 → 692d1af)</td>
+</tr>
+<tr>
+<td>R0-005</td>
+<td>Engine specification <code>SPEC.md</code> v0.2 and the record repository's conventions</td>
+<td>[x] Done</td>
+<td>Independent review: 24 findings, all addressed or put to the Project Scientist</td>
+</tr>
+<tr>
+<td>R0-006</td>
+<td>Tag <code>legacy-0.1</code>; remove the legacy package</td>
+<td>[x] Done</td>
+<td>tag pushed</td>
+</tr>
+<tr>
+<td>R0-007</td>
+<td>New package skeleton, uv lock, pre-commit, CI</td>
+<td>[x] Done</td>
+<td>CI runs on GitHub on every push</td>
+</tr>
+<tr>
+<td>R0-008</td>
+<td>Draft product tree and vault configuration in the record repository</td>
+<td>[x] Done</td>
+<td>82 nodes; merged there</td>
+</tr>
+<tr>
+<td>R0-009</td>
+<td>Roadmap page (HTML) of the record repository, for checking levels, codes and systems</td>
+<td>[x] Done</td>
+<td>generated from the tree, in the record repository</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="phase-1-core-engine-done-2026-11-02">Phase 1: core engine (done 2026-11-02)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1-001</td>
+<td>Schemas, strict vault I/O, IDs and aliases, stamps, operations, CLI</td>
+<td>[x] Done</td>
+<td></td>
+</tr>
+<tr>
+<td>R1-002</td>
+<td>Check rules, each with a triggering fixture</td>
+<td>[x] Done</td>
+<td>35 at first; 43 now</td>
+</tr>
+<tr>
+<td>R1-003</td>
+<td>Demo vault; benchmark (10,000 records: load 4.9 s, check 3.6 s)</td>
+<td>[x] Done</td>
+<td>SPEC §13</td>
+</tr>
+<tr>
+<td>R1-004</td>
+<td>Independent code review, all findings fixed</td>
+<td>[x] Done</td>
+<td>13 groups of findings</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="phase-2-first-real-vault-done-2026-11-02-in-the-record-repository">Phase 2: first real vault (done 2026-11-02, in the record repository)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R2-001</td>
+<td>Tree, people, glossary and quantities of the first project</td>
+<td>[x] Done</td>
+<td></td>
+</tr>
+<tr>
+<td>R2-002</td>
+<td>Import of the first requirement document, every requirement accounted for</td>
+<td>[x] Done</td>
+<td>by a script of the record repository; <code>qingsong import docx</code> is not built (SPEC §11)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="phase-3-html-first-slice-done-2026-11-02">Phase 3: HTML (first slice done 2026-11-02)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R3-001</td>
+<td>Site: home, interactive tree, flow-down diagram, documents with figures, requirement pages, registers, checks, search, language switch</td>
+<td>[x] Done</td>
+<td><code>qingsong render html</code></td>
+</tr>
+<tr>
+<td>R3-002</td>
+<td>Change views between releases</td>
+<td>[x] Done 2026-11-02</td>
+<td><code>documents/&lt;DOC&gt;-changes.html</code>, linked from the document page</td>
+</tr>
+<tr>
+<td>R3-003</td>
+<td>Review: labelled issues raised from findings, proposed fixes with differences, approver decisions (<code>qingsong issue …</code>), review page, marks in documents (SPEC §5.6)</td>
+<td>[x] Done 2026-11-02</td>
+<td>the Project Scientist's request of 2026-11-02</td>
+</tr>
+<tr>
+<td>R3-006</td>
+<td>Review page: choose the person from people.yaml instead of typing an ID</td>
+<td>[x] Done 2026-11-02</td>
+<td>decisions had come out with a placeholder ID</td>
+</tr>
+<tr>
+<td>R3-007</td>
+<td>Submitting review decisions without copying commands</td>
+<td>[x] Done 2026-11-02</td>
+<td>&quot;Save decisions&quot; downloads a decisions file; <code>qingsong issue apply FILE</code> applies it all or nothing, refuses proposals changed since they were read, starts a review branch on main, and keeps the file in <code>reviews/</code>. No local server (SPEC §5.6)</td>
+</tr>
+<tr>
+<td>R3-004</td>
+<td>The &quot;EN + 中文&quot; view is crowded</td>
+<td>[~] Eased</td>
+<td>Chinese set off by a rule and spacing; a side-by-side layout is left for later</td>
+</tr>
+<tr>
+<td>R3-005</td>
+<td>Review packages for a node's design review; N² interface matrix</td>
+<td>[ ] Later</td>
+<td>needs interfaces in a real vault</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="phase-4-word-and-releases-first-slice-done-2026-11-02">Phase 4: Word and releases (first slice done 2026-11-02)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R4-001</td>
+<td><code>qingsong render docx</code>: the project's layout, bilingual requirements, figures, tables, TOC, header and footer</td>
+<td>[x] Done</td>
+<td>pilot: 610 of 612 body units of the pilot document reproduced; 2 intended differences</td>
+</tr>
+<tr>
+<td>R4-002</td>
+<td>Confirm the generated file opens in Word without repair</td>
+<td>[x] Done 2026-11-02</td>
+<td>opens; the &quot;fields that may refer to other files&quot; prompt came from updateFields</td>
+</tr>
+<tr>
+<td>R4-004</td>
+<td>No prompt on opening: the table of contents is written out, with links; <code>--update-fields</code> restores update-on-open</td>
+<td>[x] Done 2026-11-02</td>
+<td>page numbers appear after a field update in Word</td>
+</tr>
+<tr>
+<td>R4-003</td>
+<td>Releases: <code>release prepare</code> (branch), <code>release tag</code> (after the merge, at the commit that brought the entry in), <code>release changes</code>; <code>render docx --release V</code> from the tag</td>
+<td>[x] Done 2026-11-02</td>
+<td>SPEC §5.5, revised after an independent review; dry run on a copy of the record</td>
+</tr>
+<tr>
+<td>R4-006</td>
+<td>Revision marks in the Word copy of a release</td>
+<td>[x] Not needed</td>
+<td>the Project Scientist, 2026-11-02: Word is a snapshot; it shows the current version</td>
+</tr>
+<tr>
+<td>R4-005</td>
+<td>The project's standard style and front page</td>
+<td>[ ] Later</td>
+<td>the Project Scientist, 2026-11-02: not critical</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="phase-5-upper-levels-and-expansion-engine-side">Phase 5: upper levels and expansion (engine side)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R5-009</td>
+<td>Slot moves as proposals on the review page, so the approver sees each move before it is applied</td>
+<td>[ ] Next</td>
+<td>until then, moves are made on a content branch; the changes page shows each move as a reader sees it</td>
+</tr>
+<tr>
+<td>R5-011</td>
+<td>A relation word after a slot is often a preposition (&quot;{x} over one night&quot;, &quot;≥ 40 % over the band&quot;), yet it is warned about as a relation said twice</td>
+<td>[ ] Next</td>
+<td>found while writing the how-to, 2026-11-03; after a slot, only phrases such as &quot;or more&quot; repeat a relation</td>
+</tr>
+<tr>
+<td>R5-012</td>
+<td>A check that every current requirement in a document's scope appears in its outline</td>
+<td>[ ] Next</td>
+<td>in SPEC §10 but not built; a new requirement can be left out of its document unnoticed</td>
+</tr>
+<tr>
+<td>R5-001</td>
+<td><code>consistency</code> rules: conflicting values, a child looser than its parent (reversed for environmental quantities), overdue issues</td>
+<td>[x] Done 2026-11-02</td>
+<td>SPEC §10; interval semantics tested</td>
+</tr>
+<tr>
+<td>R5-002</td>
+<td><code>documents</code> rules: release entries well formed; release tags mark the entry; entries append-only against main</td>
+<td>[x] Done 2026-11-02</td>
+<td></td>
+</tr>
+<tr>
+<td>R5-003</td>
+<td><code>qingsong export json</code>, with value intervals, for analysis codes</td>
+<td>[x] Done 2026-11-02</td>
+<td>SPEC §12.3</td>
+</tr>
+<tr>
+<td>R5-004</td>
+<td>Forms of requirement (qualitative / quantitative, marked and exported); slot goals; <code>qingsong slot</code> moves numbers into slots keeping the meaning and the approval</td>
+<td>[x] Done 2026-11-02</td>
+<td>decided by the Project Scientist; design reviewed independently before coding</td>
+</tr>
+<tr>
+<td>R5-005</td>
+<td><code>qingsong new issue|decision|waiver|interface|condition|source|verification --file draft.yaml</code></td>
+<td>[x] Done 2026-11-02</td>
+<td>IDs allocated per type, also against main; the draft is left as written</td>
+</tr>
+<tr>
+<td>R5-007</td>
+<td>CI for a record repository: check against main on every pull request, site as an artifact</td>
+<td>[x] Done 2026-11-02</td>
+<td>the record repository pins the engine commit it checks with</td>
+</tr>
+<tr>
+<td>R5-008</td>
+<td>Translation review of figure captions and document text</td>
+<td>[x] Done 2026-11-02</td>
+<td>the release gate found captions not yet reviewed; they were reviewed before the release</td>
+</tr>
+<tr>
+<td>R5-006</td>
+<td>N² interface matrix</td>
+<td>[ ] Later</td>
+<td>interfaces and conditions already appear in the registers</td>
+</tr>
+<tr>
+<td>R5-010</td>
+<td>Units for attenuation (dB/km) and stress (kpsi); a statement that gives one limit twice</td>
+<td>[ ] Later</td>
+<td>why some values of the pilot document stay in prose</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="documentation-done-2026-11-03">Documentation (done 2026-11-03)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-001</td>
+<td>How to use qingsong (<code>docs/howto.md</code>): concepts, rules, workflow and worked examples for people and agents</td>
+<td>[x] Done</td>
+<td>every example run on a copy of the demo vault</td>
+</tr>
+<tr>
+<td>D-002</td>
+<td>API reference (<code>docs/api.md</code>): architecture, invariants, extending; commands, rules and modules generated from the code</td>
+<td>[x] Done</td>
+<td></td>
+</tr>
+<tr>
+<td>D-003</td>
+<td><code>tools/build_docs.py</code>: HTML pages of every document, the entrance <code>docs/index.html</code>, and the generated reference; a test fails when they are out of date</td>
+<td>[x] Done</td>
+<td></td>
+</tr>
+<tr>
+<td>D-004</td>
+<td>Review of every document against the code</td>
+<td>[x] Done</td>
+<td>SPEC: the rule catalogue, commands, module map, rendering, quantities and <code>revise</code> corrected</td>
+</tr>
+</tbody>
+</table></div>
+
+</main>
+</div>
+<footer>Generated from <code>docs/TODO.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

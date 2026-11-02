@@ -52,6 +52,9 @@ def by_maturity(maturity: str | None, concept: str, draft: str, agreed: str, bas
 def run(
     vault: Vault, against: str | None = None, selected: set[str] | None = None
 ) -> list[Finding]:
+    """Run the rules (all, or the `selected` ones) on a loaded vault and return every finding,
+    sorted by severity. With `against`, the integrity rules also compare with that git reference.
+    Findings tracked by an issue name it; findings on records accepted as written become notes."""
     from qingsong.checks import (  # noqa: F401  (registers rules)
         change,
         consistency,
@@ -132,6 +135,7 @@ def apply_review(vault: Vault, findings: list[Finding]) -> list[Finding]:
 
 
 def all_rule_summaries() -> dict[str, str]:
+    """Every rule ID, including those reported while loading, with its one-line summary."""
     from qingsong.checks import (  # noqa: F401
         change,
         consistency,

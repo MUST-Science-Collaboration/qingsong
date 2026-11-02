@@ -1,8 +1,8 @@
 """The text format of docs/SPEC.md §5.4 (a Markdown subset), shared by the HTML and Word renderers.
 
-Block level: paragraphs, bullet lists ("- ") and numbered lists ("1. "), nested by indentation.
-Inline: **bold**, *italic*, `code`, ~sub~, ^sup^, $math$, [text](url), [[ID]] and [[DOC#key]]
-references, and backslash escapes. Open values (bracketed text, TBD, TBC, 待定, 待确认) are marked.
+Block level: paragraphs, bullet lists (`- `) and numbered lists (`1. `), nested by indentation.
+Inline: `**bold**`, `*italic*`, `` `code` ``, `~sub~`, `^sup^`, `$math$`, `[text](url)`, `[[ID]]`
+and `[[DOC#key]]` references, and backslash escapes. Open values (bracketed text, TBD, TBC, 待定, 待确认) are marked.
 The inline rules follow pandoc where the two could differ: emphasis, sub- and superscript and math
 need non-space characters inside their markers, so "2 * 3", "~45 m" and "$5" stay as written."""
 

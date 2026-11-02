@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qingsong: specification · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a class="here" href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#1-purpose-and-scope-accepted">1. Purpose and scope (accepted)</a></li>
+<li class="level-2"><a href="#2-principles-accepted">2. Principles (accepted)</a></li>
+<li class="level-2"><a href="#3-the-vault-accepted-structure-proposed-details">3. The vault (accepted structure; proposed details)</a></li>
+<li class="level-3"><a href="#31-configuration">3.1 Configuration</a></li>
+<li class="level-3"><a href="#32-people-and-approval">3.2 People and approval</a></li>
+<li class="level-2"><a href="#4-structure">4. Structure</a></li>
+<li class="level-3"><a href="#41-nodes-product-tree-and-wbs-accepted">4.1 Nodes: product tree and WBS (accepted)</a></li>
+<li class="level-3"><a href="#42-levels-accepted">4.2 Levels (accepted)</a></li>
+<li class="level-3"><a href="#43-namespaces-accepted">4.3 Namespaces (accepted)</a></li>
+<li class="level-2"><a href="#5-records">5. Records</a></li>
+<li class="level-3"><a href="#51-requirement">5.1 Requirement</a></li>
+<li class="level-3"><a href="#52-value-slots-and-quantities-accepted-principle-proposed-format">5.2 Value slots and quantities (accepted principle; proposed format)</a></li>
+<li class="level-3"><a href="#53-other-record-types">5.3 Other record types</a></li>
+<li class="level-3"><a href="#54-text-figures-and-document-content-proposed-from-the-first-pilot-document-2026-11-01">5.4 Text, figures and document content (proposed; from the first pilot document, 2026-11-01)</a></li>
+<li class="level-3"><a href="#55-documents-and-releases-proposed">5.5 Documents and releases (proposed)</a></li>
+<li class="level-3"><a href="#56-review-labelled-issues-and-proposed-fixes-proposed-2026-11-02">5.6 Review: labelled issues and proposed fixes (proposed, 2026-11-02)</a></li>
+<li class="level-2"><a href="#6-identity-accepted">6. Identity (accepted)</a></li>
+<li class="level-3"><a href="#61-ids">6.1 IDs</a></li>
+<li class="level-3"><a href="#62-aliases">6.2 Aliases</a></li>
+<li class="level-2"><a href="#7-languages-accepted">7. Languages (accepted)</a></li>
+<li class="level-2"><a href="#8-change-control-accepted">8. Change control (accepted)</a></li>
+<li class="level-3"><a href="#81-change-classes">8.1 Change classes</a></li>
+<li class="level-3"><a href="#82-stamps-and-suspect-links">8.2 Stamps and suspect links</a></li>
+<li class="level-2"><a href="#9-maturity-four-separate-axes-accepted">9. Maturity: four separate axes (accepted)</a></li>
+<li class="level-2"><a href="#10-checks-accepted-principle-proposed-catalogue">10. Checks (accepted principle; proposed catalogue)</a></li>
+<li class="level-2"><a href="#11-commands-proposed">11. Commands (proposed)</a></li>
+<li class="level-2"><a href="#12-outputs-accepted-principle-proposed-design">12. Outputs (accepted principle; proposed design)</a></li>
+<li class="level-3"><a href="#121-html">12.1 HTML</a></li>
+<li class="level-3"><a href="#122-word">12.2 Word</a></li>
+<li class="level-3"><a href="#123-exchange">12.3 Exchange</a></li>
+<li class="level-2"><a href="#13-engine-accepted">13. Engine (accepted)</a></li>
+<li class="level-2"><a href="#14-development-sequence">14. Development sequence</a></li>
+<li class="level-2"><a href="#15-earlier-version">15. Earlier version</a></li>
+<li class="level-2"><a href="#16-accepted-decisions">16. Accepted decisions</a></li>
+</ol></aside>
+<main>
+<h1 id="qingsong-specification">qingsong: specification</h1>
+<p>Version 0.2 (rebuild). Written 2026-11-01; last revised 2026-11-03.</p>
+<p>This document is the architecture source of truth for the qingsong engine.</p>
+<ul>
+<li><strong>Accepted:</strong> decisions of the Project Scientist, dated in §16.</li>
+<li><strong>Proposed:</strong> recommendations that implementation may refine. Changes are recorded here.</li>
+</ul>
+<p>The first project to use qingsong is the MUST telescope. Its record repository is private. This public repository never holds MUST content, so the examples here use a fictional project called DEMO.</p>
+<h2 id="1-purpose-and-scope-accepted">1. Purpose and scope (accepted)</h2>
+<p>qingsong keeps a project's requirements as the <strong>authoritative engineering record</strong> and generates every human-readable form of it.</p>
+<ul>
+<li><strong>The record.</strong> Each requirement, interface, decision and related item is a small structured text file in a git repository, the <strong>vault</strong>.</li>
+<li><strong>Who edits.</strong> AI agents do most of the editing. Authorized people review and approve: on the review page, by approving records, and by permitting each merge.</li>
+<li><strong>What is generated.</strong> Documents, mainly a static HTML site and Word files for formal distribution, are produced from the record and never edited by hand.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>schedules (user, 2026-11-01);</li>
+<li>risk management (later);</li>
+<li>raw source documents, which stay in the project's document store and are cited by path and hash;</li>
+<li>a server, a database or a browser editor.</li>
+</ul>
+<h2 id="2-principles-accepted">2. Principles (accepted)</h2>
+<ol>
+<li><strong>The record governs.</strong> An issued document is a snapshot generated at a git tag. Comments on a document return as changes to records.</li>
+<li><strong>Identity is permanent</strong> once a record reaches the main branch. An ID never changes and is never reused. The file path is a function of the ID only.</li>
+<li><strong>No silent behaviour.</strong>
+<ul>
+<li>Unreadable files, unknown references and missing required fields are errors.</li>
+<li>Nothing is filled in by default when a file is read.</li>
+<li>Every check result is reported.</li>
+</ul>
+</li>
+<li><strong>No hidden state.</strong> The vault location is passed explicitly or discovered from the working directory. The engine never writes environment variables or global caches.</li>
+<li><strong>One interface for people and agents.</strong> Every command can emit JSON. Error messages name the rule, the record and a fix.</li>
+<li><strong>Words for people.</strong> Generated pages are written for engineers and scientists in plain language.</li>
+</ol>
+<h2 id="3-the-vault-accepted-structure-proposed-details">3. The vault (accepted structure; proposed details)</h2>
+<p>A vault is a git repository with a <code>qingsong.toml</code> file at its root.</p>
+<pre><code>&lt;vault&gt;/
+  qingsong.toml           configuration (§3.1)
+  pyproject.toml          pins the qingsong version (uv)
+  AGENTS.md               agent rules for this vault
+  people.yaml             people and approvers (§3.2)
+  glossary.yaml           bilingual terms and acronyms
+  tree/                   product tree and WBS, one file per top-level branch (§4.1)
+  quantities/&lt;key&gt;.yaml   named physical quantities (§5.2)
+  requirements/&lt;SYSTEM&gt;/&lt;ID&gt;.yaml
+  conditions/&lt;ID&gt;.yaml    facts about context nodes (§5.3)
+  interfaces/ issues/ decisions/ verifications/ waivers/ sources/ baselines/
+  documents/&lt;DOC&gt;.yaml    generated-document definitions (§5.5)
+  figures/&lt;SYSTEM&gt;/      figure records and image files (§5.4)
+  reviews/&lt;date&gt;_&lt;person&gt;.yaml   decisions files as applied (§5.6)
+  templates/              reference style for Word output
+</code></pre>
+<h3 id="31-configuration">3.1 Configuration</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[project] code</code>, <code>names</code></td>
+<td>project code (<code>DEMO</code>); <code>{en, zh}</code> names</td>
+</tr>
+<tr>
+<td><code>[languages] reference</code>, <code>second</code></td>
+<td><code>en</code>, <code>zh</code></td>
+</tr>
+<tr>
+<td><code>[languages] bilingual_fields</code></td>
+<td>fields required in both languages from <code>draft</code> maturity upward. Default: <code>title</code>, <code>statement</code>, <code>rationale</code>, <code>verification.criteria</code></td>
+</tr>
+<tr>
+<td><code>[languages] default_text_origin</code></td>
+<td>language in which requirements are normally first written (<code>en</code>); nodes and documents may override it (§7)</td>
+</tr>
+<tr>
+<td><code>[[levels]] name</code>, <code>names</code></td>
+<td>ordered list of requirement levels, highest first (§4.2)</td>
+</tr>
+<tr>
+<td><code>[top_namespaces]</code></td>
+<td>namespace → level for requirements allocated to the root, e.g. <code>DEMO-SCI = &quot;science&quot;</code></td>
+</tr>
+<tr>
+<td><code>[related] &lt;name&gt; = &lt;path&gt;</code></td>
+<td>optional local paths of related repositories, used by the <code>external</code> checks</td>
+</tr>
+<tr>
+<td><code>tree_order</code></td>
+<td>optional display order of the top-level systems (codes); others follow alphabetically</td>
+</tr>
+<tr>
+<td><code>[documents] latin_font</code>, <code>east_asian_font</code></td>
+<td>optional fonts for generated Word documents (the reference style file supplies all other styles)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="32-people-and-approval">3.2 People and approval</h3>
+<p><code>people.yaml</code> lists, for each person:</p>
+<ul>
+<li>an ID in <code>snake_case</code>;</li>
+<li>name and organisation;</li>
+<li>GitHub handle;</li>
+<li>the languages the person reads (<code>[en, zh]</code>);</li>
+<li><code>approver: true</code> for authorized members of the vault repository.</li>
+</ul>
+<p>Approvals are enforced on two layers:</p>
+<ul>
+<li><strong>The git host</strong> may protect the main branch, requiring a review and a passing check. A vault may also leave protection off and merge only on an approver's explicit permission; the check then runs in pre-commit and in CI.</li>
+<li><strong>qingsong</strong> records each approval and checks that it came from an approver.</li>
+</ul>
+<p>Proposed hardening:</p>
+<ul>
+<li><code>people.yaml</code> gets a code-owner rule, so changes to the approver list need an existing approver.</li>
+<li>A CI step compares recorded approvals with the pull-request reviews (Phase 6).</li>
+</ul>
+<h2 id="4-structure">4. Structure</h2>
+<h3 id="41-nodes-product-tree-and-wbs-accepted">4.1 Nodes: product tree and WBS (accepted)</h3>
+<p>A node is one element of the project breakdown. Nodes are defined in tree files, one per top-level branch (<code>tree/&lt;CODE&gt;.yaml</code>), because the structure is reviewed as a whole. This is the one exception to one-record-per-file.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node</code></td>
+<td>Short code, matching <code>[A-Z][A-Z0-9]{1,5}</code>. Permanent. Unique within its top-level system. Top-level codes are unique among themselves. Reserved words are not allowed: <code>REQ</code>, <code>SYS</code>, <code>COND</code>, <code>IFC</code>, <code>ISS</code>, <code>DEC</code>, <code>WVR</code>, <code>VER</code>, <code>SRC</code>, <code>BL</code>, <code>RD</code>, <code>ICD</code>, and the suffixes of the top-level namespaces.</td>
+</tr>
+<tr>
+<td><code>structural_code</code></td>
+<td>optional position code, e.g. <code>IN.02.1</code>; may change</td>
+</tr>
+<tr>
+<td><code>names</code></td>
+<td><code>{en, zh}</code></td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>product</code>: something built, so requirements are allocated here. <code>work</code>: a work package, never a requirement target. <code>context</code>: something recorded but not specified, such as a site; it carries conditions only.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>active</code>, <code>placeholder</code> (reserved, not yet worked out) or <code>retired</code></td>
+</tr>
+<tr>
+<td><code>text_origin</code></td>
+<td>optional default for requirements of this node and its descendants (§7)</td>
+</tr>
+<tr>
+<td><code>description</code>, <code>owners</code>, <code>design_stage</code></td>
+<td>optional</td>
+</tr>
+<tr>
+<td><code>note</code></td>
+<td>optional plain-text remark for reviewers, e.g. a correction made on import or a name to confirm</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td>nested nodes</td>
+</tr>
+</tbody>
+</table></div>
+<p>A tree file states its parent, as <code>parent: DEMO</code>. The root file has no parent.</p>
+<p><strong>Node references.</strong> Elsewhere, a node is written <code>&lt;SYSTEM&gt;-&lt;NODE&gt;</code>, e.g. <code>INS-DET</code>. For the root or a top-level system, the code alone is used (<code>DEMO</code>, <code>INS</code>). The same string prefixes requirement IDs (§4.3).</p>
+<p>Nodes follow the same permanence rule as records. A node is never removed, renamed or moved to another top-level system. Instead it is retired, and a new node is created.</p>
+<h3 id="42-levels-accepted">4.2 Levels (accepted)</h3>
+<p>Requirement levels are ordered. The vault lists them in its configuration, and each requirement states its level.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Level</th>
+<th>Written in terms of</th>
+<th>Typical allocation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>science</code></td>
+<td>goals of the science programme</td>
+<td>root</td>
+</tr>
+<tr>
+<td><code>survey</code></td>
+<td>what the data must achieve independent of hardware: numbers of targets, depth, S/N, success rates, wavelength range, resolution, calibration accuracy</td>
+<td>root</td>
+</tr>
+<tr>
+<td><code>system</code></td>
+<td>what the facility as built must achieve: collecting area, field of view, budgets, efficiency, design environment, lifetime</td>
+<td>root</td>
+</tr>
+<tr>
+<td><code>element</code></td>
+<td>each top-level system's own specification</td>
+<td>top-level system</td>
+</tr>
+<tr>
+<td><code>subsystem</code></td>
+<td>each subsystem's specification</td>
+<td>node inside a system</td>
+</tr>
+<tr>
+<td><code>component</code></td>
+<td>optional, when a document needs it</td>
+<td>lower node</td>
+</tr>
+</tbody>
+</table></div>
+<p>The <code>survey</code> level is the layer between science and engineering. 4MOST introduced it as &quot;user requirements&quot;, after going directly from science to system requirements proved error-prone. Competing science cases are reconciled there into one set of measurable numbers, and analysis tools verify it.</p>
+<p>Flow-down rules (checked):</p>
+<ul>
+<li><strong>Direction.</strong> <code>derives_from</code> points only to requirements at a higher level. Levels may be skipped.</li>
+<li><strong>Siblings.</strong> A budget shared between siblings is expressed by each share deriving from the higher-level budget requirement, never by sibling-to-sibling derivation.</li>
+<li><strong>Science.</strong> <code>science</code> requirements have no parent. They carry a <code>justification</code>.</li>
+<li><strong>Parentless requirements below science.</strong> They must cite a decision in <code>justified_by</code>. Otherwise the check raises a <strong>TBJ</strong> (&quot;to be justified&quot;) finding. It is a note at <code>concept</code>, a warning at <code>draft</code> and <code>agreed</code> (to be tracked by a <code>tbj</code> issue, §5.6), and an error in a baseline (decision of 2026-11-02: approval concerns a requirement's content, and complete traceability is required at baseline).</li>
+<li><strong>Allocation.</strong> The children of one parent may be allocated to different branches of the tree.</li>
+</ul>
+<h3 id="43-namespaces-accepted">4.3 Namespaces (accepted)</h3>
+<p>The ID prefix of a requirement is its <strong>namespace</strong>. The namespace records where the requirement was first issued. It does not change if the requirement is later reallocated.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Used for</th>
+<th>Expected level</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>keys of <code>[top_namespaces]</code></td>
+<td>requirements allocated to the root</td>
+<td>as configured</td>
+<td><code>DEMO-SCI</code>, <code>DEMO-SRV</code>, <code>DEMO-SYS</code></td>
+</tr>
+<tr>
+<td><code>&lt;SYSTEM&gt;-SYS</code></td>
+<td>a top-level system's own requirements</td>
+<td><code>element</code></td>
+<td><code>INS-SYS</code></td>
+</tr>
+<tr>
+<td><code>&lt;SYSTEM&gt;-&lt;NODE&gt;</code></td>
+<td>requirements of a node inside a system</td>
+<td><code>subsystem</code> or <code>component</code></td>
+<td><code>INS-DET</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>A requirement whose level differs from its namespace's expected level produces a warning (<code>structure.level_namespace</code>).</p>
+<h2 id="5-records">5. Records</h2>
+<p>Every record is one YAML file, apart from nodes (§4.1).</p>
+<p><strong>Fields common to all record types:</strong></p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code>, <code>type</code></td>
+<td>permanent ID (§6) and record type</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>{en, zh}</code></td>
+</tr>
+<tr>
+<td><code>lifecycle</code></td>
+<td><code>current</code>, <code>superseded</code> or <code>withdrawn</code>; never deleted</td>
+</tr>
+<tr>
+<td><code>superseded_by</code></td>
+<td>list of IDs; required when superseded</td>
+</tr>
+<tr>
+<td><code>aliases</code></td>
+<td>other names of this record (§6.2)</td>
+</tr>
+<tr>
+<td><code>revision</code></td>
+<td>integer from 1; increases with every recorded change</td>
+</tr>
+<tr>
+<td><code>normative_revision</code></td>
+<td>integer from 1; increases only with changes of meaning (§8.1)</td>
+</tr>
+<tr>
+<td><code>normative_hash</code></td>
+<td>hash of the fields whose change is never editorial (values, level, verification method), written by qingsong; <code>revise</code> refuses <code>editorial</code> when it differs</td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td>append-only list of change events (§8.1)</td>
+</tr>
+<tr>
+<td><code>stamp</code></td>
+<td>hash of every field except <code>stamp</code> and <code>history</code>, written by qingsong (§8.2)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Normative content</strong> is what a change of meaning alters. It differs by type:</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Type</th>
+<th>Normative content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requirement</td>
+<td>statement, values, level, verification methods and criteria. Values, level and methods can never change editorially (<code>normative_hash</code>); wording changes are recorded as editorial or value changes by the author, and any change of the approved wording makes the approval stale.</td>
+</tr>
+<tr>
+<td>Condition</td>
+<td>values, conditions of measurement</td>
+</tr>
+<tr>
+<td>Interface</td>
+<td>endpoints, agreed values</td>
+</tr>
+<tr>
+<td>Quantity</td>
+<td>dimension, canonical unit</td>
+</tr>
+<tr>
+<td>Others</td>
+<td>not applicable; they have <code>revision</code> only</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="51-requirement">5.1 Requirement</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>statement</code></td>
+<td><code>{en, zh}</code>. Exactly one &quot;shall&quot;. Values appear as <code>{slot}</code> placeholders.</td>
+</tr>
+<tr>
+<td><code>values</code></td>
+<td>value slots (§5.2)</td>
+</tr>
+<tr>
+<td><code>rationale</code></td>
+<td><code>{en, zh}</code></td>
+</tr>
+<tr>
+<td><code>justification</code> / <code>justified_by</code></td>
+<td>for parentless requirements (§4.2)</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td>§4.2</td>
+</tr>
+<tr>
+<td><code>allocated_to</code></td>
+<td>exactly one node reference, of <code>kind: product</code></td>
+</tr>
+<tr>
+<td><code>interface</code></td>
+<td>optional interface ID, when this requirement belongs to an interface (§5.3)</td>
+</tr>
+<tr>
+<td><code>derives_from</code></td>
+<td>list of <code>{id, normative_revision}</code>: the parent's normative revision when the link was last confirmed</td>
+</tr>
+<tr>
+<td><code>constrained_by</code></td>
+<td>list of <code>{id, normative_revision}</code> pointing to conditions</td>
+</tr>
+<tr>
+<td><code>sources</code></td>
+<td>list of <code>{source, locator}</code>, e.g. the section and table row of an imported document</td>
+</tr>
+<tr>
+<td><code>verification</code></td>
+<td><code>{methods, level, criteria: {en, zh}}</code>. <code>methods</code> is a non-empty list of <code>test</code>, <code>analysis</code>, <code>inspection</code>, <code>demonstration</code>, <code>review_of_design</code> (several methods are common, e.g. &quot;by design and test&quot;), each with bilingual labels from the vocabulary.</td>
+</tr>
+<tr>
+<td><code>maturity</code></td>
+<td>§9</td>
+</tr>
+<tr>
+<td><code>approval</code></td>
+<td><code>{by, date, ref, normative_revision, text_hash}</code>: the latest maturity approval and what it approved: the normative revision and a hash of the reference-language statement and verification criteria. A change of either makes the approval stale.</td>
+</tr>
+<tr>
+<td><code>text_origin</code></td>
+<td><code>en</code> or <code>zh</code> (§7)</td>
+</tr>
+<tr>
+<td><code>translation</code></td>
+<td>per-field tracking (§7)</td>
+</tr>
+<tr>
+<td><code>variants</code></td>
+<td>(proposed) other versions of this requirement stated elsewhere, e.g. a vendor's wording or value in its specification: <code>{source, label, statement, values, relation}</code>, where <code>relation</code> is <code>vendor_stated</code>, <code>proposed</code> or <code>rejected</code>. Shown for comparison; excluded from consistency checks.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="52-value-slots-and-quantities-accepted-principle-proposed-format">5.2 Value slots and quantities (accepted principle; proposed format)</h3>
+<p>Numbers live in slots, not in prose. Both languages then render the same value, and checks can compare values across requirements.</p>
+<pre><code class="language-yaml">values:
+  dark_current:
+    quantity: detector.dark_current
+    relation: le                     # eq | le | lt | ge | gt | range | approx
+    value: 3
+    unit: electron / pixel / hour
+    certainty: provisional           # firm | provisional | tbc | tbd
+    issue: ISS-0007                  # required unless firm
+    condition: {en: &quot;at 163 K&quot;, zh: &quot;163 K 时&quot;}
+</code></pre>
+<p>How each certainty is rendered:</p>
+<ul>
+<li><code>eq</code> with a tolerance: <code>100 ± 2 µm</code>.</li>
+<li><code>provisional</code>: the value and unit in brackets, <code>≤ [3 e⁻/pix/h]</code>.</li>
+<li><code>tbc</code>: the value followed by &quot;(TBC)&quot;.</li>
+<li><code>tbd</code>: &quot;TBD&quot;, with no value needed.</li>
+</ul>
+<p>A <strong>quantity</strong> (<code>quantities/&lt;key&gt;.yaml</code>) has:</p>
+<ul>
+<li>a dotted key as its ID;</li>
+<li>a title <code>{en, zh}</code>, an optional symbol, a dimension and a canonical unit;</li>
+<li>optionally <code>kpp: true</code>, which marks a Key Performance Parameter (stricter change control is planned);</li>
+<li>optionally <code>environmental: true</code>, for a condition to be withstood (§10);</li>
+<li>an optional description <code>{en, zh}</code>. Links to analysis records in other repositories are planned.</li>
+</ul>
+<p>Units are parsed with <code>pint</code>.</p>
+<p><strong>Forms of requirement</strong> (accepted, 2026-11-02; details revised after an independent review). A requirement is <strong>qualitative</strong> or <strong>quantitative</strong>. What counts is that it is verifiable: it has a verification method and criteria, and no vague words (<code>content.writing</code>).</p>
+<ul>
+<li><strong>Derived, never stored.</strong> A requirement with at least one value slot is <em>quantitative</em>; one without is <em>qualitative</em>. The form is derived from the record, so it cannot drift.</li>
+<li><strong>Shown everywhere.</strong>
+<ul>
+<li>The HTML marks each requirement with its form. It adds &quot;numbers in text&quot; when the reference-language statement still holds numbers outside slots; years are not counted.</li>
+<li>The same condition gives a note in <code>content.completeness</code> at <code>agreed</code> and above.</li>
+<li>The JSON export lists <code>forms</code>.</li>
+</ul>
+</li>
+<li><strong>The parse rule.</strong> Only value slots are parsed: relation, numbers, tolerance, unit (<code>pint</code>), certainty, condition and goal. Checks and analysis codes never read numbers in prose.</li>
+<li><strong>When to use a slot</strong> (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references.</li>
+<li><strong>Goals</strong> (optional; the Rubin model is offered, not imposed).
+<ul>
+<li>A slot with a limit (<code>le</code>, <code>lt</code>, <code>ge</code>, <code>gt</code>) and a value may carry <code>goal</code>: a number in the slot's unit, on the better side of the limit.</li>
+<li>It renders as &quot;≥ [90 %] (goal 92.5 %)&quot;, in Chinese &quot;≥ [90 %]（目标为92.5 %）&quot;.</li>
+<li>A goal is part of the approved content, so changing it is a <code>value</code> change.</li>
+<li>Consistency checks ignore goals.</li>
+</ul>
+</li>
+<li><strong>Rendering.</strong> A provisional value has its brackets around the value and unit, not the relation (&quot;≥ [90 %]&quot;), as in the project's documents. There is a space before <code>%</code>, as SI requires, and none before angle symbols.</li>
+<li><strong>A TBD slot carries no number:</strong> no value, range or goal.</li>
+<li><strong>A relation said twice.</strong> A slot that carries its own relation sign, with a relation word next to it in the text (&quot;at least {x}&quot; reading &quot;at least ≥ 40 %&quot;), is a warning of <code>content.values</code>.</li>
+</ul>
+<p><strong>Converting between the forms</strong> (accepted, 2026-11-02; details revised after an independent review).</p>
+<ol>
+<li><strong>Moving numbers into slots without changing the meaning:</strong> <code>qingsong slot ID --file slots.yaml --by P [--dry-run]</code>.
+<ul>
+<li>
+<p><strong>Input.</strong> For each slot, the file gives its fields and <code>replaces</code>, the literal it replaces in each language of the statement.</p>
+</li>
+<li>
+<p><strong>Accepted only when every literal:</strong></p>
+<ul>
+<li>occurs exactly once, and overlaps no other literal of the same move;</li>
+<li>is not part of a reference, link, footnote, code or mathematics;</li>
+<li>is not glued to a larger expression: a letter, a digit, an operator, a sign (−, ±) or a decimal point next to it;</li>
+<li>has no relation word (&quot;at least&quot;, any &quot;… than&quot;, &quot;不小于&quot;, any &quot;…于&quot;, &quot;以上&quot;, …) or qualifier (&quot;per&quot;, &quot;total&quot;, &quot;每&quot;, …) just outside it. Such a word must be included in the literal, so that the slot's data says what the sentence says;</li>
+<li><strong>reads the same as the slot's rendering</strong>, up to a short, named list of formatting differences:
+<ul>
+<li>spacing, except between two digits;</li>
+<li>thousands separators written without spaces;</li>
+<li>relation words written out (&quot;more than&quot;, &quot;不小于&quot;) against their signs;</li>
+<li><code>µ</code>/<code>μ</code>, <code>um</code>, <code>percent</code>, <code>deg</code>;</li>
+<li>a unit written after both the value and the tolerance;</li>
+<li>a unit just after the brackets of a provisional value;</li>
+<li>a tolerance group in parentheses.</li>
+</ul>
+</li>
+</ul>
+<p>There is no grammar of its own: the one renderer is the parse rule. Letter case is kept, except in relation words and TBC/TBD, because units differ by case (mm and Mm).</p>
+</li>
+<li>
+<p><strong>Refused when:</strong></p>
+<ul>
+<li>the record has unrecorded changes, so nothing else can be carried into an approval;</li>
+<li>a slot's <code>{name}</code> already appears anywhere in the record's text.</li>
+</ul>
+<p>A literal that also appears in the rationale, notes or criteria is reported; it stays in prose there.</p>
+</li>
+<li>
+<p><strong>What changes.</strong> Only the literals change, to <code>{slot}</code>; the rest of the statement is untouched by construction. A translation that was current follows the new text and keeps its review status, because both languages change from one input. A stale translation stays stale. The normative revision is unchanged, so children, verifications and waivers are unaffected.</p>
+</li>
+<li>
+<p><strong>The approval</strong> is re-bound to the new text only if it was current before. A stale approval stays stale. An &quot;accepted as written&quot; decision (§5.6) is carried over the same way, with a history entry on its issue.</p>
+</li>
+<li>
+<p><strong>The <code>slotted</code> event</strong> records the normative hash before and after. <code>integrity.against</code> accepts a changed normative hash without a new normative revision only when <code>slotted</code> events since the reference lead, hash to hash, from the earlier hash to the current one. A value changed after the move is still caught.</p>
+</li>
+<li>
+<p><strong>Scope.</strong> The move covers the statement. Numbers in the verification criteria stay in prose.</p>
+</li>
+</ul>
+</li>
+<li><strong>Changing what is required</strong> is an ordinary <code>value</code> revision: a new normative revision, approval again, and children flagged. Examples: &quot;high transmission&quot; becomes &quot;≥ 90 %&quot;, a number is removed, or a value changes.</li>
+</ol>
+<h3 id="53-other-record-types">5.3 Other record types</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Type</th>
+<th>ID pattern</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Condition</td>
+<td><code>&lt;NODEREF&gt;-COND-NNN</code></td>
+<td>A fact about a <code>context</code> node (e.g. site temperature statistics): value slots, source, date, evidence basis (<code>measured</code>, <code>modelled</code>, <code>assumed</code>). Never a &quot;shall&quot;.</td>
+</tr>
+<tr>
+<td>Interface</td>
+<td><code>IFC-&lt;SYSTEM&gt;-NNN</code></td>
+<td>Numbered within the top-level system that owns the interface. Endpoints <code>owner_end</code> and <code>other_end</code> (node references) and agreed values. Its requirements are ordinary requirements that name it in <code>interface</code>.</td>
+</tr>
+<tr>
+<td>Issue</td>
+<td><code>ISS-NNNN</code></td>
+<td>Open TBD, TBC, provisional value or TBJ; a question; a conflict. Owner, closure plan, due point (a date or a named event), status.</td>
+</tr>
+<tr>
+<td>Decision</td>
+<td><code>DEC-NNNN</code></td>
+<td>Who decided what, when and why; affected records</td>
+</tr>
+<tr>
+<td>Verification</td>
+<td><code>VER-&lt;REQUIREMENT&gt;-NN</code></td>
+<td>Method, level, criteria, status, evidence (§9), and the requirement's <code>normative_revision</code> that was verified</td>
+</tr>
+<tr>
+<td>Waiver</td>
+<td><code>WVR-NNNN</code></td>
+<td>Approved departure: requirement and its <code>normative_revision</code>, scope, reason, approver, expiry. The requirement itself is unchanged.</td>
+</tr>
+<tr>
+<td>Source</td>
+<td><code>SRC-&lt;slug&gt;</code></td>
+<td>External document: number, version, date, file name, sha256, storage path</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td><code>BL-&lt;slug&gt;</code></td>
+<td>A named, frozen set of records, its git tag and the review it belongs to</td>
+</tr>
+<tr>
+<td>Document</td>
+<td>document number</td>
+<td>§5.5</td>
+</tr>
+<tr>
+<td>Figure</td>
+<td><code>&lt;NAMESPACE&gt;-FIG-NNN</code></td>
+<td>§5.4</td>
+</tr>
+</tbody>
+</table></div>
+<p>ID syntax (checked):</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Type</th>
+<th>Regular expression</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requirement</td>
+<td><code>^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)+-REQ-\d{3,}$</code></td>
+</tr>
+<tr>
+<td>Condition</td>
+<td><code>^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*-COND-\d{3,}$</code></td>
+</tr>
+<tr>
+<td>Interface</td>
+<td><code>^IFC-[A-Z][A-Z0-9]*-\d{3,}$</code></td>
+</tr>
+<tr>
+<td>Issue, decision, waiver</td>
+<td><code>^(ISS|DEC|WVR)-\d{4,}$</code></td>
+</tr>
+<tr>
+<td>Verification</td>
+<td><code>^VER-&lt;requirement ID&gt;-\d{2,}$</code></td>
+</tr>
+<tr>
+<td>Source, baseline</td>
+<td><code>^(SRC|BL)-[A-Za-z0-9][A-Za-z0-9._-]*$</code></td>
+</tr>
+<tr>
+<td>Document</td>
+<td><code>^[A-Z][A-Z0-9]*(-[A-Za-z0-9.]+)+$</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Numbers sort numerically, not lexically.</p>
+<h3 id="54-text-figures-and-document-content-proposed-from-the-first-pilot-document-2026-11-01">5.4 Text, figures and document content (proposed; from the first pilot document, 2026-11-01)</h3>
+<p><strong>Text format.</strong> Every prose field (<code>statement</code>, <code>rationale</code>, <code>notes</code>, <code>suggestions</code>, criteria, captions, document text) is a Markdown subset per language: paragraphs; bullet (<code>- </code>) and numbered (<code>1. </code>) lists, nested by indentation, which may follow a paragraph line directly; <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code> and backslash escapes. Emphasis, sub- and superscript and mathematics follow pandoc's rules, so that <code>2 * 3</code>, <code>~45 m</code> and <code>$5</code> stay as written. It also has the following additions:</p>
+<ul>
+<li><strong>Sub- and superscript:</strong> <code>~x~</code> and <code>^x^</code>, as in pandoc.</li>
+<li><strong>Inline mathematics:</strong> <code>$…$</code> in LaTeX.</li>
+<li><strong>Cross-references:</strong> <code>[[ID]]</code>. A requirement ID renders as the ID. A figure ID renders as &quot;Figure 3.2&quot; / &quot;图3.2&quot;, numbered by the document being rendered (outside a document, as the figure's ID). <code>[[DOC#key]]</code> renders as the number of that section, e.g. &quot;Section 4.1&quot;.</li>
+</ul>
+<p><strong>Open values in prose.</strong> Bracketed text (<code>[7,500]</code>, <code>[five]</code>) marks a provisional value, as in the MUST documents; it, TBD and TBC (待定, 待确认) must be tracked by an issue. Markdown links <code>[text](url)</code> and footnotes <code>[^1]</code> are not open values.</p>
+<p>Cross-references are checked like any other reference. Numbers written by hand (&quot;Figure 3.2&quot;, &quot;Section 4&quot;) are avoided, because numbering belongs to documents.</p>
+<p><strong>Requirement parts.</strong> Besides <code>statement</code>, <code>rationale</code> and <code>verification</code>, a requirement may carry <code>notes</code> and <code>suggestions</code>, both <code>{en, zh}</code> and informative. Renderers show them in a fixed order: requirement, rationale, notes, suggestions, verification.</p>
+<p><strong>Figure.</strong> Figures are records with ID <code>&lt;NAMESPACE&gt;-FIG-NNN</code> and file <code>figures/&lt;SYSTEM&gt;/&lt;ID&gt;.yaml</code>, next to the image files (<code>&lt;ID&gt;.png</code>, optionally <code>.svg</code> and <code>.pdf</code>). A figure record holds:</p>
+<ul>
+<li>the caption <code>{en, zh}</code> and the alt text;</li>
+<li>the image files with their sha256;</li>
+<li>provenance: the generating script and its repository, version or commit, data, and date.</li>
+</ul>
+<p>Images are shared by both languages; captions are translated. Image files are part of the stamp through their hashes, so a changed image is a recorded change.</p>
+<p><strong>Glossary.</strong> <code>glossary.yaml</code> lists:</p>
+<ul>
+<li>acronyms and terms, with expansions <code>{en, zh}</code>;</li>
+<li>optional definitions <code>{en, zh}</code>;</li>
+<li>symbols, with meanings <code>{en, zh}</code>.</li>
+</ul>
+<p>Documents select from it.</p>
+<p><strong>Document outline.</strong> An ordered list of blocks:</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Block</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>section</code></td>
+<td>key, title <code>{en, zh}</code>, nested blocks</td>
+</tr>
+<tr>
+<td><code>text</code></td>
+<td><code>{en, zh}</code> Markdown</td>
+</tr>
+<tr>
+<td><code>requirement</code></td>
+<td>a requirement ID</td>
+</tr>
+<tr>
+<td><code>figure</code></td>
+<td>a figure ID</td>
+</tr>
+<tr>
+<td><code>table</code></td>
+<td>header and rows of bilingual cells, optional caption</td>
+</tr>
+<tr>
+<td><code>definitions</code></td>
+<td>glossary terms or symbols to list</td>
+</tr>
+</tbody>
+</table></div>
+<p>Front matter holds:</p>
+<ul>
+<li>the title <code>{en, zh}</code>;</li>
+<li>roles, as <code>{role {en, zh}, person}</code> for authors, checkers and approvers;</li>
+<li>reference documents, as source IDs;</li>
+<li>the bibliography;</li>
+<li>the change record of releases made before qingsong.</li>
+</ul>
+<h3 id="55-documents-and-releases-proposed">5.5 Documents and releases (proposed)</h3>
+<p>A document record holds:</p>
+<ul>
+<li>its number and title;</li>
+<li>its <strong>scope</strong>, a list of namespaces;</li>
+<li>an ordered outline of sections and the requirement IDs in each;</li>
+<li>front matter;</li>
+<li>roles (authors, checkers, approvers);</li>
+<li>releases.</li>
+</ul>
+<p>Section numbers and order belong to the document, never to requirement IDs. Earlier document numbers are kept as aliases.</p>
+<p><strong>Release entries.</strong> <code>releases</code> lists every issue of the document, oldest first. Each entry holds the version, date, summary <code>{en, zh}</code>, the person who released it, an optional note, <code>made_with_qingsong</code> and <code>tag</code>.</p>
+<ul>
+<li><strong>Made with qingsong:</strong> <code>tag</code> is <code>release/&lt;DOC&gt;/&lt;version&gt;</code>, and <code>engine</code> records the qingsong version that prepared it.</li>
+<li><strong>Made before qingsong:</strong> <code>tag</code> may name a git tag that an approver placed on the commit where the record was verified against the issued document. Later changes are then summarised against it. Without such a tag, the change summary needs an explicit starting point (<code>--since REF</code>).</li>
+</ul>
+<p><strong>Versions</strong> are dotted numbers (<code>1.2</code>). A new version must be higher than every earlier one, compared number by number.</p>
+<p><strong>Releasing takes two steps,</strong> so that the tag marks a reviewed and merged state (proposed, 2026-11-02; revised after an independent review the same day).</p>
+<ol>
+<li><strong>Prepare,</strong> on a branch: <code>qingsong release prepare DOC V --by P --summary-en S --summary-zh S [--date D]</code>.
+<ul>
+<li><strong>It refuses, listing every reason:</strong>
+<ul>
+<li>an error on the document, on a record in its outline, or an <code>integrity</code> error anywhere. An unrelated broken draft elsewhere does not block a release;</li>
+<li>P is not an approver;</li>
+<li>V is not higher than every earlier version;</li>
+<li>a current requirement or figure in the outline lacks a <code>reviewed</code>, current translation of a translated field (§7), whatever its maturity: everything printed in an issued document has been read in both languages.</li>
+</ul>
+</li>
+<li><strong>What it writes.</strong> It appends the release entry and records a <code>released</code> event in the document's history. Then it prints the change summary since the previous release. The approver reviews both in the pull request, like any other change.</li>
+<li><strong>Dates.</strong> The entry's date is the date of the approver's release decision: today, unless <code>--date</code> is given. The tag carries its own date. Dates may not decrease from one release to the next.</li>
+<li><strong>Rerunning.</strong> <code>prepare</code> may run again for the same version while the entry is not yet on the main branch. It then replaces the entry and checks everything again. Once the entry is on main, the version is closed; a correction is a new version.</li>
+</ul>
+</li>
+<li><strong>Tag,</strong> after the merge: <code>qingsong release tag DOC V</code>.
+<ul>
+<li><strong>Which commit is tagged.</strong> It finds the commit on the main branch's first-parent history that first contains the release entry, following renames of the document file. With a squash merge this is the squashed commit; with a merge commit it is the merge. That commit is tagged, whatever commits followed it. Later changes are not part of the release.</li>
+<li><strong>It refuses when:</strong>
+<ul>
+<li>no such commit exists;</li>
+<li>the vault at that commit has an error of the kinds listed under Prepare;</li>
+<li>the tag already exists.</li>
+</ul>
+</li>
+<li><strong>The tag.</strong> It creates the annotated tag <code>release/&lt;DOC&gt;/&lt;V&gt;</code> locally. Pushing the tag is a separate, deliberate <code>git push</code>.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Release entries are append-only.</strong></p>
+<ul>
+<li><code>documents.release</code> (error): versions are unique and increase in list order; dates do not decrease; a release made with qingsong names the tag <code>release/&lt;DOC&gt;/&lt;version&gt;</code>, its person is an approver, and it records <code>engine</code>. This also catches two versions prepared in parallel and merged one after the other.</li>
+<li><code>documents.release_tag</code>: when the vault is a git repository and a release's tag exists, the tagged commit must contain the same release entry (error). A missing tag is a note, because tagging follows the merge and CI clones may lack tags.</li>
+<li><code>integrity.against</code>: release entries present at the reference may not change or disappear, like history.</li>
+</ul>
+<p><strong>Issued copies are reproducible.</strong></p>
+<ul>
+<li><strong>Rendering a release.</strong> <code>qingsong render docx DOC --release V</code> reads the vault as it was at the release tag and renders it.</li>
+<li><strong>Reading an earlier state.</strong> The vault at a git reference is read from the raw stored files (<code>git ls-tree</code> and <code>git cat-file</code>). No checkout, archive filter or line-ending conversion is involved. A missing reference is an error.</li>
+<li><strong>Engine versions.</strong> Records are read with the current schemas. If an old state no longer loads, the message names the engine version recorded in the release (<code>engine</code>) to render it with.</li>
+<li><strong>Storage.</strong> The issued Word file is not stored in the vault. Its document properties carry the version and the tag.</li>
+</ul>
+<p><strong>The change summary.</strong> <code>qingsong release changes DOC [--since V|REF] [--until REF]</code> compares two states of the document. By default it compares the latest release that has a tag with the working tree. With <code>--until</code>, the default start is the latest tagged release strictly before that point, and a start that is not earlier than the end is refused. If that release was made before qingsong, the summary is marked as approximate, since nothing checks that the tagged record matched the issued file. It lists:</p>
+<ul>
+<li>requirements and figures added to the outline and removed from it. A record removed here but present in another document's outline is reported as <strong>moved</strong> to that document;</li>
+<li>revised records:
+<ul>
+<li>the history events whose revision is above the earlier state's revision, with their classes and summaries. If the earlier history is not a prefix of the later one, the summary says that history was rewritten;</li>
+<li>the fields that changed, with word-level differences in both languages on the HTML page, and the value slots before and after;</li>
+<li>aliases added or removed;</li>
+</ul>
+</li>
+<li>maturity changes, and lifecycle changes (superseded or withdrawn, with successors), reported apart from outline changes;</li>
+<li>records <strong>moved within</strong> the document, from one section to another;</li>
+<li>changes to the document's own text, by section key:
+<ul>
+<li>a changed title, text block, table or definitions list is reported with the section's before and after;</li>
+<li>a section whose blocks only changed order is reported as <strong>reordered</strong>;</li>
+<li>blocks have no identity of their own, so a moved text block appears as a changed section;</li>
+<li>section keys must be unique and non-empty (<code>structure.outline</code>, error).</li>
+</ul>
+</li>
+<li>front-matter changes, other than the release list itself.</li>
+</ul>
+<p>Approvals, confirmations and translation reviews are listed apart from changes of content. A translation edited in the same event as its review is a content change.</p>
+<p>The HTML site shows the summary on each document's changes page (&quot;Changes since v1.1&quot;). In Word, the release's entry in the change record carries the summary the approver wrote. The Word copy shows the document as released, without revision marks: Word is a snapshot and one form of output, no longer the reference (decision of 2026-11-02).</p>
+<h3 id="56-review-labelled-issues-and-proposed-fixes-proposed-2026-11-02">5.6 Review: labelled issues and proposed fixes (proposed, 2026-11-02)</h3>
+<p>The Project Scientist asked (2026-11-02) for three things:</p>
+<ul>
+<li>what the checks find should be labelled clearly and highlighted in the HTML documents;</li>
+<li>a fix can be proposed alongside it;</li>
+<li>one place, reachable from the project page, where all of it is reviewed.</li>
+</ul>
+<p>Check findings are computed and come and go with the text. To carry a label, an owner and a proposed fix they need a record, so <strong>issues are the review items</strong>. A finding becomes reviewable when an issue tracks it.</p>
+<p><strong>Labels.</strong> The issue <code>kind</code> is its label, shown in the same words and colour on every page:</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Kind</th>
+<th>Label</th>
+<th>Usually raised from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tbd</code>, <code>tbc</code>, <code>provisional</code></td>
+<td>TBD, TBC, Provisional</td>
+<td>open values (<code>content.open_values</code>, <code>content.values</code>)</td>
+</tr>
+<tr>
+<td><code>tbj</code></td>
+<td>No parent (TBJ)</td>
+<td><code>structure.justification</code></td>
+</tr>
+<tr>
+<td><code>wording</code></td>
+<td>Wording</td>
+<td><code>content.writing</code>: not exactly one &quot;shall&quot;, vague terms</td>
+</tr>
+<tr>
+<td><code>translation</code></td>
+<td>Translation</td>
+<td><code>change.translation</code>, or a reviewer: the two languages differ in meaning</td>
+</tr>
+<tr>
+<td><code>question</code></td>
+<td>Question</td>
+<td>anyone</td>
+</tr>
+<tr>
+<td><code>conflict</code></td>
+<td>Conflict</td>
+<td>two records disagree</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Issue fields added:</strong></p>
+<ul>
+<li><code>rule</code>: the check rule whose findings the issue tracks. The findings of that rule on the issue's <code>records</code> are then <em>tracked</em>.</li>
+<li><code>proposals</code>: proposed fixes, numbered 1, 2, … within the issue.</li>
+<li><code>outcome</code>, set on closing: <code>fixed</code>, <code>accepted_as_written</code>, <code>answered</code> or <code>withdrawn</code>.</li>
+<li><code>accepted</code>: for <code>accepted_as_written</code>, the review hash (below) of each record at the time of acceptance.</li>
+</ul>
+<p><strong>Proposal.</strong> A proposal holds:</p>
+<ul>
+<li><code>number</code>, <code>date</code>, <code>by</code> (a person) and <code>via</code> (an agent);</li>
+<li><code>summary</code> <code>{en, zh}</code> and <code>change_class</code> (<code>editorial</code> by default, <code>value</code> or <code>reallocate</code>; §8.1);</li>
+<li><code>status</code>: <code>proposed</code>, <code>accepted</code> or <code>rejected</code>, and <code>reason</code> for a rejection;</li>
+<li><code>changes</code>: each one names <code>record</code>, <code>field</code> and the new <code>text</code> per language. Allowed fields: <code>title</code>, <code>statement</code>, <code>rationale</code>, <code>notes</code>, <code>suggestions</code> and <code>verification.criteria</code>. <code>base</code> holds the text hash, per language, of the text being replaced.</li>
+</ul>
+<p>A proposal without changes proposes to <strong>keep the text as written</strong>.</p>
+<p><strong>Review hash.</strong> A hash of a record's prose fields and values in every language. An acceptance made against one review hash does not cover a later wording.</p>
+<p><strong>Lifecycle:</strong></p>
+<ol>
+<li><strong>Raise.</strong>
+<ul>
+<li><code>qingsong issue raise --from-checks [--rule R] [--group]</code> writes one issue per untracked finding, or, with <code>--group</code>, one issue per rule covering all its records. Kind and title come from the rule.</li>
+<li><code>qingsong issue raise --kind K --title T --description D --record ID…</code> writes one by hand.</li>
+</ul>
+</li>
+<li><strong>Propose.</strong> <code>qingsong issue propose ISS --file proposal.yaml</code>, or <code>--keep --summary S</code>.
+<ul>
+<li>The command numbers the proposal, fills in the date, the person and the base hashes, and checks that each record and field exist.</li>
+<li>Anyone in <code>people.yaml</code> may propose.</li>
+</ul>
+</li>
+<li><strong>Decide.</strong> Only an approver may do this.
+<ul>
+<li><code>qingsong issue accept ISS --proposal N</code> applies the changes through <code>revise</code>, with the proposal's class and a summary naming the issue and proposal. It refuses when a base hash no longer matches. Changes given in both languages mark the translation reviewed. A change given in only one language leaves the other to be updated (<code>change.translation</code>).</li>
+<li>Accepting a keep proposal records the review hashes.</li>
+<li>Either way the issue closes, with outcome <code>fixed</code> or <code>accepted_as_written</code>, and the other open proposals become <code>rejected</code>.</li>
+<li><code>qingsong issue reject ISS --proposal N --reason R</code> rejects one proposal.</li>
+<li><code>qingsong issue close ISS --outcome answered|withdrawn|fixed --resolution R</code> closes an issue without a proposal. <code>fixed</code> is for a fix made by a separate recorded revision.</li>
+<li>A keep proposal is refused for an issue that tracks no rule on any record, because it would suppress nothing.</li>
+</ul>
+</li>
+<li><strong>Agents</strong> prepare proposals; people decide. The HTML review page saves the decisions as a decisions file (§12.1), which <code>qingsong issue apply</code> applies.</li>
+</ol>
+<p><strong>Decisions file</strong> (accepted 2026-11-02). One reviewer's decisions from one sitting:</p>
+<pre><code class="language-yaml">format: qingsong-decisions/1
+project: DEMO
+decided_by: alice
+saved: 2026-11-02T15:40:00Z
+decisions:
+  - issue: ISS-0001
+    proposal: 2
+    decision: accept           # or reject
+    note: &quot;optional; the reason when rejecting&quot;
+    proposal_hash: 0123456789abcdef
+    decision_record: DEC-0001  # only to accept a change to a baselined record
+</code></pre>
+<p><code>qingsong issue apply FILE</code>:</p>
+<ul>
+<li><strong>Checks every decision before writing anything,</strong> and reports every problem at once:
+<ul>
+<li>the project code matches the vault;</li>
+<li>the person is in <code>people.yaml</code>; accepting needs an approver, and rejecting needs an approver or the proposal's author;</li>
+<li>the issue is open and the proposal is still proposed;</li>
+<li><strong>the proposal is the one the reviewer read:</strong> <code>proposal_hash</code> covers its summary, change class and changes, so a proposal edited after the page was made is refused;</li>
+<li>an accepted proposal is not out of date (its base hashes still match), and its records are current, have no unrecorded changes, and, when baselined, come with a <code>decision_record</code>;</li>
+<li>at most one proposal per issue is accepted, no two accepted proposals change the same field of a record, and no proposal is decided twice;</li>
+<li>on <code>main</code>, no branch named <code>review</code> blocks the review branch.</li>
+</ul>
+</li>
+<li><strong>Applies all or nothing.</strong> Rejections go first, then acceptances, each through <code>issue reject</code> and <code>issue accept</code>. If any step fails, every file is restored and nothing is applied. A rejection's note becomes its reason, in Chinese if it contains Chinese characters, and &quot;rejected in review&quot; without a note. An acceptance's note stays in the kept file.</li>
+<li><strong>Never writes on the main branch.</strong> In a git vault on <code>main</code>, it starts the branch <code>review/&lt;date&gt;-&lt;person&gt;</code>; with uncommitted changes there it refuses.</li>
+<li><strong>Keeps the file</strong> in <code>reviews/&lt;date&gt;_&lt;person&gt;.yaml</code> (<code>_2</code>, <code>_3</code> for later sittings that day), byte for byte as saved. The issue histories record the decisions; the file keeps the notes and what the reviewer saw.</li>
+<li><strong>It commits nothing.</strong> The approver, or an agent, commits and merges as for any change.</li>
+</ul>
+<p>Out of scope: a local server or a Submit button (evaluated 2026-11-02). A page that writes to the record needs a server, which §1 excludes, and a network-facing write path to secure and maintain beside the commands.</p>
+<p><strong>Checks:</strong></p>
+<ul>
+<li>A tracked finding keeps its severity and names its issue.</li>
+<li>A finding on a record accepted as written, whose review hash is unchanged, becomes a note (<code>info</code>) naming the issue. Once the text changes it is a warning again.</li>
+<li><code>change.stale_proposal</code> (warning): an open proposal whose base no longer matches the record.</li>
+<li><code>integrity.proposal</code> (error): a proposal names an unknown record, field or rule, or numbers repeat.</li>
+</ul>
+<h2 id="6-identity-accepted">6. Identity (accepted)</h2>
+<h3 id="61-ids">6.1 IDs</h3>
+<ul>
+<li><strong>Format.</strong> Requirements are <code>&lt;NAMESPACE&gt;-REQ-&lt;NNN&gt;</code>, e.g. <code>INS-DET-REQ-012</code>. There is one continuous series per namespace, starting at 001.</li>
+<li><strong>Allocation.</strong> <code>qingsong new</code> allocates above the highest number in the working tree <strong>and</strong> on the main branch, counting superseded and withdrawn IDs.</li>
+<li><strong>When permanence starts.</strong> An ID becomes permanent once its record reaches the main branch. Two branches may still collide before merging. <code>qingsong renumber --unmerged OLD NEW</code> moves a record that is not yet on main to a free number and rewrites references to it.</li>
+<li><strong>What the check enforces.</strong> With <code>--against REF</code> (normally <code>origin/main</code>), the check reads REF through the <code>git</code> command line and reports:
+<ul>
+<li>an ID present at REF and now missing, or now of a different type;</li>
+<li>a node removed or moved;</li>
+<li>a <code>history</code> whose earlier entries were altered;</li>
+<li>a lifecycle that moved backwards.</li>
+</ul>
+</li>
+<li><strong>File path.</strong> <code>requirements/&lt;SYSTEM&gt;/&lt;ID&gt;.yaml</code>, where <code>&lt;SYSTEM&gt;</code> is the first segment of the ID. Other types use <code>&lt;type folder&gt;/&lt;ID&gt;.yaml</code>.</li>
+</ul>
+<h3 id="62-aliases">6.2 Aliases</h3>
+<p>An alias is another name of the same record: an earlier ID in our own documents, or a vendor's number for the same requirement.</p>
+<pre><code class="language-yaml">aliases:
+  - {id: REQ-007, kind: legacy, document: DEMO-INS-DET-RD, from_version: &quot;0.1&quot;, to_version: &quot;1.1&quot;}
+  - {id: &quot;3.2.4&quot;, kind: vendor, document: &quot;Vendor X compliance matrix&quot;, from_version: &quot;2026-09&quot;}
+</code></pre>
+<p>Checks:</p>
+<ul>
+<li><strong>No overlap.</strong> Aliases sharing the same <code>kind</code>, <code>document</code> and <code>id</code> must not have overlapping version ranges. One old number used for two different requirements in different versions therefore gets an alias on each, with its own range.</li>
+<li><strong>No collision with an ID.</strong> An alias may not equal any record's ID.</li>
+</ul>
+<p>Aliases are searchable, shown on the requirement's page, and can be printed as a column in generated documents. A vendor's different <em>wording or value</em> is a variant (§5.1), not an alias.</p>
+<h2 id="7-languages-accepted">7. Languages (accepted)</h2>
+<ul>
+<li>
+<p><strong>English is the reference language.</strong> Checks, values and approvals refer to the English text.</p>
+</li>
+<li>
+<p><strong>Required Chinese.</strong> From <code>draft</code> maturity upward, the fields in <code>bilingual_fields</code> must exist in both languages. These are the title, statement, rationale and verification criteria. The verification method uses bilingual vocabulary labels. A <code>concept</code> requirement may exist in one language.</p>
+</li>
+<li>
+<p><strong>Text origin.</strong> <code>text_origin</code> records the language a requirement was first written in. The default comes from the document, then the node or its nearest ancestor, then the configuration.</p>
+</li>
+<li>
+<p><strong>Respecting a Chinese original.</strong> When <code>text_origin</code> is <code>zh</code>:</p>
+<ul>
+<li>the Chinese text is kept as its authors wrote it, and the English is a faithful translation;</li>
+<li>agents never regenerate the origin-language text from the other language;</li>
+<li>a change of meaning updates both texts, and the origin-language text must be reviewed by a person who reads it before the requirement can be <code>agreed</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Translation tracking, per field.</strong> For each bilingual field, <code>translation.&lt;field&gt;</code> holds:</p>
+<ul>
+<li><code>source_hash</code>: the hash of the origin-language text when the other language was written;</li>
+<li><code>status</code>: <code>machine</code> (written by an agent) or <code>reviewed</code> (checked by a person);</li>
+<li><code>by</code> and <code>date</code>.</li>
+</ul>
+<p>Editing the origin-language text makes that field's translation stale, and its status returns to <code>machine</code>. A formal release requires <code>reviewed</code> translations, by a person who reads both languages.</p>
+</li>
+<li>
+<p><strong>Values never appear in prose</strong> (§5.2), so both languages always show the same numbers.</p>
+</li>
+</ul>
+<h2 id="8-change-control-accepted">8. Change control (accepted)</h2>
+<h3 id="81-change-classes">8.1 Change classes</h3>
+<p>Content is edited in the file. <code>qingsong revise &lt;ID&gt; --class &lt;class&gt; --summary &quot;…&quot;</code> then records the change:</p>
+<ul>
+<li>it bumps <code>revision</code>, and <code>normative_revision</code> when the class changes meaning;</li>
+<li>it rewrites <code>stamp</code>;</li>
+<li>it appends a history event with the date, the person, the class, the summary and, where required, a decision.</li>
+</ul>
+<p><code>revise</code> compares the record with its stored <code>normative_hash</code>. It refuses <code>editorial</code> when values, the level or the verification methods changed, and <code>reallocate</code> when anything but the allocation changed in them.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Class</th>
+<th>Example</th>
+<th><code>normative_revision</code></th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>editorial</code></td>
+<td>wording, punctuation, translation, rationale</td>
+<td>unchanged</td>
+<td>children unaffected</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>value, tolerance, condition or criteria changed; same intent</td>
+<td>+1</td>
+<td>children, verifications and waivers become stale; the approval becomes stale</td>
+</tr>
+<tr>
+<td><code>reallocate</code></td>
+<td><code>allocated_to</code> changed</td>
+<td>unchanged</td>
+<td>documents affected; the ID is unchanged</td>
+</tr>
+<tr>
+<td><code>intent</code></td>
+<td>the requirement asks for something different</td>
+<td>—</td>
+<td>new ID; <code>qingsong supersede OLD --with NEW</code></td>
+</tr>
+<tr>
+<td><code>split</code> / <code>merge</code></td>
+<td>one becomes several, or several become one</td>
+<td>—</td>
+<td>new IDs; originals superseded and pointing to all successors</td>
+</tr>
+<tr>
+<td><code>withdraw</code></td>
+<td>no longer needed</td>
+<td>—</td>
+<td><code>qingsong withdraw ID --reason … --decision …</code>; the ID is retired</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Other events.</strong> <code>approve</code>, <code>confirm</code> and lifecycle changes also append history events and rewrite the stamp. A hand edit of any field, including <code>maturity</code>, without a recorded event fails the check as &quot;changed since stamp&quot;.</p>
+<p><strong>Requirements on the change, by maturity:</strong></p>
+<ul>
+<li><code>concept</code> and <code>draft</code>: the history event only.</li>
+<li><code>agreed</code>: a summary that states the reason.</li>
+<li><code>baselined</code>: a decision record whose affected records include the impact list qingsong generates (parents, children, interfaces, verifications, waivers, documents).</li>
+</ul>
+<p>A party that cannot meet a baselined requirement gets a waiver, not an edit.</p>
+<h3 id="82-stamps-and-suspect-links">8.2 Stamps and suspect links</h3>
+<ul>
+<li><strong><code>stamp</code></strong> is the SHA-256 of the canonical JSON of all fields except <code>stamp</code> and <code>history</code>, shortened to 16 hexadecimal characters.</li>
+<li><strong>Suspect links.</strong> A <code>derives_from</code> or <code>constrained_by</code> link stores the target's <code>normative_revision</code>. If the target's current normative revision is higher, the link is suspect until someone reviews the child and runs <code>qingsong confirm &lt;child&gt; &lt;parent&gt;</code>, which records who confirmed it and when.</li>
+<li><strong>Superseded targets.</strong> A link to a superseded record must be re-pointed to a successor.</li>
+<li><strong>Verifications and waivers</strong> store the normative revision they apply to and become stale the same way.</li>
+</ul>
+<h2 id="9-maturity-four-separate-axes-accepted">9. Maturity: four separate axes (accepted)</h2>
+<p>This follows a principle established in the companion simulation project: describe a record on separate axes rather than one grade, and do not treat superseded or withdrawn as a rank. In that project, how a value was obtained (evidence basis) and how far the hardware has progressed are graded separately.</p>
+<p>Here:</p>
+<ul>
+<li>evidence basis applies to <strong>conditions</strong> and to <strong>verification evidence</strong>;</li>
+<li>the hardware-maturity scale of analysis inputs decides whether verification by analysis counts as <code>predicted</code> or <code>compliant</code>.</li>
+</ul>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Axis</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Requirement maturity</strong></td>
+<td><code>concept</code>, <code>draft</code>, <code>agreed</code>, <code>baselined</code></td>
+<td>how settled the requirement is</td>
+</tr>
+<tr>
+<td><strong>Lifecycle</strong></td>
+<td><code>current</code>, <code>superseded</code>, <code>withdrawn</code></td>
+<td>whether it is in force; not a maturity rank</td>
+</tr>
+<tr>
+<td><strong>Value certainty</strong> (per slot)</td>
+<td><code>firm</code>, <code>provisional</code>, <code>tbc</code>, <code>tbd</code></td>
+<td>how settled each value is; non-firm values need an issue</td>
+</tr>
+<tr>
+<td><strong>Verification status</strong></td>
+<td><code>not_planned</code>, <code>planned</code>, <code>predicted</code>, <code>compliant</code>, <code>partially_compliant</code>, <code>non_compliant</code>, <code>waived</code></td>
+<td>how far evidence shows compliance</td>
+</tr>
+</tbody>
+</table></div>
+<p>The maturity levels:</p>
+<ul>
+<li><strong><code>concept</code>:</strong> a need is captured; wording and values may be missing.</li>
+<li><strong><code>draft</code>:</strong> a verifiable statement exists in both languages; values may be non-firm.</li>
+<li><strong><code>agreed</code>:</strong> an approver approved this normative revision, and every non-firm value has an issue with an owner and a due point.</li>
+<li><strong><code>baselined</code>:</strong> the requirement belongs to a named baseline, and change control applies.</li>
+</ul>
+<p>Transitions:</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>From</th>
+<th>To</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>concept</code></td>
+<td><code>draft</code></td>
+<td><code>revise --to-draft</code>, when the draft criteria are met</td>
+</tr>
+<tr>
+<td><code>draft</code></td>
+<td><code>agreed</code></td>
+<td><code>qingsong approve ID --to agreed --by P --ref R</code>; P must be an approver</td>
+</tr>
+<tr>
+<td><code>agreed</code></td>
+<td><code>baselined</code></td>
+<td>baseline creation (Phase 6); before then, <code>baselined</code> is not used</td>
+</tr>
+<tr>
+<td><code>agreed</code> / <code>baselined</code></td>
+<td><code>draft</code></td>
+<td><code>approve --to draft</code> (reopen), by an approver</td>
+</tr>
+</tbody>
+</table></div>
+<p>A <code>value</code> revision of an <code>agreed</code> or <code>baselined</code> requirement leaves its maturity in place but makes the approval stale (<code>change.approval_stale</code>) until it is approved again. Agents run <code>approve</code> only on an approver's instruction.</p>
+<p><strong>Verification:</strong></p>
+<ul>
+<li><code>compliant</code> needs at least one evidence item that resolves: a file in the vault, a source record, or an analysis record identified by repository and commit.</li>
+<li>Analysis whose inputs are placeholders or derived from requirements yields <code>predicted</code>, never <code>compliant</code>.</li>
+<li>Requirement maturity is named in words, so it is never confused with numeric hardware-maturity scales.</li>
+</ul>
+<h2 id="10-checks-accepted-principle-proposed-catalogue">10. Checks (accepted principle; proposed catalogue)</h2>
+<p><code>qingsong check</code> runs in pre-commit, in CI (with <code>--against origin/main</code>), and by agents after every edit.</p>
+<ul>
+<li>Every rule has an ID such as <code>integrity.duplicate_id</code> and a severity (<code>error</code>, <code>warning</code> or <code>info</code>), which may depend on the record's maturity.</li>
+<li><code>--json</code> prints a list of <code>{rule, severity, record, file, message, fix}</code> objects, and the command exits non-zero on any error.</li>
+<li>Every rule has a test fixture that triggers it.</li>
+</ul>
+<p>The full list of rules, with one line each, is printed by <code>qingsong rules</code> and generated into the <a href="api.html#check-rules">API reference</a>.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Group</th>
+<th>Implemented</th>
+<th>Planned</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>integrity</code></td>
+<td>YAML and schema; configuration; ID syntax (§5.3); duplicate IDs; file path matches ID; required files; figure files and hashes; unresolved references, including a document's acronyms in the glossary; proposals; against REF: IDs removed or retyped, nodes removed or moved, history or release entries rewritten, lifecycle reversed</td>
+<td></td>
+</tr>
+<tr>
+<td><code>structure</code></td>
+<td>One allocation, to an active <code>product</code> node. Level order of <code>derives_from</code>, and level against namespace. Parentless below <code>science</code> without <code>justified_by</code> (TBJ). Cycles. Superseded without successors; links to withdrawn or superseded targets. Interface and condition ends. Tree root and parents; node codes valid, unique within a system and not reserved. Namespaces. Alias overlap or collision. Each requirement and figure once in a document outline; section keys unique.</td>
+<td></td>
+</tr>
+<tr>
+<td><code>change</code></td>
+<td>Unrecorded change (stamp). History complete and in order. Suspect links. Stale approval, verification or waiver; expired waiver. Approval by a non-approver. Stale or unreviewed translation. Stale proposals.</td>
+<td>A recorded change to a baselined requirement without a decision (<code>revise</code> refuses one now).</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>Languages. Exactly one &quot;shall&quot;; vague terms (English and Chinese lists). References well formed. Open values tracked. Slots valid and tracked, units valid and matching the quantity's dimension, a relation said twice. Rationale and verification present according to maturity; numbers left in the text of a quantitative requirement (a note). Required bilingual fields. Evidence for <code>compliant</code>.</td>
+<td></td>
+</tr>
+<tr>
+<td><code>consistency</code></td>
+<td>One quantity with conflicting values in current requirements under the same condition. A child looser than its parent; an environmental range not covering its parent's. An issue past its due date. (TBD in a baselined requirement is a <code>content.open_values</code> error.)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>documents</code></td>
+<td>Release entries well formed (§5.5); release tags mark a commit holding the entry.</td>
+<td>Each current requirement in a namespace that some document scopes appears in a document's outline.</td>
+</tr>
+<tr>
+<td><code>external</code></td>
+<td></td>
+<td>Sources carry sha256 and a path. Cited analysis records and files exist when the related repositories are configured.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Consistency rules in detail</strong> (proposed, 2026-11-02; revised after an independent review the same day).</p>
+<p><strong>The values a slot allows</strong>, as an interval:</p>
+<ul>
+<li><code>le</code> gives everything up to the value, including it; <code>lt</code> excludes it.</li>
+<li><code>ge</code> gives everything from the value, including it; <code>gt</code> excludes it.</li>
+<li><code>eq</code> gives the value, widened by its tolerance, which is given in the slot's unit.</li>
+<li><code>approx</code> gives the value widened by its tolerance; without a tolerance, an <code>approx</code> slot is not compared.</li>
+<li><code>range</code> gives the range, ends included; a tolerance on a range is ignored.</li>
+</ul>
+<p>Open and closed ends are respected: <code>&lt; 3</code> and <code>≥ 3</code> share no value, while <code>≤ 3</code> and <code>≥ 3</code> share one.</p>
+<p><strong>Which slots are compared:</strong></p>
+<ul>
+<li><strong>Numbers.</strong> Only slots that carry numbers. TBD slots are skipped; <code>provisional</code> and <code>tbc</code> slots are compared, and the message names their certainty.</li>
+<li><strong>Units.</strong> Numbers are converted to the quantity's unit with <code>pint</code>, ends first, so offset units such as °C convert correctly. Equality allows a relative difference of 10⁻⁹.</li>
+<li><strong>Missing units.</strong> A slot without a unit is compared only when its quantity is dimensionless. <code>content.values</code> warns about a slot whose quantity has a dimension but whose unit is missing.</li>
+<li><strong>Several slots on one quantity.</strong> Within one requirement they are combined first, so a minimum and a maximum written as two slots form one interval.</li>
+<li><strong>The same condition.</strong> The reference-language condition texts must match after case, spacing and final punctuation are normalised. No condition at all matches no condition.</li>
+</ul>
+<p><strong>The rules:</strong></p>
+<ul>
+<li><code>consistency.conflict</code> (warning): two current requirements allow no common value for one quantity under the same condition, and both cannot be met.
+<ul>
+<li>Only requirements allocated to the same node, or to a node and its ancestor, are compared. A quantity used for two different objects then does not produce false conflicts.</li>
+<li>Variants are not compared.</li>
+<li>The finding is reported on both requirements.</li>
+</ul>
+</li>
+<li><code>consistency.child_looser</code> (warning): along a <code>derives_from</code> link, the child's combined interval for a quantity under a condition must lie inside the parent's.
+<ul>
+<li>A quantity marked <code>environmental: true</code> is a condition to be withstood, such as an operating temperature range. For it the direction is reversed: the child's range must cover the parent's.</li>
+<li>A budget share that is tighter than its parent passes, as it should.</li>
+</ul>
+</li>
+<li><code>consistency.issue_due</code> (warning): an open issue whose <code>due</code> is a date (<code>YYYY-MM-DD</code>) before the day of the check. A due point that is a named event is not checked.</li>
+</ul>
+<p>TBD in a baselined requirement is already an error of <code>content.open_values</code>.</p>
+<h2 id="11-commands-proposed">11. Commands (proposed)</h2>
+<p>The generated <a href="api.html#commands">command reference</a> lists every option. All commands accept <code>--vault PATH</code>. Without it, qingsong uses the nearest parent directory containing <code>qingsong.toml</code>. All commands accept <code>--json</code>.</p>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Phase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qingsong init PATH</code></td>
+<td>create an empty vault</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong check [--against REF]</code></td>
+<td>run the rules (§10)</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong new requirement --namespace NS</code></td>
+<td>allocate an ID and write a skeleton</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong new TYPE --file DRAFT</code></td>
+<td>allocate an ID for a draft issue, decision, waiver, interface, condition, source or verification, and take it in</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>qingsong revise ID --class C --summary S [--decision D]</code></td>
+<td>record a change (§8.1)</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong adopt FILE --summary S</code></td>
+<td>take a hand-written record file in: adds revision, history and stamp</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong supersede OLD --with NEW… --summary S</code>, <code>qingsong withdraw ID --reason R</code></td>
+<td>lifecycle changes</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong slot ID --file SLOTS [--dry-run]</code></td>
+<td>move numbers from the statement into value slots without changing the meaning (§5.2)</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>qingsong rules</code></td>
+<td>list the check rules</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong approve ID --to M --by P --ref R</code></td>
+<td>record a maturity change</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong confirm CHILD PARENT</code></td>
+<td>clear a suspect link after review</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong renumber --unmerged OLD NEW</code></td>
+<td>move a record not yet on main to a free number</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong show ID</code>, <code>qingsong list [filters]</code>, <code>qingsong find TEXT</code></td>
+<td>read</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong schema [TYPE]</code></td>
+<td>print the JSON Schema for editors and agents</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>qingsong issue raise</code>, <code>propose</code>, <code>accept</code>, <code>reject</code>, <code>close</code></td>
+<td>review items and proposed fixes (§5.6)</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>qingsong issue apply FILE</code></td>
+<td>apply a decisions file from the review page, all or nothing (§5.6)</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>qingsong import docx FILE --document DOC</code></td>
+<td>draft records from a Word requirement table, with source locators. Not built: the first import used a script of the record repository.</td>
+<td>later</td>
+</tr>
+<tr>
+<td><code>qingsong render html OUT</code></td>
+<td>HTML site (§12.1)</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>qingsong render docx DOC [--release V]</code></td>
+<td>Word output, current or as issued (§12.2)</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>qingsong release prepare DOC V</code>, <code>release tag DOC V</code>, <code>release changes DOC</code></td>
+<td>releases and change summaries (§5.5)</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>qingsong baseline create NAME --review REF</code></td>
+<td>baselines</td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>qingsong export json [--output FILE] [--at REF | --release DOC/V]</code></td>
+<td>all records and an index of value slots (§12.3)</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>qingsong export reqif</code></td>
+<td>exchange with other requirement tools</td>
+<td>later</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="12-outputs-accepted-principle-proposed-design">12. Outputs (accepted principle; proposed design)</h2>
+<h3 id="121-html">12.1 HTML</h3>
+<p>A static site that works offline from a folder: no server, all JavaScript vendored. Every record has a stable address, e.g. <code>r/INS-DET-REQ-012.html</code>.</p>
+<p>Views:</p>
+<ul>
+<li><strong>Home:</strong> status counts, open issues, recent changes, check status.</li>
+<li><strong>Product tree:</strong> owners, design stage, documents, counts, and an N² interface matrix.</li>
+<li><strong>Document:</strong> reads like the formal document, with an English / Chinese / both switch, non-firm values highlighted, and a view per release.</li>
+<li><strong>Requirement:</strong> statement and values, rationale, flow-down up and down, interfaces, verification and evidence, issues, decisions, revision timeline with differences, aliases and variants, and the documents it appears in.</li>
+<li><strong>Trace:</strong> an interactive graph filtered by link type.</li>
+<li><strong>Registers:</strong> open values, issues, decisions, waivers, verification matrix, conditions.</li>
+<li><strong>Changes:</strong> between any two baselines or releases.</li>
+<li><strong>Review package:</strong> for a node's design review.</li>
+<li><strong>Search:</strong> in both languages.</li>
+<li><strong>Check report.</strong></li>
+<li><strong>Review:</strong> every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from <code>people.yaml</code> (a single approver is preselected). Marks are kept in the browser. &quot;Save decisions&quot; downloads them as a decisions file (§5.6), and &quot;Copy decisions&quot; copies the same text to paste to an agent; both refuse until a name is chosen. Each proposal on the page carries its <code>proposal_hash</code>. The page itself never writes to the record.</li>
+<li><strong>Later.</strong> Submitting through GitHub (the page opening a pull request) needs a sign-in in the page; it comes later, for reviewers who install nothing.</li>
+<li><strong>Review marks in documents:</strong> a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.</li>
+</ul>
+<p>Pages follow a light, print-friendly style written for scientists and engineers.</p>
+<p>GitHub Pages is not used for private vaults: its sites are public unless the host offers private publishing. The site is distributed as a CI artifact, or generated and opened locally from its folder.</p>
+<h3 id="122-word">12.2 Word</h3>
+<p><code>qingsong render docx</code> reproduces the project's document layout from a reference style file in <code>templates/</code>:</p>
+<ul>
+<li>cover, change record, responsibilities;</li>
+<li>acronyms from the glossary;</li>
+<li>reference documents;</li>
+<li>bilingual requirement tables, with an optional alias column.</li>
+</ul>
+<p>A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.</p>
+<h3 id="123-exchange">12.3 Exchange</h3>
+<ul>
+<li>
+<p><strong>JSON export</strong> (proposed, 2026-11-02; revised after review). <code>qingsong export json [--output FILE] [--at REF | --release DOC/V]</code> writes one file, from the working tree or from an earlier state. It holds:</p>
+<ul>
+<li><strong>Header:</strong>
+<ul>
+<li><code>format: qingsong-export</code> and <code>format_version</code>;</li>
+<li>the qingsong version and the project code;</li>
+<li><code>commit</code>, which is the commit read, or HEAD for the working tree, and <code>dirty</code>, true when the working tree has uncommitted changes. Both are null outside a git repository.</li>
+</ul>
+</li>
+<li><strong><code>records</code>:</strong> every record as stored, including its revision, normative revision and stamp.</li>
+<li><strong><code>nodes</code>:</strong> the tree, flattened, with each node's reference and parent.</li>
+<li><strong><code>values</code>:</strong> one entry per value slot of a current requirement, holding:
+<ul>
+<li>the requirement, slot name, quantity, relation, numbers, unit, certainty, issue and condition, and the requirement's maturity, allocation, revision and normative revision;</li>
+<li>the numbers converted to the quantity's unit;</li>
+<li>the interval the slot allows (<code>low</code>, <code>high</code>, <code>low_open</code>, <code>high_open</code>) as defined above, or null if it is not comparable.</li>
+</ul>
+</li>
+</ul>
+<p>Rules for the output:</p>
+<ul>
+<li>Records are sorted by ID and slots by name, with keys in a fixed order, so two exports compare cleanly.</li>
+<li>It holds no absolute paths and no git author or host names.</li>
+<li><strong>Compatibility:</strong> <code>format_version</code> changes only for a change that breaks readers, such as a removed or renamed key, or a changed meaning. New keys may be added without it.</li>
+</ul>
+<p>Analysis code reads current values from the export instead of copying numbers out of a document. <code>--release</code> reproduces the numbers behind an issued document.</p>
+</li>
+<li>
+<p>ReqIF later, for partners using DOORS or Polarion. This also keeps the data portable to other requirement tools.</p>
+</li>
+</ul>
+<h2 id="13-engine-accepted">13. Engine (accepted)</h2>
+<p>The engine is a small core of its own. Doorstop is not used: it has untyped links, no validation interface and no Word output. Its useful ideas, one file per item and links that detect parent changes, are reimplemented here.</p>
+<pre><code>src/qingsong/
+  schema.py          pydantic models of every record type; JSON Schema generation
+  vault.py           discovery, strict loading, reading earlier states (vault_at)
+  ids.py             ID syntax, namespaces and file paths
+  hashing.py         stamps, normative, text, review and proposal hashes
+  findings.py        the result a check reports
+  walk.py            texts and references inside records
+  checks/            rule registry and the integrity, structure, change, content,
+                     consistency and documents rules
+  operations.py      new, adopt, revise, supersede, withdraw, approve, confirm, renumber, init
+  review.py          issues, proposals, accept, reject, close
+  decisions_file.py  decisions files from the review page (issue apply)
+  slots.py           moving numbers into slots; wording.py: relation words and qualifiers
+  release.py         releases and change summaries
+  gitutil.py         git plumbing
+  export.py          JSON export
+  render/            model.py, text.py (the text format), html.py (Jinja2), word.py (python-docx)
+  cli.py             Typer
+tools/
+  benchmark.py       load and check time on a synthetic vault
+  build_docs.py      HTML pages, the docs index and the generated API reference
+</code></pre>
+<p>The <a href="api.html">API reference</a> describes the layers, the invariants and every module.</p>
+<ul>
+<li><strong>Python and tooling.</strong> Python 3.11–3.14; build with <code>uv_build</code>; dependencies through <code>uv</code> only.</li>
+<li><strong>Runtime dependencies,</strong> added as the phases need them: pydantic, ruamel.yaml, typer, jinja2, pint, python-docx.</li>
+<li><strong>Development dependencies:</strong> pytest, ruff, pre-commit, markdown-it-py (documentation). Ruff is the single source of truth for lint and format, with pep8-naming rules on.</li>
+<li><strong>Tests</strong> build synthetic vaults in temporary directories only. They never read or write a real vault and never set environment variables globally.
+<ul>
+<li>Every check rule has a fixture that must trigger it.</li>
+<li>The defect classes found in the 2026-11-01 review of the earlier version are regression tests: duplicate IDs, unreadable files, dangling links, deleted files and silent defaults.</li>
+</ul>
+</li>
+<li><strong>CI</strong> (GitHub Actions) runs <code>uv sync --locked</code>, <code>ruff check</code>, <code>ruff format --check</code> and <code>pytest</code>. The tests include a check that the generated documentation is current. Failures are never masked.</li>
+<li><strong>Documentation.</strong> The Markdown files are the sources. <code>tools/build_docs.py</code> generates their HTML pages in <code>docs/html/</code>, the entrance <code>docs/index.html</code>, and the reference part of <code>docs/api.md</code> from the code.</li>
+<li><strong>Performance.</strong> Load and check time is measured on a synthetic vault of 10,000 records in Phase 1, and the measurement is recorded here. A cache is introduced only if the measurement shows a need.
+<ul>
+<li>Measured 2026-11-02 (<code>tools/benchmark.py</code>, Apple silicon, Python 3.13): loading 10,000 requirements takes 4.9 s with the C YAML parser (19.9 s with the pure-Python parser), and all checks take 3.6 s. 500 records: about 0.5 s in total. No cache is needed at MUST's expected size (hundreds to a few thousand records).</li>
+</ul>
+</li>
+<li><strong>Writing YAML by hand.</strong> A text that starts with <code>[</code> or <code>{</code> must be quoted, or YAML reads it as a list or a mapping: <code>zh: &quot;[[ID]]的…&quot;</code>. <code>adopt</code> reports this case explicitly.</li>
+</ul>
+<h2 id="14-development-sequence">14. Development sequence</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Phase</th>
+<th>Content</th>
+<th>Acceptance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>This specification; reset of the package; tooling and CI</td>
+<td>Specification accepted; CI green on the empty package</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Schemas, vault I/O, IDs and aliases, stamps, operations, check groups <code>integrity</code>, <code>structure</code>, <code>change</code> and <code>content</code>, JSON output; synthetic demo vault</td>
+<td>Every rule's fixture fails as intended; the clean demo passes; review regressions caught; benchmark recorded</td>
+</tr>
+<tr>
+<td>2</td>
+<td>First real vault: tree, people, glossary, quantities; import of one requirement document</td>
+<td>Every requirement of the source accounted for; check clean apart from tracked issues</td>
+</tr>
+<tr>
+<td>3</td>
+<td>HTML site</td>
+<td>Usable by the Project Scientist instead of the Word copy; works offline</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Word output and releases</td>
+<td>Opens without repair; text matches the source apart from intended changes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Upper levels, conditions, interfaces, <code>consistency</code> and <code>documents</code> checks</td>
+<td>Conflicts surface as issues</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Verification, waivers, baselines, metrics</td>
+<td>One complete verification matrix with resolvable evidence</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="15-earlier-version">15. Earlier version</h2>
+<p>Version 0.1 (February 2026) is tagged <code>legacy-0.1</code>. It stored items in a Doorstop-like folder tree and had a Streamlit editor. The 2026-11-01 review found it unsound, so it was rebuilt rather than repaired. Its lessons are in <code>docs/lessons.md</code>.</p>
+<h2 id="16-accepted-decisions">16. Accepted decisions</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Date</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-11-01</td>
+<td>Rebuild rather than repair. qingsong is the source of documents, not a registry of Word files.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>No Doorstop; own small core (decision delegated to the assistant).</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>IDs <code>&lt;NAMESPACE&gt;-REQ-NNN</code>, permanent, one continuous series per namespace; other numbers kept as aliases, including vendor numbers.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>Six levels: science, survey, system, element, subsystem, component. The <code>survey</code> name is accepted.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>Context nodes (e.g. a site) carry conditions, never requirements.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>Authorized members of the vault repository approve maturity changes; authorized collaborators propose changes by pull request.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>English is the reference language. Title, statement, rationale and verification also exist in Chinese. Text originally written in Chinese is respected (§7).</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>Schedules are out of scope; risks later.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>HTML is first-class and Word is for formal distribution. HTML is distributed as an artifact or served locally.</td>
+</tr>
+<tr>
+<td>2026-11-01</td>
+<td>Record content lives in a private vault repository. This public repository holds only the engine and synthetic examples.</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Check findings are labelled, highlighted in the HTML documents, carry proposed fixes, and are reviewed from one page reachable from the roadmap (§5.6).</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Alternative versions are mainly other numbers and IDs (aliases); a requirement may also carry alternative wording (variants).</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word.</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Word is a snapshot and one form of output, not the reference. Released Word copies show the current text without revision marks; changes are read in the HTML.</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Requirements may be qualitative or quantitative; verifiability is what counts. Each form is clearly marked; numeric values follow one parse rule (value slots). Goals in the Rubin manner are an option, not enforced. A number moves into a slot without reopening the approval when the move provably keeps the meaning (§5.2).</td>
+</tr>
+<tr>
+<td>2026-11-02</td>
+<td>Review decisions leave the page as a decisions file, applied all or nothing by <code>qingsong issue apply</code> and kept in the record. No local server or Submit button (§5.6).</td>
+</tr>
+</tbody>
+</table></div>
+
+</main>
+</div>
+<footer>Generated from <code>docs/SPEC.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

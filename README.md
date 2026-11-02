@@ -7,11 +7,11 @@ It is being rebuilt for the MUltiplexed Survey Telescope (MUST). The project's o
 > **Status: rebuild in progress (version 0.2.0.dev0).**
 > - Done:
 >   - the core engine: records, IDs, change recording and checks, including consistency of values;
->   - the HTML site with the review page and the changes since each release;
->   - Word output;
->   - releases, prepared on a branch and tagged after the merge;
->   - JSON export.
-> - Next: interfaces and conditions in the site, and CI for record repositories.
+>   - value slots, and moving numbers from prose into slots without changing the meaning;
+>   - the HTML site, with the review page, decisions files and the changes since each release;
+>   - Word output, and releases prepared on a branch and tagged after the merge;
+>   - JSON export, and CI for record repositories.
+> - Next: slot moves proposed on the review page, and a check that every requirement is in its document. Later: interfaces in the site, verification, waivers and baselines.
 > - The earlier version 0.1 is preserved under the git tag `legacy-0.1`.
 
 ## What it does
@@ -25,7 +25,12 @@ It is being rebuilt for the MUltiplexed Survey Telescope (MUST). The project's o
 - **Generated documents.** A static HTML site for reading and tracing requirements, and Word files for formal releases.
 - **Review.** What the checks find is raised as labelled issues and highlighted in the HTML documents. Fixes are proposed with word-level differences in both languages and decided by an approver from one review page.
 
-The design is in [docs/SPEC.md](docs/SPEC.md).
+## Documentation
+
+Open [docs/index.html](docs/index.html) in a browser for all of it, or read the Markdown:
+- [How to use qingsong](docs/howto.md): concepts, rules, workflow and worked examples, for people and agents;
+- [API reference](docs/api.md): how the code is organised, and every command, check rule and module;
+- [Specification](docs/SPEC.md): the design and the accepted decisions.
 
 ## Commands
 
@@ -33,8 +38,11 @@ The design is in [docs/SPEC.md](docs/SPEC.md).
 qingsong check                                  # run every rule
 qingsong new requirement --namespace INS-DET …  # allocate the next ID
 qingsong new decision --file draft.yaml --by PERSON   # also issue, interface, condition, source…
+qingsong adopt FILE --summary … --by PERSON     # take in a record file written by hand
 qingsong revise ID --class editorial --summary … --by PERSON   # record a change
+qingsong slot ID --file slots.yaml --by PERSON  # move numbers from the statement into slots
 qingsong approve ID --to agreed --by PERSON --ref …
+qingsong confirm CHILD PARENT --by PERSON       # clear a suspect link after review
 qingsong issue raise --from-checks --by PERSON  # one issue per untracked finding
 qingsong issue propose ISS-0001 --file fix.yaml --by PERSON
 qingsong issue accept ISS-0001 --proposal 1 --by APPROVER
@@ -57,6 +65,7 @@ uv sync                      # create the environment
 uv run pytest                # run the tests
 uv run pre-commit install    # lint and format on commit
 uv run qingsong --version
+uv run python tools/build_docs.py   # rebuild the HTML docs and the generated API reference
 ```
 
 ## Name
