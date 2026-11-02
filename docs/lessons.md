@@ -106,3 +106,11 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   covered requirements only.
 - **Check the data a feature needs before building on it.** The consistency rules and the export's value index read
   value slots, but the pilot record keeps every number in prose. The engine works; the record has to catch up.
+- **An independent code review found seven defects that 130 passing tests did not.** The worst:
+  - an open-ended limit (`< 10`) carried its "open" flag onto the infinite end, so `≤ 5` did not count as
+    inside `< 10`;
+  - `--until` at a release compared that release with itself;
+  - reordering a document was reported as "no changes".
+
+  Each now has a regression test. Interval code needs tests at every combination of open, closed and infinite
+  ends.

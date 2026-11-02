@@ -5,6 +5,7 @@ tagged at the commit of the main branch that first contains it (`tag_release`). 
 (`changes`) compares a document between two states of the vault."""
 
 import datetime
+import json
 import re
 from dataclasses import asdict, dataclass, field
 from io import StringIO
@@ -44,8 +45,10 @@ content_fields: dict[str, tuple[str, ...]] = {
         "interface",
         "verification",
         "variants",
+        "sources",
+        "issues",
     ),
-    "figure": ("title", "caption", "alt", "files"),
+    "figure": ("title", "caption", "alt", "files", "provenance"),
 }
 link_fields = ("derives_from", "constrained_by")
 front_fields = ("title", "scope", "front")
@@ -81,21 +84,49 @@ def outline_records(blocks: list[Block]) -> list[str]:
     return found
 
 
-def section_texts(blocks: list[Block], key: str = "", title: Any = None) -> dict[str, dict]:
-    """Section key → its title and its own text, table and definitions blocks (records excluded).
-    Blocks outside any section are kept under the empty key."""
-    own = [
-        block.model_dump(mode="json", exclude_none=True)
-        for block in blocks
-        if block.section is None and not block.requirement and not block.figure
-    ]
-    result = {key: {"title": title, "blocks": own}}
+def kept_order(order: list[str], accounted: set[str]) -> list[str]:
+    """A section's block order without the records already reported as added, removed or moved."""
+    return [token for token in order if token not in accounted]
+
+
+def outline_places(blocks: list[Block], key: str | None = None) -> dict[str, str | None]:
+    """Record ID → key of the section that holds it (None outside any section)."""
+    places: dict[str, str | None] = {}
     for block in blocks:
         if block.section is not None:
-            result.update(
-                section_texts(block.section.blocks, block.section.key, block.section.title)
-            )
-    return result
+            places.update(outline_places(block.section.blocks, block.section.key))
+        elif block.requirement or block.figure:
+            places.setdefault(block.requirement or block.figure or "", key)
+    return places
+
+
+def section_contents(
+    blocks: list[Block], key: str | None = None, title: Any = None, found: dict | None = None
+) -> dict[str | None, dict]:
+    """Section key → its title, its own text, table and definitions blocks, and the order of all
+    its blocks (records by ID, sections by key, others by content). Blocks outside any section
+    are kept under the key None; a repeated key gets a suffix (structure.outline reports it)."""
+    found = {} if found is None else found
+    own, order = [], []
+    for block in blocks:
+        if block.section is not None:
+            order.append(f"section {block.section.key}")
+        elif block.requirement or block.figure:
+            order.append(block.requirement or block.figure)
+        else:
+            dumped = block.model_dump(mode="json", exclude_none=True)
+            own.append(dumped)
+            order.append(json.dumps(dumped, sort_keys=True, ensure_ascii=False))
+    unique = key
+    counter = 2
+    while unique in found:
+        unique = f"{key} ({counter})"
+        counter += 1
+    found[unique] = {"title": title, "blocks": own, "order": order}
+    for block in blocks:
+        if block.section is not None:
+            section_contents(block.section.blocks, block.section.key, block.section.title, found)
+    return found
 
 
 def release_blockers(vault: Vault, document: Document) -> list[str]:
@@ -118,6 +149,9 @@ def release_blockers(vault: Vault, document: Document) -> list[str]:
                 continue
             origin = getattr(record, "text_origin", None)
             states = getattr(record, "translation", {}) or {}
+            if translation_fields(vault, record.type) and origin not in languages:
+                reasons.append(f"{record_id}: text_origin {origin!r} is not a configured language")
+                continue
             for name in translation_fields(vault, record.type):
                 value = field_value(record, name)
                 if not isinstance(value, dict) or not value:
@@ -243,8 +277,8 @@ def find_release_commit(root: Path, document_path: str, version: str) -> str:
     """The commit on the main branch's first-parent history that first contains the release."""
     found: set[str] = set()
     for ref in gitutil.main_refs(root):
-        for commit in gitutil.first_parent_commits(root, ref, document_path):
-            if has_release(gitutil.read_at(root, commit, document_path), version):
+        for commit, path_then in gitutil.first_parent_history(root, ref, document_path):
+            if has_release(gitutil.read_at(root, commit, path_then), version):
                 found.add(commit)
                 break
     if not found:
@@ -339,7 +373,7 @@ class RecordChange:
 
 @dataclass
 class SectionChange:
-    key: str
+    key: str | None
     status: str
     title_before: dict[str, str] | None = None
     title_after: dict[str, str] | None = None
@@ -357,6 +391,7 @@ class ChangeSummary:
     added: list[str] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
     moved: dict[str, list[str]] = field(default_factory=dict)
+    moved_within: dict[str, list[str | None]] = field(default_factory=dict)
     revised: list[RecordChange] = field(default_factory=list)
     bookkeeping: list[RecordChange] = field(default_factory=list)
     sections: list[SectionChange] = field(default_factory=list)
@@ -366,6 +401,7 @@ class ChangeSummary:
         return not (
             self.added
             or self.removed
+            or self.moved_within
             or self.revised
             or self.bookkeeping
             or self.sections
@@ -401,6 +437,10 @@ class ChangeSummary:
             moved = self.moved.get(record_id)
             where = f" (moved to {', '.join(moved)})" if moved else ""
             lines.append(f"  removed    {record_id}{where}")
+        for record_id, (before, after) in self.moved_within.items():
+            lines.append(
+                f"  moved      {record_id}: section {before or '(none)'} → {after or '(none)'}"
+            )
         for change in self.revised:
             lines.append(f"  revised    {change.record}: {', '.join(change.fields) or 'links'}")
             for event in change.events:
@@ -520,15 +560,32 @@ def compare(
         if change is None:
             continue
         (summary.revised if change.kind == "revised" else summary.bookkeeping).append(change)
-    old_sections = section_texts(old_document.outline) if isinstance(old_document, Document) else {}
-    new_sections = section_texts(new_document.outline)
+    if isinstance(old_document, Document):
+        old_places = outline_places(old_document.outline)
+        for record_id, key in outline_places(new_document.outline).items():
+            if record_id in old_places and old_places[record_id] != key:
+                summary.moved_within[record_id] = [old_places[record_id], key]
+    old_sections = (
+        section_contents(old_document.outline) if isinstance(old_document, Document) else {}
+    )
+    new_sections = section_contents(new_document.outline)
+    accounted = {*summary.added, *summary.removed, *summary.moved_within}
     for key in dict.fromkeys([*new_sections, *old_sections]):
         before, after = old_sections.get(key), new_sections.get(key)
         if before == after:
             continue
-        if key == "" and not (before or {}).get("blocks") and not (after or {}).get("blocks"):
+        if key is None and not (before or {}).get("order") and not (after or {}).get("order"):
             continue
-        status = "added" if before is None else "removed" if after is None else "changed"
+        if before is None:
+            status = "added"
+        elif after is None:
+            status = "removed"
+        elif before["title"] != after["title"] or before["blocks"] != after["blocks"]:
+            status = "changed"
+        elif kept_order(before["order"], accounted) != kept_order(after["order"], accounted):
+            status = "reordered"
+        else:
+            continue
         summary.sections.append(
             SectionChange(
                 key=key,
@@ -546,26 +603,45 @@ def compare(
     return summary
 
 
-def resolve_since(root: Path, document: Document, since: str | None) -> tuple[str, str, bool]:
-    """(git reference, label, approximate) of the earlier state to compare with."""
+def resolve_since(
+    root: Path, document: Document, since: str | None, until_commit: str | None = None
+) -> tuple[str, str, bool]:
+    """(git reference, label, approximate) of the earlier state to compare with. With an end
+    commit, only states strictly before it qualify as the default."""
+
+    def earlier_than_until(commit: str | None, strictly: bool) -> bool:
+        if until_commit is None:
+            return True
+        if commit is None:
+            return False
+        if commit == until_commit:
+            return not strictly
+        return gitutil.is_ancestor(root, commit, until_commit)
+
     if since is None:
         for entry in reversed(document.releases):
             tag = tag_name(document.id, entry.version)
-            if gitutil.tag_exists(root, tag):
+            if gitutil.tag_exists(root, tag) and earlier_than_until(
+                gitutil.commit_of(root, tag), strictly=True
+            ):
                 return tag, f"v{entry.version}", not entry.made_with_qingsong
         raise OperationError(
             f"no earlier release of {document.id} has a tag; give --since REF "
             "(or tag the earlier release: qingsong release tag)"
         )
     entry = next((item for item in document.releases if item.version == since), None)
-    if entry is not None:
-        tag = tag_name(document.id, since)
-        if not gitutil.tag_exists(root, tag):
-            raise OperationError(f"release {since} has no tag {tag}")
-        return tag, f"v{since}", not entry.made_with_qingsong
-    if gitutil.commit_of(root, since) is None:
+    if entry is not None or gitutil.tag_exists(root, tag_name(document.id, since)):
+        reference, label = tag_name(document.id, since), f"v{since}"
+        approximate = entry is not None and not entry.made_with_qingsong
+        if not gitutil.tag_exists(root, reference):
+            raise OperationError(f"release {since} has no tag {reference}")
+    elif gitutil.commit_of(root, since) is not None:
+        reference, label, approximate = since, since, False
+    else:
         raise OperationError(f"{since!r} is neither a release of {document.id} nor a git reference")
-    return since, since, False
+    if not earlier_than_until(gitutil.commit_of(root, reference), strictly=False):
+        raise OperationError(f"{since} is not earlier than the end of the comparison")
+    return reference, label, approximate
 
 
 def changes(
@@ -573,18 +649,52 @@ def changes(
 ) -> ChangeSummary:
     try:
         if until is None:
-            later = load(root)
-            return changes_between(root, document_id, later, since, "the working tree")
+            return changes_between(root, document_id, load(root), since, "the working tree", None)
+        until_commit = gitutil.commit_of(root, until)
+        if until_commit is None:
+            raise OperationError(f"git reference {until!r} not found")
         with vault_at(root, until) as later:
-            return changes_between(root, document_id, later, since, until)
+            return changes_between(root, document_id, later, since, until, until_commit)
     except gitutil.GitError as error:
         raise OperationError(str(error)) from error
 
 
 def changes_between(
-    root: Path, document_id: str, later: Vault, since: str | None, until_label: str
+    root: Path,
+    document_id: str,
+    later: Vault,
+    since: str | None,
+    until_label: str,
+    until_commit: str | None,
 ) -> ChangeSummary:
     document = require_document(later, document_id)
-    ref, label, approximate = resolve_since(root, document, since)
+    ref, label, approximate = resolve_since(root, document, since, until_commit)
     with vault_at(root, ref) as earlier:
         return compare(document_id, earlier, later, label, ref, until_label, approximate)
+
+
+def summaries_since_last_release(root: Path, later: Vault) -> "dict[str, ChangeSummary | str]":
+    """For every document of a working-tree vault: its changes since its last tagged release, or
+    why there is none. Each earlier state is read once, however many documents share it."""
+    results: dict[str, ChangeSummary | str] = {}
+    wanted: dict[str, list[tuple[str, str, bool]]] = {}
+    for record in later.records.values():
+        if not isinstance(record, Document):
+            continue
+        try:
+            ref, label, approximate = resolve_since(root, record, None)
+        except OperationError as error:
+            results[record.id] = str(error)
+            continue
+        wanted.setdefault(ref, []).append((record.id, label, approximate))
+    for ref, items in wanted.items():
+        try:
+            with vault_at(root, ref) as earlier:
+                for document_id, label, approximate in items:
+                    results[document_id] = compare(
+                        document_id, earlier, later, label, ref, "the working tree", approximate
+                    )
+        except gitutil.GitError as error:
+            for document_id, _, _ in items:
+                results[document_id] = str(error)
+    return results

@@ -10,10 +10,11 @@
 {% if summary.approximate %}<br><span class="small">Approximate: {{ summary.since }} was issued before qingsong. Its tag marks the record as checked against the issued file, not the file itself.</span>{% endif %}</p>
 {% if summary.is_empty() %}<p class="hint">Nothing has changed.</p>{% endif %}
 
-{% if summary.added or summary.removed %}
-<h2>Added and removed</h2>
+{% if summary.added or summary.removed or summary.moved_within %}
+<h2>Added, removed and moved</h2>
 <ul class="change-list">
 {% for record_id in summary.added %}<li>{{ badge("added", "info") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% set record = vault.records.get(record_id) %}{% if record %} {{ site.text(record.title, prefix, document, block=False) }}{% endif %}</li>{% endfor %}
+{% for record_id, places in summary.moved_within.items() %}<li>{{ badge("moved", "info") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a> · section {{ places[0] or "(none)" }} → {{ places[1] or "(none)" }}</li>{% endfor %}
 {% for record_id in summary.removed %}<li>{{ badge("removed", "warning") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% if summary.moved.get(record_id) %} · moved to {% for home in summary.moved[record_id] %}<a href="{{ prefix }}documents/{{ home }}.html">{{ home }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</li>{% endfor %}
 </ul>
 {% endif %}

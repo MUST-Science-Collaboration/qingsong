@@ -318,3 +318,135 @@ def test_export_lists_values_with_intervals(demo_repository, tmp_path):
     exported = json.loads(at_head.output)
     titles = {record["id"]: record["title"]["en"] for record in exported["records"]}
     assert titles["INS-DET-REQ-001"] == "Read noise" and exported["dirty"] is False
+
+
+def test_open_limits_compare_with_unbounded_ends():
+    """Review finding 1: the open flag of `lt`/`gt` must not leak onto the infinite end."""
+    meter = quantity("m")
+    assert allowed(slot(relation="le", value=5, unit="m"), meter).within(
+        allowed(slot(relation="lt", value=10, unit="m"), meter)
+    )
+    assert allowed(slot(relation="ge", value=5, unit="m"), meter).within(
+        allowed(slot(relation="gt", value=3, unit="m"), meter)
+    )
+    assert not allowed(slot(relation="le", value=10, unit="m"), meter).within(
+        allowed(slot(relation="lt", value=10, unit="m"), meter)
+    )
+
+
+def test_until_compares_with_the_release_before_it(demo_repository):
+    """Review finding 2: --until at a release tag compares with the release before it."""
+    root = demo_repository
+    release.tag_release(root, document_id, "1.0", at="HEAD")
+    git(root, "checkout", "-q", "-b", "next")
+    reword_rationale(root, "Keeps faint spectra sky-limited.", "使暗弱光谱处于天光限。")
+    release.prepare(root, document_id, "1.1", "alice", summary(), today=day)
+    commit_all(root, "prepare 1.1")
+    git(root, "checkout", "-q", "main")
+    git(root, "merge", "-q", "--no-ff", "-m", "merge 1.1", "next")
+    tag, _ = release.tag_release(root, document_id, "1.1")
+    found = release.changes(root, document_id, until=tag)
+    assert found.since == "v1.0" and [c.record for c in found.revised] == ["INS-DET-REQ-001"]
+    with pytest.raises(OperationError, match="not earlier"):
+        release.changes(root, document_id, since="1.1", until="release/DEMO-INS-DET-RD/1.0")
+
+
+def test_reordering_and_moves_within_a_document_are_reported(demo_repository):
+    """Review finding 3: order and moves within the document are changes."""
+    root = demo_repository
+    release.tag_release(root, document_id, "1.0", at="HEAD")
+    path = root / "documents" / f"{document_id}.yaml"
+
+    def swap(data):
+        blocks = data["outline"][1]["section"]["blocks"]
+        blocks[0], blocks[1] = blocks[1], blocks[0]
+
+    edit_yaml(path, swap)
+    operations.revise(root, document_id, "editorial", "figure first", "alice", today=day)
+    found = release.changes(root, document_id)
+    assert not found.is_empty()
+    assert [(section.key, section.status) for section in found.sections] == [
+        ("performance", "reordered")
+    ]
+
+    def move(data):
+        figure = data["outline"][1]["section"]["blocks"].pop(0)
+        data["outline"][0]["section"]["blocks"].append(figure)
+
+    edit_yaml(path, move)
+    operations.revise(root, document_id, "editorial", "figure moved", "alice", today=day)
+    found = release.changes(root, document_id)
+    assert found.moved_within == {"INS-DET-FIG-001": ["performance", "introduction"]}
+    assert not found.sections
+
+
+def test_repeated_section_keys_are_errors(demo):
+    def repeat(data):
+        data["outline"][1]["section"]["key"] = "introduction"
+
+    edit_yaml(demo / "documents" / f"{document_id}.yaml", repeat)
+    hits = [f for f in checks.run(load(demo)) if f.rule == "structure.outline"]
+    assert any(f.severity == "error" and "'introduction'" in f.message for f in hits)
+
+
+def test_empty_values_are_not_shown_as_text(demo, tmp_path):
+    """Review finding 4: an empty mapping is not bilingual text."""
+    from qingsong.render.html import Site
+
+    site = Site(load(demo), tmp_path / "site")
+    assert not site.is_text({})
+    assert not site.is_text({"read_noise": {"relation": "le"}})
+    assert site.is_text({"en": "text", "zh": "文本"})
+
+
+def test_file_history_follows_renames(tmp_path):
+    """Review finding 5: the commit that introduced a release is found across a rename."""
+    root = tmp_path / "repository"
+    root.mkdir()
+    git(root, "init", "-q", "-b", "main")
+    (root / "old.yaml").write_text("releases: [{version: '1.0'}]\n")
+    first = commit_all(root, "add")
+    git(root, "mv", "old.yaml", "new.yaml")
+    second = commit_all(root, "rename")
+    assert gitutil.first_parent_history(root, "main", "new.yaml") == [
+        (first, "old.yaml"),
+        (second, "new.yaml"),
+    ]
+
+
+def test_conflicts_give_one_finding_per_requirement(demo):
+    """Review finding 6: a requirement in conflict with several others gets one finding."""
+    for record_id, value in (("INS-SYS-REQ-001", 5), ("INS-OPT-REQ-001", 6)):
+        conflicting = {"quantity": "detector.read_noise", "relation": "ge", "value": value}
+        conflicting.update({"unit": "count", "certainty": "firm"})
+
+        def add(data, conflicting=conflicting):
+            data["values"]["noise"] = conflicting
+            data["allocated_to"] = "INS"
+
+        edit_yaml(requirement_file(demo, record_id), add)
+    hits = [f for f in checks.run(load(demo)) if f.rule == "consistency.conflict"]
+    by_record = {}
+    for finding in hits:
+        by_record.setdefault(finding.record, []).append(finding)
+    assert len(by_record["INS-DET-REQ-001"]) == 1
+    assert "INS-OPT-REQ-001" in by_record["INS-DET-REQ-001"][0].message
+    assert "INS-SYS-REQ-001" in by_record["INS-DET-REQ-001"][0].message
+
+
+def test_no_changes_page_without_a_tagged_release(demo, tmp_path):
+    """Review finding 7: documents without a tagged release get no changes page or link."""
+    from qingsong.render.html import render_site
+
+    site = render_site(load(demo), tmp_path / "site").parent
+    assert not (site / "documents" / f"{document_id}-changes.html").exists()
+    assert "Changes since" not in (site / "documents" / f"{document_id}.html").read_text()
+
+
+def test_repeated_version_is_reported_once(demo):
+    def repeat(data):
+        data["releases"].append(dict(data["releases"][0]))
+
+    edit_yaml(demo / "documents" / f"{document_id}.yaml", repeat)
+    hits = [f for f in checks.run(load(demo)) if f.rule == "documents.release"]
+    assert len(hits) == 1 and "twice" in hits[0].message

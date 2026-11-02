@@ -30,6 +30,14 @@ class Interval:
     low_open: bool = False
     high_open: bool = False
 
+    def __post_init__(self) -> None:
+        # An infinite end is never reached, so whether it is open has no meaning; keep it closed
+        # so that comparisons of infinite ends agree.
+        if math.isinf(self.low):
+            object.__setattr__(self, "low_open", False)
+        if math.isinf(self.high):
+            object.__setattr__(self, "high_open", False)
+
     def intersection(self, other: "Interval") -> "Interval | None":
         if same(self.low, other.low):
             low, low_open = self.low, self.low_open or other.low_open
@@ -112,11 +120,11 @@ def allowed(slot: ValueSlot, quantity: Quantity) -> Interval | None:
     if relation == "le":
         return Interval(-infinity, value)
     if relation == "lt":
-        return Interval(-infinity, value, True, True)
+        return Interval(-infinity, value, high_open=True)
     if relation == "ge":
         return Interval(value, infinity)
     if relation == "gt":
-        return Interval(value, infinity, True, True)
+        return Interval(value, infinity, low_open=True)
     if relation == "approx" and slot.tolerance is None:
         return None
     if slot.tolerance is None:
@@ -130,8 +138,17 @@ def allowed(slot: ValueSlot, quantity: Quantity) -> Interval | None:
 
 
 def condition_key(slot: ValueSlot, reference: str) -> str:
-    text = (slot.condition or {}).get(reference, "")
-    return " ".join(text.split()).casefold().rstrip(".;,。；，")
+    """The condition as compared: the reference-language text, normalised; a condition written
+    only in another language is kept apart from both the unconditioned and the referenced ones."""
+    condition = slot.condition or {}
+    if reference in condition:
+        language, text = "", condition[reference]
+    elif condition:
+        language, text = next(iter(sorted(condition.items())))
+        language += ":"
+    else:
+        return ""
+    return language + " ".join(text.split()).casefold().rstrip(".;,。；，")
 
 
 @dataclass(frozen=True)
@@ -185,29 +202,34 @@ def constraints(vault: Vault) -> Iterator[Constraint | tuple[Requirement, str, s
             )
 
 
-def related_nodes(vault: Vault, first: str, second: str) -> bool:
-    """The same node, or one an ancestor of the other."""
-
-    def ancestors(reference: str) -> set[str]:
+def ancestor_sets(vault: Vault) -> dict[str, set[str]]:
+    """Each node reference with itself and all its ancestors."""
+    result: dict[str, set[str]] = {}
+    for reference in vault.nodes:
         found: set[str] = set()
         current: str | None = reference
         while current and current not in found:
             found.add(current)
             info = vault.nodes.get(current)
             current = info.parent if info else None
-        return found
-
-    return first in ancestors(second) or second in ancestors(first)
+        result[reference] = found
+    return result
 
 
 def condition_label(condition: str) -> str:
     return f" ({condition})" if condition else ""
 
 
+def listed(names: list[str], limit: int = 5) -> str:
+    shown = ", ".join(names[:limit])
+    return shown + (f" and {len(names) - limit} more" if len(names) > limit else "")
+
+
 @rule("consistency.conflict", "requirements on one quantity leave a value that meets them all")
 def conflicts(context: Context) -> Iterator[Finding]:
     vault = context.vault
-    groups: dict[tuple[str, str], list[Constraint]] = {}
+    ancestors = ancestor_sets(vault)
+    groups: dict[tuple[str, str], dict[str, list[Constraint]]] = {}
     for item in constraints(vault):
         if isinstance(item, tuple):
             record, quantity_id, names = item
@@ -219,29 +241,45 @@ def conflicts(context: Context) -> Iterator[Finding]:
                 file=relative_file(vault, record.id),
             )
             continue
-        groups.setdefault((item.quantity.id, item.condition), []).append(item)
-    for (quantity_id, condition), members in groups.items():
-        members.sort(key=lambda constraint: constraint.requirement.id)
-        for index, first in enumerate(members):
-            for second in members[index + 1 :]:
-                if first.requirement.id == second.requirement.id:
+        by_node = groups.setdefault((item.quantity.id, item.condition), {})
+        by_node.setdefault(item.requirement.allocated_to, []).append(item)
+    for (quantity_id, condition), by_node in groups.items():
+        partners: dict[str, list[Constraint]] = {}
+        own: dict[str, Constraint] = {}
+        nodes = sorted(by_node)
+        for index, first_node in enumerate(nodes):
+            for second_node in nodes[index:]:
+                related = first_node in ancestors.get(second_node, {second_node}) or (
+                    second_node in ancestors.get(first_node, {first_node})
+                )
+                if not related:
                     continue
-                if not related_nodes(
-                    vault, first.requirement.allocated_to, second.requirement.allocated_to
-                ):
-                    continue
-                if first.interval.intersection(second.interval) is not None:
-                    continue
-                for this, other in ((first, second), (second, first)):
-                    yield Finding(
-                        "consistency.conflict",
-                        "warning",
-                        f"{quantity_id}{condition_label(condition)}: {this.describe()} here, "
-                        f"{other.describe()} in {other.requirement.id}; no value meets both",
-                        record=this.requirement.id,
-                        file=relative_file(vault, this.requirement.id),
-                        fix="change one of them, or raise a conflict issue for the owners",
-                    )
+                for first in by_node[first_node]:
+                    for second in by_node[second_node]:
+                        if first_node == second_node and (
+                            first.requirement.id >= second.requirement.id
+                        ):
+                            continue
+                        if first.requirement.id == second.requirement.id:
+                            continue
+                        if first.interval.intersection(second.interval) is not None:
+                            continue
+                        for this, other in ((first, second), (second, first)):
+                            own[this.requirement.id] = this
+                            partners.setdefault(this.requirement.id, []).append(other)
+        for record_id in sorted(partners):
+            this = own[record_id]
+            others = sorted(partners[record_id], key=lambda item: item.requirement.id)
+            described = [f"{other.describe()} in {other.requirement.id}" for other in others]
+            yield Finding(
+                "consistency.conflict",
+                "warning",
+                f"{quantity_id}{condition_label(condition)}: {this.describe()} here, "
+                f"{listed(described)}; no value meets both",
+                record=record_id,
+                file=relative_file(vault, record_id),
+                fix="change one of them, or raise a conflict issue for the owners",
+            )
 
 
 @rule("consistency.child_looser", "a child allows no values its parent excludes (same quantity)")

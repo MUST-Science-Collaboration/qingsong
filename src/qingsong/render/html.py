@@ -133,7 +133,7 @@ class Site:
         self.in_documents = requirement_documents(vault)
         self.documents = documents_of(vault)
         self.numberings = {document.id: number_document(document) for document in self.documents}
-        self.changes = {document.id: change_summary(vault, document) for document in self.documents}
+        self.changes = change_summaries(vault)
         self.figure_document = {
             figure: document_id
             for document_id, numbering in self.numberings.items()
@@ -306,7 +306,13 @@ class Site:
         return diff_markup(readable(old), readable(change.text.get(language, "")))
 
     def is_text(self, value: Any) -> bool:
-        return isinstance(value, dict) and all(isinstance(item, str) for item in value.values())
+        """Bilingual text: a non-empty mapping from language codes to strings."""
+        return (
+            isinstance(value, dict)
+            and bool(value)
+            and set(value) <= set(self.languages)
+            and all(isinstance(item, str) for item in value.values())
+        )
 
     def field_diff(self, before: Any, after: Any, language: str) -> Markup:
         """Word-level difference of one language of a changed text field."""
@@ -396,20 +402,24 @@ class Site:
             flow=script_json(self.flow_data(requirements)),
         )
         for document in self.documents:
-            self.render(
-                "changes.html",
-                f"documents/{document.id}-changes.html",
-                "../",
-                document=document,
-                summary=self.changes[document.id],
-            )
+            summary = self.changes.get(document.id)
+            if summary is not None and not isinstance(summary, str):
+                self.render(
+                    "changes.html",
+                    f"documents/{document.id}-changes.html",
+                    "../",
+                    document=document,
+                    summary=summary,
+                )
+            else:
+                summary = None
             self.render(
                 "document.html",
                 f"documents/{document.id}.html",
                 "../",
                 document=document,
                 numbering=self.numberings[document.id],
-                summary=self.changes[document.id],
+                summary=summary,
             )
         for requirement in requirements:
             self.render("requirement.html", f"r/{requirement.id}.html", "../", record=requirement)
@@ -527,16 +537,16 @@ class Site:
         )
 
 
-def change_summary(vault: Vault, document: Document) -> "ChangeSummary | str":
-    """The document's changes since its last tagged release, or why there is no summary."""
-    from qingsong.release import changes
+def change_summaries(vault: Vault) -> "dict[str, ChangeSummary | str]":
+    """Each document's changes since its last tagged release, or why there is no summary."""
+    from qingsong.release import summaries_since_last_release
 
     if not gitutil.is_repository(vault.root):
-        return "The vault is not a git repository, so earlier releases cannot be read."
+        return {}
     try:
-        return changes(vault.root, document.id)
-    except OperationError as error:
-        return str(error)
+        return summaries_since_last_release(vault.root, vault)
+    except OperationError:
+        return {}
 
 
 def render_site(vault: Vault, output: Path) -> Path:

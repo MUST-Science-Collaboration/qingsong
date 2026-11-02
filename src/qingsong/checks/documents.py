@@ -41,6 +41,7 @@ def release_problems(context: Context, document: Document) -> Iterator[tuple[str
                 f"version {entry.version} is listed twice",
                 "two releases were prepared in parallel; give the later one a new version",
             )
+            continue
         seen.add(entry.version)
         try:
             key = parse_version(entry.version)

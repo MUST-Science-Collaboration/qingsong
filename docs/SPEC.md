@@ -224,6 +224,22 @@ A **quantity** (`quantities/<key>.yaml`) has:
 
 Units are parsed with `pint`.
 
+**Moving numbers from prose into slots** (proposed, 2026-11-02; awaiting the Project Scientist's decision). A requirement imported from a Word document holds its numbers in prose. A number must move into a slot before the consistency rules (§10) can compare it or the JSON export (§12.3) can list it. Such a move changes nothing a reader sees, so it should not reopen approvals or flag children.
+
+1. **The operation.** `qingsong slot ID --file slots.yaml --by P` takes, for each slot:
+   - its name;
+   - the literal text it replaces, in each language;
+   - its fields: quantity, relation, value, tolerance, unit, certainty, issue and condition.
+
+   It replaces each literal with `{name}` and adds the slots. Then it renders the statement and criteria in every language. It refuses unless:
+   - each literal occurs exactly once;
+   - the rendered text is identical, character for character, to the text before.
+
+   It records an `editorial` event of kind `slotted` ("values moved into slots; the text reads the same"). The normative revision is unchanged.
+2. **Approvals bind the rendered text.** An approval's text hash is computed over the statement and criteria as rendered, with slots filled in. For a statement without slots this equals today's hash, so existing approvals stay valid.
+3. **Checks accept the move.** `revise` and `integrity.against` accept a changed normative hash without a new normative revision only after a `slotted` event, and only when the rendered text at the reference equals the rendered text now.
+4. **Quantities** are created once per physical quantity and project, e.g. `fibre.core_diameter`, and shared by every requirement that constrains it.
+
 ### 5.3 Other record types
 
 | Type | ID pattern | Holds |
@@ -322,12 +338,12 @@ Section numbers and order belong to the document, never to requirement IDs. Earl
      - an error on the document, on a record in its outline, or an `integrity` error anywhere. An unrelated broken draft elsewhere does not block a release;
      - P is not an approver;
      - V is not higher than every earlier version;
-     - a current requirement in the outline lacks a `reviewed` translation of a field in `bilingual_fields` (§7).
+     - a current requirement or figure in the outline lacks a `reviewed`, current translation of a translated field (§7), whatever its maturity: everything printed in an issued document has been read in both languages.
    - **What it writes.** It appends the release entry and records a `released` event in the document's history. Then it prints the change summary since the previous release. The approver reviews both in the pull request, like any other change.
    - **Dates.** The entry's date is the date of the approver's release decision: today, unless `--date` is given. The tag carries its own date. Dates may not decrease from one release to the next.
    - **Rerunning.** `prepare` may run again for the same version while the entry is not yet on the main branch. It then replaces the entry and checks everything again. Once the entry is on main, the version is closed; a correction is a new version.
 2. **Tag,** after the merge: `qingsong release tag DOC V`.
-   - **Which commit is tagged.** It finds the commit on the main branch's first-parent history that first contains the release entry. With a squash merge this is the squashed commit; with a merge commit it is the merge. That commit is tagged, whatever commits followed it. Later changes are not part of the release.
+   - **Which commit is tagged.** It finds the commit on the main branch's first-parent history that first contains the release entry, following renames of the document file. With a squash merge this is the squashed commit; with a merge commit it is the merge. That commit is tagged, whatever commits followed it. Later changes are not part of the release.
    - **It refuses when:**
      - no such commit exists;
      - the vault at that commit has an error of the kinds listed under Prepare;
@@ -345,14 +361,19 @@ Section numbers and order belong to the document, never to requirement IDs. Earl
 - **Engine versions.** Records are read with the current schemas. If an old state no longer loads, the message names the engine version recorded in the release (`engine`) to render it with.
 - **Storage.** The issued Word file is not stored in the vault. Its document properties carry the version and the tag.
 
-**The change summary.** `qingsong release changes DOC [--since V|REF] [--until REF]` compares two states of the document. By default it compares the latest earlier release that has a tag with the working tree. If that release was made before qingsong, the summary is marked as approximate, since nothing checks that the tagged record matched the issued file. It lists:
+**The change summary.** `qingsong release changes DOC [--since V|REF] [--until REF]` compares two states of the document. By default it compares the latest release that has a tag with the working tree. With `--until`, the default start is the latest tagged release strictly before that point, and a start that is not earlier than the end is refused. If that release was made before qingsong, the summary is marked as approximate, since nothing checks that the tagged record matched the issued file. It lists:
 - requirements and figures added to the outline and removed from it. A record removed here but present in another document's outline is reported as **moved** to that document;
 - revised records:
   - the history events whose revision is above the earlier state's revision, with their classes and summaries. If the earlier history is not a prefix of the later one, the summary says that history was rewritten;
   - the fields that changed, with word-level differences in both languages on the HTML page, and the value slots before and after;
   - aliases added or removed;
 - maturity changes, and lifecycle changes (superseded or withdrawn, with successors), reported apart from outline changes;
-- changes to the document's own text, by section key: a changed title, text block, table or definitions list is reported with the section's before and after. Blocks have no identity of their own, so moved blocks appear as changed sections;
+- records **moved within** the document, from one section to another;
+- changes to the document's own text, by section key:
+  - a changed title, text block, table or definitions list is reported with the section's before and after;
+  - a section whose blocks only changed order is reported as **reordered**;
+  - blocks have no identity of their own, so a moved text block appears as a changed section;
+  - section keys must be unique and non-empty (`structure.outline`, error).
 - front-matter changes, other than the release list itself.
 
 Approvals, confirmations and translation reviews are listed apart from changes of content. A translation edited in the same event as its review is a content change.
