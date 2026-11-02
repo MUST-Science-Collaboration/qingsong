@@ -225,7 +225,7 @@ def format_slot(slot, language: str) -> str:
         text = f"{text} (TBC)" if language == "en" else f"{text}（待确认）"
     if slot.goal is not None:
         goal = f"{number(slot.goal)}{spaced}"
-        text += f" (goal {goal})" if language == "en" else f"（目标{goal}）"
+        text += f" (goal {goal})" if language == "en" else f"（目标为{goal}）"
     return markdown_special.sub(r"\\\1", text)
 
 

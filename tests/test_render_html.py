@@ -129,7 +129,7 @@ def test_value_slots_read_as_written():
         format_slot(
             slot(relation="ge", value=90, unit="percent", certainty="firm", goal=92.5), "zh"
         )
-        == "≥ 90 %（目标92.5 %）"
+        == "≥ 90 %（目标为92.5 %）"
     )
     assert (
         format_slot(

@@ -234,7 +234,7 @@ Units are parsed with `pint`.
 - **When to use a slot** (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references.
 - **Goals** (optional; the Rubin model is offered, not imposed).
   - A slot with a limit (`le`, `lt`, `ge`, `gt`) and a value may carry `goal`: a number in the slot's unit, on the better side of the limit.
-  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "≥ [90 %]（目标92.5 %）".
+  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "≥ [90 %]（目标为92.5 %）".
   - A goal is part of the approved content, so changing it is a `value` change.
   - Consistency checks ignore goals.
 - **Rendering.** A provisional value has its brackets around the value and unit, not the relation ("≥ [90 %]"), as in the project's documents. There is a space before `%`, as SI requires, and none before angle symbols.
@@ -248,7 +248,7 @@ Units are parsed with `pint`.
      - occurs exactly once, and overlaps no other literal of the same move;
      - is not part of a reference, link, footnote, code or mathematics;
      - is not glued to a larger expression: a letter, a digit, an operator, a sign (−, ±) or a decimal point next to it;
-     - has no relation word ("at least", "不小于", "以上", …) or qualifier ("per", "total", "每", …) just outside it. Such a word must be included in the literal, so that the slot's data says what the sentence says;
+     - has no relation word ("at least", any "… than", "不小于", any "…于", "以上", …) or qualifier ("per", "total", "每", …) just outside it. Such a word must be included in the literal, so that the slot's data says what the sentence says;
      - **reads the same as the slot's rendering**, up to a short, named list of formatting differences:
        - spacing, except between two digits;
        - thousands separators written without spaces;

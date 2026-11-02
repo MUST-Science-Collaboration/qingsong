@@ -1,6 +1,7 @@
 """Words next to a number or a value slot (docs/SPEC.md §5.2).
 
-Relation words say what a number is: a limit, a range, an approximation. Qualifiers say what it
+Relation words say what a number is: a limit, a range, an approximation. Any comparative ("longer
+than", "长于") counts, through "than" and "于". Qualifiers say what it
 counts: per item, in total, on average. The slot move refuses a literal with either kind just
 outside it, so that the slot's data says what the sentence says. The check for a relation said
 twice ("at least ≥ 40 %") uses the relation words only."""
@@ -45,6 +46,7 @@ relation_words = {
         "max",
         "min",
         "not",
+        "than",
     ),
     "zh": (
         "不小于",
@@ -71,6 +73,7 @@ relation_words = {
         "大约",
         "约",
         "左右",
+        "于",
     ),
 }
 relation_signs = (">=", "<=", "≥", "≤", ">", "<", "≈", "~")
