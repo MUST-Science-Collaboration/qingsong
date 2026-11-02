@@ -100,8 +100,8 @@ def translation_entries(
     """Translation state for bilingual fields present in both languages.
 
     With `existing`, entries whose source hash is still current are kept as they are; only stale
-    or missing entries are (re)written. A review (`status` reviewed) also marks current entries
-    as reviewed by the person, unless that person already reviewed them."""
+    or missing entries are (re)written. A review (`status` reviewed) also marks current machine
+    entries as reviewed by the person; current reviews by others are kept."""
     languages = set(languages_of(vault))
     origin = getattr(record, "text_origin", None)
     entries: dict[str, Any] = dict(existing or {})
@@ -114,7 +114,11 @@ def translation_entries(
         current_hash = text_hash(value[origin])
         old = entries.get(name)
         current = old is not None and old.get("source_hash") == current_hash
-        if existing is not None and current and (status != "reviewed" or old.get("by") == person):
+        if (
+            existing is not None
+            and current
+            and (status != "reviewed" or old.get("status") == "reviewed")
+        ):
             continue
         entry: dict[str, Any] = {"source_hash": current_hash, "status": status}
         if status == "reviewed":
@@ -162,8 +166,9 @@ def load_round_trip(path: Path) -> CommentedMap:
 
 def literal_blocks(value: Any) -> Any:
     """Write new multi-line texts as literal blocks (|-) instead of quoted strings with escapes.
-    Texts that a literal block cannot hold exactly (trailing spaces, tabs, leading indentation
-    or a final newline) are left as they are."""
+    Texts that a literal block cannot hold exactly (control or separator characters such as tab,
+    vertical tab, carriage return, U+0085 and U+2028, trailing spaces, leading indentation or a
+    final newline) are left as they are."""
     if isinstance(value, dict):
         for key in list(value):
             value[key] = literal_blocks(value[key])
@@ -173,7 +178,7 @@ def literal_blocks(value: Any) -> Any:
     elif (
         type(value) is str
         and "\n" in value
-        and "\t" not in value
+        and all(character == "\n" or character.isprintable() for character in value)
         and not value.endswith("\n")
         and not value.startswith((" ", "\n"))
         and not any(line != line.rstrip() for line in value.split("\n"))

@@ -28,12 +28,12 @@ normative_revision: 1
 normative_hash: 869bb7194e57a2cc
 history:
   - revision: 1
-    date: &id001 2026-11-01
+    date: 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
   - revision: 2
-    date: &id002 2026-11-01
+    date: 2026-11-01
     by: alice
     event: approved
     summary: approved as agreed (demo#1)
@@ -43,25 +43,25 @@ translation:
     source_hash: 534f5cfec246b2fb
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   statement:
     source_hash: edf593cfd2bd9864
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   rationale:
     source_hash: 2cd3edd1fedd2628
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   verification.criteria:
     source_hash: 6a1d13717bb290bb
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
 approval:
   by: alice
-  date: *id002
+  date: 2026-11-01
   ref: demo#1
   normative_revision: 1
   text_hash: 97755e3e6bdcd530

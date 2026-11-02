@@ -1,8 +1,9 @@
 (function () {
   "use strict";
   // Review page: filters, and decisions kept in this browser until copied as commands.
-  var decisionKey = "qingsong-review-decisions";
-  var reviewerKey = "qingsong-reviewer";
+  var project = document.body.dataset.project || "";
+  var decisionKey = "qingsong-review-decisions:" + project;
+  var reviewerKey = "qingsong-reviewer:" + project;
 
   function read(key, fallback) {
     try { var value = localStorage.getItem(key); return value === null ? fallback : value; } catch (error) { return fallback; }
@@ -13,6 +14,13 @@
   var decisions = {};
   try { decisions = JSON.parse(read(decisionKey, "{}")) || {}; } catch (error) { decisions = {}; }
   function saveDecisions() { write(decisionKey, JSON.stringify(decisions)); }
+  // Keep only marks for proposals that are still open on this page (decided ones drop out).
+  var openKeys = {};
+  document.querySelectorAll(".issue-card .proposal[data-key]").forEach(function (box) {
+    if (box.querySelector("button[data-decision]")) { openKeys[box.dataset.key] = true; }
+  });
+  Object.keys(decisions).forEach(function (key) { if (!openKeys[key]) { delete decisions[key]; } });
+  saveDecisions();
 
   // Filters ------------------------------------------------------------------------------------
   var active = {kind: "", state: "", document: ""};
@@ -93,10 +101,20 @@
     reviewer.addEventListener("input", function () { write(reviewerKey, reviewer.value.trim()); });
   }
   function quote(text) { return "'" + String(text).replace(/'/g, "'\\''") + "'"; }
+  function byIssueAndNumber(first, second) {
+    var a = first.split("#"), b = second.split("#");
+    return a[0] === b[0] ? Number(a[1]) - Number(b[1]) : (a[0] < b[0] ? -1 : 1);
+  }
   function commands() {
-    var person = (reviewer && reviewer.value.trim()) || "YOUR_ID";
+    var person = quote((reviewer && reviewer.value.trim()) || "YOUR_ID");
     var lines = [];
-    Object.keys(decisions).sort().forEach(function (key) {
+    // Rejections first: accepting a proposal closes its issue and rejects the others.
+    var keys = Object.keys(decisions).sort(byIssueAndNumber);
+    keys.sort(function (first, second) {
+      var a = decisions[first].decision === "accept" ? 1 : 0, b = decisions[second].decision === "accept" ? 1 : 0;
+      return a - b || byIssueAndNumber(first, second);
+    });
+    keys.forEach(function (key) {
       var parts = key.split("#"), decision = decisions[key];
       if (decision.decision === "accept") {
         if (decision.note) { lines.push("# " + parts[0] + " proposal " + parts[1] + ": " + decision.note.replace(/\n/g, " ")); }

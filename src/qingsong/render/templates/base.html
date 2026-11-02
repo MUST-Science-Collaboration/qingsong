@@ -6,7 +6,7 @@
 <title>{% block title %}{{ site.plain(vault.config.project.names) }}{% endblock %} · qingsong</title>
 <link rel="stylesheet" href="{{ prefix }}static/site.css">
 </head>
-<body class="show-both">
+<body class="show-both" data-project="{{ vault.config.project.code }}">
 <header class="top">
   <div class="brand"><a href="{{ prefix }}index.html">{{ vault.config.project.code }}</a>
     <span class="brand-name">{{ site.plain(vault.config.project.names) }}</span></div>

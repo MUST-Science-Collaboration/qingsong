@@ -150,7 +150,8 @@ def test_a_failed_acceptance_restores_every_record(demo, monkeypatch):
 
 
 def test_reject_and_close(demo):
-    review.propose(demo, "ISS-0001", "bob", {"en": "keep"}, [], today=day)
+    change = {"record": "INS-DET-REQ-001", "field": "notes", "text": {"en": "Other note."}}
+    review.propose(demo, "ISS-0001", "bob", {"en": "other"}, [change], today=day)
     review.reject(demo, "ISS-0001", 2, "bob", {"en": "withdrawn by its author"}, today=day)
     with pytest.raises(OperationError, match="already rejected"):
         review.accept(demo, "ISS-0001", 2, "alice", today=day)
@@ -203,3 +204,73 @@ def test_a_hand_raised_issue_can_track_a_rule_over_several_records(demo):
     assert all(finding.issue == issue.id for finding in writing_findings(demo))
     with pytest.raises(OperationError, match="unknown rule"):
         review.raise_issue(demo, "wording", {"en": "x"}, {"en": "x"}, [], "bob", rule="x.y")
+
+
+# regressions from the independent review of 2026-11-02 ------------------------------------------
+def test_a_translation_review_keeps_other_reviewers(demo):
+    operations.revise(
+        demo, "INS-OPT-REQ-001", "editorial", "re-review", "bob", translation="reviewed", today=day
+    )
+    states = load(demo).records["INS-OPT-REQ-001"].translation.values()
+    assert all(state.by == "alice" for state in states)
+
+
+def test_any_current_acceptance_covers_the_finding(demo):
+    two_shalls(demo)
+    first = review.raise_issue(
+        demo,
+        "wording",
+        {"en": "a"},
+        {"en": "a"},
+        ["INS-DET-REQ-001"],
+        "bob",
+        rule="content.writing",
+        today=day,
+    )
+    second = review.raise_issue(
+        demo,
+        "wording",
+        {"en": "b"},
+        {"en": "b"},
+        ["INS-DET-REQ-001"],
+        "bob",
+        rule="content.writing",
+        today=day,
+    )
+    review.propose(demo, second.id, "bob", {"en": "keep"}, [], today=day)
+    review.accept(demo, second.id, 1, "alice", today=day)
+
+    def retitle(data):
+        data["title"]["en"] = "Read noise, slow mode"
+
+    edit_yaml(requirement_file(demo, "INS-DET-REQ-001"), retitle)
+    operations.revise(demo, "INS-DET-REQ-001", "editorial", "retitled", "alice", today=day)
+    review.propose(demo, first.id, "bob", {"en": "keep"}, [], today=day)
+    review.accept(demo, first.id, 1, "alice", today=day)
+    assert all(f.severity == "info" for f in writing_findings(demo))
+
+
+def test_keeping_the_text_needs_a_rule_and_records(demo):
+    with pytest.raises(OperationError, match="would change nothing"):
+        review.propose(demo, "ISS-0001", "bob", {"en": "keep"}, [], today=day)
+
+
+def test_malformed_proposals_are_refused(demo):
+    change = {"record": "INS-DET-REQ-001", "field": "notes", "text": {"en": "x"}}
+    with pytest.raises(OperationError, match="summary"):
+        review.propose(demo, "ISS-0001", "bob", "just a string", [change], today=day)
+    with pytest.raises(OperationError, match="mapping"):
+        review.propose(demo, "ISS-0001", "bob", {"en": "x"}, ["INS-DET-REQ-001"], today=day)
+    with pytest.raises(OperationError, match="twice"):
+        review.propose(demo, "ISS-0001", "bob", {"en": "x"}, [change, change], today=day)
+
+
+@pytest.mark.parametrize("text", ["a\x0bb\nc", "a\rb\nc", "a\x85b\nc", "a\u2028b\nc", "a\tb\nc"])
+def test_texts_a_literal_block_cannot_hold_are_left_quoted(text):
+    from ruamel.yaml.comments import CommentedMap
+
+    from qingsong.operations import serialize
+    from qingsong.vault import round_trip_yaml
+
+    data = CommentedMap(text=text)
+    assert round_trip_yaml().load(serialize(data))["text"] == text

@@ -76,3 +76,21 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   value ("[five]"), not only bracketed numbers.
 - **Never use `git stash -u` on a working tree with untracked work.** It briefly removes the untracked files.
   Copy the files to a scratch folder instead.
+
+## 9. Review items and the Word prompt (2026-11-02)
+
+- **A field added to a schema must default to `None`, not to an empty list.** The stamp hashes the record's
+  dump without `None` values, so a new `proposals: []` default changed the stamp of every existing issue and
+  made them all "unrecorded". Fields added later are optional and absent until used.
+- **A mapping keyed by language is not necessarily text.** Hashes stored per language (`base`, `accepted`)
+  had the same type as bilingual text, so the language checks read them as prose and reported "empty text".
+  They now have their own type.
+- **Word's "fields that may refer to other files" prompt comes from `updateFields`.** Both v1.1 and the
+  generated file asked Word to update every field on opening. A written-out table of contents avoids it;
+  page numbers then come from one field update in Word.
+- **Keep content and traceability apart in severities.** Approving the fibre requirements turned 23
+  "no parent" warnings into errors, although approval concerns the requirement's content. Traceability is
+  now required at baseline, and tracked by an issue until then.
+- **Group review items by the decision they need.** 24 wording findings became three issues: seven
+  statements with one rewording proposal, one vague statement, and fifteen compound procedures with a
+  keep-as-written proposal. One decision per issue is easier to review than 24 near-identical cards.

@@ -107,6 +107,8 @@ def round_trip_yaml() -> YAML:
     yaml.preserve_quotes = True
     yaml.width = 1_000_000
     yaml.indent(mapping=2, sequence=4, offset=2)
+    # A date used twice in one write would otherwise appear as an anchor (&id001) and alias.
+    yaml.representer.ignore_aliases = lambda data: True
     return yaml
 
 

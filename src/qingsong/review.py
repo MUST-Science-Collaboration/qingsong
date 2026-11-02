@@ -233,7 +233,12 @@ def checked_changes(vault: Vault, changes: Iterable[dict[str, Any]]) -> list[dic
     """Validate proposed changes against the current records and add their base hashes."""
     languages = set(languages_of(vault))
     result = []
+    seen: set[tuple[str, str, str]] = set()
+    if not isinstance(changes, list):
+        raise OperationError("changes must be a list")
     for change in changes:
+        if not isinstance(change, dict):
+            raise OperationError("each change is a mapping with record, field and text")
         record_id, field, text = change.get("record"), change.get("field"), change.get("text")
         if not isinstance(record_id, str) or not isinstance(field, str):
             raise OperationError("each change needs record and field")
@@ -249,6 +254,10 @@ def checked_changes(vault: Vault, changes: Iterable[dict[str, Any]]) -> list[dic
             )
         if any(not isinstance(value, str) or not value.strip() for value in text.values()):
             raise OperationError(f"{record_id} {field}: empty text")
+        for language in text:
+            if (record_id, field, language) in seen:
+                raise OperationError(f"{record_id} {field}.{language} is changed twice")
+            seen.add((record_id, field, language))
         current = field_text_hashes(record, field)
         base = {language: current.get(language, "") for language in text}
         result.append({"record": record_id, "field": field, "text": dict(text), "base": base})
@@ -272,9 +281,19 @@ def propose(
     issue = require_issue(vault, issue_id)
     if change_class not in ("editorial", "value", "reallocate"):
         raise OperationError("the class must be editorial, value or reallocate")
-    if not summary or not any(text.strip() for text in summary.values()):
-        raise OperationError("a proposal needs a summary")
+    if (
+        not isinstance(summary, dict)
+        or not summary
+        or not all(isinstance(text, str) for text in summary.values())
+        or not any(text.strip() for text in summary.values())
+    ):
+        raise OperationError("a proposal needs a summary {en: …, zh: …}")
     checked = checked_changes(vault, changes)
+    if not checked and not (issue.rule and issue.records):
+        raise OperationError(
+            f"{issue_id} tracks no check rule on any record, so keeping the text as written "
+            "would change nothing; close the issue instead (qingsong issue close)"
+        )
     number = max((proposal.number for proposal in (issue.proposals or [])), default=0) + 1
 
     def change(data: CommentedMap, old: RecordBase) -> None:
@@ -480,7 +499,7 @@ def accept(
                 ),
             )
         )
-    except Exception:
+    except BaseException:
         for record_id, text in originals.items():
             write_atomically(vault.files[record_id], text)
         raise

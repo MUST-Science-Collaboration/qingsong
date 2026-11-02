@@ -20,14 +20,14 @@ history:
     event: created
     summary: written for the demo vault
   - revision: 2
-    date: &id001 2026-11-01
+    date: 2026-11-01
     by: bob
     event: revised
     summary: proposal 1
 stamp: f7530a46adf91ba3
 proposals:
   - number: 1
-    date: *id001
+    date: 2026-11-01
     by: bob
     summary:
       en: State how the read noise is combined over amplifiers.

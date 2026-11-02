@@ -561,14 +561,27 @@ def issue_accept(
     """Accept a proposal (approvers only): apply its changes and close the issue."""
     from qingsong import review
 
+    root = vault_root(vault)
     try:
-        written = review.accept(vault_root(vault), issue_id, proposal, by, decision, via)
+        written = review.accept(root, issue_id, proposal, by, decision, via)
     except OperationError as error:
         fail(error, as_json)
+    touched = {item.id for item in written}
+    remaining = [
+        finding
+        for finding in checks.run(load(root))
+        if finding.record in touched and finding.severity == "error"
+    ]
     emit(
-        [{"id": item.id, "revision": item.revision} for item in written],
+        {
+            "written": [{"id": item.id, "revision": item.revision} for item in written],
+            "errors": [finding.as_dict() for finding in remaining],
+        },
         as_json,
-        "\n".join(f"{item.id} now at revision {item.revision}" for item in written),
+        "\n".join(
+            [f"{item.id} now at revision {item.revision}" for item in written]
+            + [f"still to do: {finding.line()}" for finding in remaining]
+        ),
     )
 
 

@@ -91,7 +91,7 @@ def apply_review(vault: Vault, findings: list[Finding]) -> list[Finding]:
     from qingsong.schema import Issue
 
     tracked: dict[tuple[str, str], str] = {}
-    accepted: dict[tuple[str, str], tuple[str, str]] = {}
+    accepted: dict[tuple[str, str], list[tuple[str, str]]] = {}
     for record in vault.records.values():
         if not isinstance(record, Issue) or not record.rule:
             continue
@@ -100,14 +100,16 @@ def apply_review(vault: Vault, findings: list[Finding]) -> list[Finding]:
                 tracked.setdefault((record.rule, target), record.id)
         elif record.outcome == "accepted_as_written":
             for target, digest in (record.accepted or {}).items():
-                accepted[(record.rule, target)] = (record.id, digest)
+                accepted.setdefault((record.rule, target), []).append((record.id, digest))
     result = []
     for finding in findings:
         key = (finding.rule, finding.record or "")
         target = vault.records.get(finding.record or "")
         if key in accepted and target is not None and finding.severity != "error":
-            issue_id, digest = accepted[key]
-            if review_hash(target) == digest:
+            current = review_hash(target)
+            covering = [issue_id for issue_id, digest in accepted[key] if digest == current]
+            if covering:
+                issue_id = covering[0]
                 finding = replace(
                     finding,
                     severity="info",

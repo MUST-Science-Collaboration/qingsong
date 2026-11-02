@@ -129,7 +129,7 @@ Flow-down rules (checked):
 - **Direction.** `derives_from` points only to requirements at a higher level. Levels may be skipped.
 - **Siblings.** A budget shared between siblings is expressed by each share deriving from the higher-level budget requirement, never by sibling-to-sibling derivation.
 - **Science.** `science` requirements have no parent. They carry a `justification`.
-- **Parentless requirements below science.** They must cite a decision in `justified_by`. Otherwise the check raises a **TBJ** ("to be justified") finding. It is a warning, to be tracked by a `tbj` issue (§5.6), up to `agreed`, and an error in a baseline (decision of 2026-11-02: approval concerns a requirement's content, and complete traceability is required at baseline).
+- **Parentless requirements below science.** They must cite a decision in `justified_by`. Otherwise the check raises a **TBJ** ("to be justified") finding. It is a note at `concept`, a warning at `draft` and `agreed` (to be tracked by a `tbj` issue, §5.6), and an error in a baseline (decision of 2026-11-02: approval concerns a requirement's content, and complete traceability is required at baseline).
 - **Allocation.** The children of one parent may be allocated to different branches of the tree.
 
 ### 4.3 Namespaces (accepted)
@@ -368,7 +368,8 @@ A proposal without changes proposes to **keep the text as written**.
    - Accepting a keep proposal records the review hashes.
    - Either way the issue closes, with outcome `fixed` or `accepted_as_written`, and the other open proposals become `rejected`.
    - `qingsong issue reject ISS --proposal N --reason R` rejects one proposal.
-   - `qingsong issue close ISS --outcome answered|withdrawn --resolution R` closes an issue without a proposal.
+   - `qingsong issue close ISS --outcome answered|withdrawn|fixed --resolution R` closes an issue without a proposal. `fixed` is for a fix made by a separate recorded revision.
+   - A keep proposal is refused for an issue that tracks no rule on any record, because it would suppress nothing.
 4. **Agents** prepare proposals; people decide. The HTML review page writes the decisions as commands (§12.1), which an agent or the approver runs.
 
 **Checks:**

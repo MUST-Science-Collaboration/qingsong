@@ -37,7 +37,7 @@ normative_revision: 1
 normative_hash: 546d990271bb621b
 history:
   - revision: 1
-    date: &id001 2026-11-01
+    date: 2026-11-01
     by: alice
     event: created
     summary: written for the demo vault
@@ -47,19 +47,19 @@ translation:
     source_hash: a73bd8da0f0ebd92
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   statement:
     source_hash: 31f3ce72ab35383b
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   rationale:
     source_hash: c52180aab37fb6b0
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
   verification.criteria:
     source_hash: 4646c0abb94de346
     status: reviewed
     by: alice
-    date: *id001
+    date: 2026-11-01
