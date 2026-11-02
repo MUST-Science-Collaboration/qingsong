@@ -117,7 +117,19 @@ def test_value_slots_read_as_written():
     )
     assert (
         format_slot(slot(relation="le", value=0.8, unit="deg", certainty="provisional"), "en")
-        == "[≤ 0.8°]"
+        == "≤ [0.8°]"
+    )
+    assert (
+        format_slot(
+            slot(relation="ge", value=90, unit="percent", certainty="provisional", goal=92.5), "en"
+        )
+        == "≥ [90 %] (goal 92.5 %)"
+    )
+    assert (
+        format_slot(
+            slot(relation="ge", value=90, unit="percent", certainty="firm", goal=92.5), "zh"
+        )
+        == "≥ 90 %（目标92.5 %）"
     )
     assert (
         format_slot(
@@ -140,7 +152,7 @@ def test_value_slots_read_as_written():
             ),
             "en",
         )
-        == "(20 ± 0.5)%"
+        == "20 ± 0.5 %"
     )
     assert (
         format_slot(slot(relation="eq", value=7500, unit="count", certainty="firm"), "en")
@@ -174,3 +186,13 @@ def test_difference_marks_words_and_chinese_characters():
         "read noise of <del>3</del><ins>4</ins> e"
     )
     assert str(diff_markup("应为三", "应为四<")) == "应为<del>三</del><ins>四&lt;</ins>"
+
+
+def test_review_page_offers_people_not_free_text(demo, tmp_path):
+    """The decision commands name a person from people.yaml; a single approver is preselected."""
+    site = render_site(load(demo), tmp_path / "site").parent
+    page = (site / "review.html").read_text()
+    assert '<select id="reviewer" data-default="alice">' in page
+    assert '<option value="bob">' in page and "YOUR_ID" not in page
+    script = (site / "static" / "review.js").read_text()
+    assert "YOUR_ID" not in script and "Choose your name" in script

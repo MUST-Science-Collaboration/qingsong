@@ -210,3 +210,21 @@ ul.issue-records { margin: 4px 0; padding-left: 18px; font-size: 0.92rem; }
 .issue-description p { margin: 4px 0; }
 .resolution { margin-top: 6px; font-size: 0.92rem; }
 @media print { .review-marks, .marks-switch, .decision-bar { display: none; } }
+
+/* changes between releases */
+article.change-card { border: 1px solid var(--line); border-left: 4px solid var(--accent2); border-radius: 4px; padding: 10px 14px; margin: 12px 0; background: #fff; }
+article.change-card header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+article.change-card .state { margin-left: auto; font-size: 0.85rem; color: var(--muted); }
+article.change-card ul.events { margin: 6px 0; padding-left: 18px; color: var(--muted); }
+.field-change { margin: 8px 0; }
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.before-after pre { margin: 0; padding: 6px 8px; border-radius: 4px; font-size: 0.8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.before-after pre.before { background: #fee2e2; }
+.before-after pre.after { background: #dcfce7; }
+ul.change-list { padding-left: 18px; }
+ul.change-list li { margin: 4px 0; }
+@media (max-width: 640px) { .before-after { grid-template-columns: 1fr; } }
+
+/* forms of requirement */
+.badge.form-quantitative { border-color: #93c5fd; background: #eff6ff; color: #1e40af; }
+.badge.form-qualitative { border-color: #d1d5db; background: #f9fafb; color: #374151; }

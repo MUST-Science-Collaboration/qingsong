@@ -386,6 +386,95 @@ def new_requirement(
     return finish(path, data, exclusive=True)
 
 
+drafted_types = ("issue", "decision", "waiver", "interface", "condition", "source", "verification")
+
+
+def draft_identity(vault: Vault, record_type: str, data: CommentedMap, slug: str | None) -> str:
+    """The ID a new record of this type receives (docs/SPEC.md §5.3, §6.1)."""
+    if record_type == "source":
+        if not slug:
+            raise OperationError("a source needs --slug, e.g. DEMO-INS-DET-RD-v1.0")
+        record_id = f"SRC-{slug}"
+        if not ids.id_matches("source", record_id):
+            raise OperationError(f"{record_id} is not a valid source ID")
+        if (
+            record_id in vault.records
+            or (vault.root / ids.relative_path("source", record_id)).exists()
+        ):
+            raise OperationError(f"{record_id} already exists")
+        return record_id
+    if slug:
+        raise OperationError("--slug applies to sources only")
+    if record_type == "interface":
+        owner = vault.nodes.get(str(data.get("owner_end") or ""))
+        if owner is None:
+            raise OperationError("an interface draft needs owner_end, a node reference")
+        system = owner.system or owner.node.node
+        return ids.format_id("interface", system, allocate_number(vault, "interface", system))
+    if record_type == "condition":
+        node = str(data.get("node") or "")
+        if node not in vault.nodes:
+            raise OperationError("a condition draft needs node, a node reference")
+        return ids.format_id("condition", node, allocate_number(vault, "condition", node))
+    if record_type == "verification":
+        requirement = str(data.get("requirement") or "")
+        if not ids.id_matches("requirement", requirement) or requirement not in vault.records:
+            raise OperationError("a verification draft needs requirement, an existing ID")
+        prefix = f"VER-{requirement}-"
+        used = {
+            int(stem[len(prefix) :])
+            for stem in (path.stem for path in (vault.root / "verifications").glob("*.yaml"))
+            if stem.startswith(prefix) and stem[len(prefix) :].isdigit()
+        }
+        for ref in gitutil.main_refs(vault.root):
+            for name in gitutil.files_at(vault.root, ref, "verifications"):
+                stem = Path(name).stem
+                if stem.startswith(prefix) and stem[len(prefix) :].isdigit():
+                    used.add(int(stem[len(prefix) :]))
+        return ids.format_id("verification", requirement, max(used, default=0) + 1)
+    return ids.format_id(record_type, None, allocate_number(vault, record_type, None))
+
+
+def new_from_draft(
+    root: Path,
+    record_type: str,
+    draft: Path,
+    person: str,
+    slug: str | None = None,
+    via: str | None = None,
+    today: datetime.date | None = None,
+) -> RecordBase:
+    """Allocate an ID for a draft file (all fields but the ID and bookkeeping), write the record
+    where its ID says, and record its creation. The draft file itself is left untouched."""
+    if record_type not in drafted_types:
+        raise OperationError(
+            f"new --file takes {', '.join(drafted_types)}; requirements use new requirement"
+        )
+    vault = load(root)
+    require_person(vault, person)
+    data = load_round_trip(draft)
+    present = [name for name in ("id", *bookkeeping_fields) if name in data]
+    if present:
+        raise OperationError(f"the draft must not contain {', '.join(present)}")
+    if data.get("type", record_type) != record_type:
+        raise OperationError(f"the draft is a {data.get('type')}, not a {record_type}")
+    record_id = draft_identity(vault, record_type, data, slug)
+    record = CommentedMap()
+    record["id"] = record_id
+    record["type"] = record_type
+    for key, value in data.items():
+        if key != "type":
+            record[key] = value
+    record.setdefault("lifecycle", "current")
+    target = root / ids.relative_path(record_type, record_id)
+    write_atomically(target, serialize(record), exclusive=True)
+    try:
+        return adopt(root, target, person, "created", event="created", via=via, today=today)
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
+
+
 def revise(
     root: Path,
     record_id: str,

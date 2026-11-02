@@ -1,6 +1,9 @@
 """Vault discovery, strict loading and round-trip saving (docs/SPEC.md §3, §6.1)."""
 
+import tempfile
 import tomllib
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -9,7 +12,7 @@ from pydantic import TypeAdapter, ValidationError
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
-from qingsong import ids
+from qingsong import gitutil, ids
 from qingsong.findings import Finding
 from qingsong.schema import (
     GlossaryFile,
@@ -130,6 +133,16 @@ def load(root: Path) -> Vault:
     load_people_and_glossary(vault)
     load_records(vault)
     return vault
+
+
+@contextmanager
+def vault_at(root: Path, ref: str) -> Iterator[Vault]:
+    """The vault as stored at a git reference, loaded from a temporary copy of the raw stored files
+    (docs/SPEC.md §5.5). Raises gitutil.GitError when the reference cannot be read."""
+    with tempfile.TemporaryDirectory(prefix="qingsong-") as folder:
+        target = Path(folder) / "vault"
+        gitutil.export_tree(root, ref, target)
+        yield load(target)
 
 
 def load_config(vault: Vault) -> None:

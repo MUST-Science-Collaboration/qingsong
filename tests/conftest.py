@@ -38,6 +38,9 @@ def git(root: Path, *arguments: str) -> str:
 @pytest.fixture
 def demo_repository(demo: Path) -> Path:
     git(demo, "init", "-q", "-b", "main")
+    # CI runners have no git identity; annotated tags and merge commits need one.
+    git(demo, "config", "user.name", "Test")
+    git(demo, "config", "user.email", "test@example.org")
     git(demo, "-c", "user.name=Test", "-c", "user.email=test@example.org", "add", "-A")
     git(
         demo,

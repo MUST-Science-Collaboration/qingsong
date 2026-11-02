@@ -357,7 +357,18 @@ def outline_counts(blocks, counts: dict[str, int]) -> dict[str, int]:
     return counts
 
 
-@rule("structure.outline", "each requirement and figure appears once in a document outline")
+def section_keys(blocks, keys: list[str]) -> list[str]:
+    for block in blocks:
+        if block.section is not None:
+            keys.append(block.section.key)
+            section_keys(block.section.blocks, keys)
+    return keys
+
+
+@rule(
+    "structure.outline",
+    "each requirement and figure appears once in a document outline; section keys are unique",
+)
 def outline(context: Context) -> Iterator[Finding]:
     from qingsong.schema import Document
 
@@ -375,3 +386,14 @@ def outline(context: Context) -> Iterator[Finding]:
                     file=relative_file(vault, record.id),
                     fix="place each requirement and figure once; refer to it elsewhere with [[ID]]",
                 )
+        keys = section_keys(record.outline, [])
+        for key in sorted({key for key in keys if keys.count(key) > 1 or not key.strip()}):
+            yield Finding(
+                "structure.outline",
+                "error",
+                f"section key {key!r} is empty or used more than once",
+                record=record.id,
+                file=relative_file(vault, record.id),
+                fix="give every section its own key; [[DOC#key]] references and change "
+                "summaries rely on it",
+            )

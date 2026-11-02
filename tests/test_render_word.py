@@ -18,7 +18,7 @@ def test_word_document_is_valid_and_complete(demo, tmp_path):
     texts = [paragraph.text for paragraph in docx.Document(str(output)).paragraphs]
     assert "1. Introduction (简介)" in texts
     assert "2.1 INS-DET-REQ-001 Read noise (读出噪声)" in texts
-    assert "The detector read noise shall be [≤ 3] (see Figure 2.1)." in texts
+    assert "The detector read noise shall be ≤ [3] (see Figure 2.1)." in texts
     assert any(text.startswith("Figure 2.1. ") for text in texts)
     assert any(text.startswith("图2.1 ") for text in texts)
     assert "本文件给出探测器的需求，见第2节。" in texts

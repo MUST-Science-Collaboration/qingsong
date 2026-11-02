@@ -8,13 +8,16 @@ import re
 import shutil
 from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup
 
-from qingsong import __version__, checks, ids
+from qingsong import __version__, checks, gitutil, ids
+from qingsong.checks.content import numbers_in_text, requirement_form
 from qingsong.findings import Finding
 from qingsong.hashing import field_value
+from qingsong.operations import OperationError
 from qingsong.render.model import (
     children_of,
     documents_of,
@@ -26,6 +29,9 @@ from qingsong.render.text import blocks, format_slot, inline, substitute_slots
 from qingsong.review import kind_labels
 from qingsong.schema import Document, Figure, Issue, Proposal, ProposedChange, Requirement
 from qingsong.vault import Vault
+
+if TYPE_CHECKING:
+    from qingsong.release import ChangeSummary
 
 static_dir = Path(__file__).parent / "static"
 record_pages = {"requirement": "r", "figure": "f"}
@@ -128,6 +134,7 @@ class Site:
         self.in_documents = requirement_documents(vault)
         self.documents = documents_of(vault)
         self.numberings = {document.id: number_document(document) for document in self.documents}
+        self.changes = change_summaries(vault)
         self.figure_document = {
             figure: document_id
             for document_id, numbering in self.numberings.items()
@@ -299,6 +306,61 @@ class Site:
 
         return diff_markup(readable(old), readable(change.text.get(language, "")))
 
+    form_labels = {
+        "quantitative": {"en": "Quantitative", "zh": "定量"},
+        "qualitative": {"en": "Qualitative", "zh": "定性"},
+    }
+
+    def form(self, record: Requirement) -> str:
+        return requirement_form(record)
+
+    def numbers_in_text(self, record: Requirement) -> bool:
+        return bool(numbers_in_text(record))
+
+    def form_hint(self, record: Requirement) -> str:
+        if record.values:
+            return f"values in slots: {', '.join(record.values)}; checks and the export read them"
+        if numbers_in_text(record):
+            return "numbers are written in the text; checks and the export do not read them"
+        return "no numeric value; verified by its criteria"
+
+    def is_text(self, value: Any) -> bool:
+        """Bilingual text: a non-empty mapping from language codes to strings."""
+        return (
+            isinstance(value, dict)
+            and bool(value)
+            and set(value) <= set(self.languages)
+            and all(isinstance(item, str) for item in value.values())
+        )
+
+    def field_diff(self, before: Any, after: Any, language: str) -> Markup:
+        """Word-level difference of one language of a changed text field."""
+        old = before.get(language, "") if isinstance(before, dict) else ""
+        new = after.get(language, "") if isinstance(after, dict) else ""
+        return diff_markup(old, new)
+
+    def as_text(self, value: Any) -> str:
+        if value is None:
+            return "—"
+        return json.dumps(value, ensure_ascii=False, indent=1, default=str)
+
+    def blocks_text(self, blocks: list[dict], language: str) -> str:
+        """The readable text of a section's own blocks, for a before/after difference."""
+        lines: list[str] = []
+        for block in blocks:
+            if "text" in block:
+                lines.append(block["text"].get(language, ""))
+            elif "table" in block:
+                table = block["table"]
+                for row in [table.get("header", []), *table.get("rows", [])]:
+                    lines.append(" | ".join(cell.get(language, "") for cell in row))
+            elif "definitions" in block:
+                lines.append(", ".join(block["definitions"].get("terms", [])))
+        return "\n".join(lines)
+
+    def blocks_diff(self, before: list[dict], after: list[dict], language: str) -> Markup:
+        return diff_markup(self.blocks_text(before, language), self.blocks_text(after, language))
+
     def plain(self, value: dict | None, language: str = "en") -> str:
         if not value:
             return ""
@@ -359,12 +421,24 @@ class Site:
             flow=script_json(self.flow_data(requirements)),
         )
         for document in self.documents:
+            summary = self.changes.get(document.id)
+            if summary is not None and not isinstance(summary, str):
+                self.render(
+                    "changes.html",
+                    f"documents/{document.id}-changes.html",
+                    "../",
+                    document=document,
+                    summary=summary,
+                )
+            else:
+                summary = None
             self.render(
                 "document.html",
                 f"documents/{document.id}.html",
                 "../",
                 document=document,
                 numbering=self.numberings[document.id],
+                summary=summary,
             )
         for requirement in requirements:
             self.render("requirement.html", f"r/{requirement.id}.html", "../", record=requirement)
@@ -480,6 +554,18 @@ class Site:
             "window.QINGSONG_INDEX = " + script_json(entries) + ";\n",
             encoding="utf-8",
         )
+
+
+def change_summaries(vault: Vault) -> "dict[str, ChangeSummary | str]":
+    """Each document's changes since its last tagged release, or why there is no summary."""
+    from qingsong.release import summaries_since_last_release
+
+    if not gitutil.is_repository(vault.root):
+        return {}
+    try:
+        return summaries_since_last_release(vault.root, vault)
+    except OperationError:
+        return {}
 
 
 def render_site(vault: Vault, output: Path) -> Path:

@@ -94,3 +94,41 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 - **Group review items by the decision they need.** 24 wording findings became three issues: seven
   statements with one rewording proposal, one vague statement, and fifteen compound procedures with a
   keep-as-written proposal. One decision per issue is easier to review than 24 near-identical cards.
+
+## 10. Releases (2026-11-02)
+
+- **Review a workflow design against how git is used, not only against the code.** The first release design tagged
+  HEAD after the merge. An independent review pointed out that with a squash merge followed by another merge, HEAD
+  holds later, unreviewed changes. The tag now goes on the commit of the main branch's first-parent history that
+  first contains the release entry, and the gate runs on that commit.
+- **Dry-run a new gate on the real record before declaring it done.** The release gate, run on a copy of the record,
+  found that the pilot document's figure captions had never been marked as reviewed translations: the bilingual check had
+  covered requirements only.
+- **Check the data a feature needs before building on it.** The consistency rules and the export's value index read
+  value slots, but the pilot record keeps every number in prose. The engine works; the record has to catch up.
+- **An independent code review found seven defects that 130 passing tests did not.** The worst:
+  - an open-ended limit (`< 10`) carried its "open" flag onto the infinite end, so `≤ 5` did not count as
+    inside `< 10`;
+  - `--until` at a release compared that release with itself;
+  - reordering a document was reported as "no changes".
+
+  Each now has a regression test. Interval code needs tests at every combination of open, closed and infinite
+  ends.
+- **CI has no git identity.** Five release tests passed locally and failed on every CI runner: `git tag -a` and
+  merge commits need a committer, which macOS derives from the host and a Linux runner does not. Reproduce CI
+  locally with `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly
+  GIT_CONFIG_VALUE_0=true`; test repositories set their own local identity.
+
+## 11. Moving numbers into slots (2026-11-02)
+
+- **A proof by comparison is only as good as its normalisation.** The first version of the slot move lower-cased
+  everything, so "5 Mm" matched a slot in mm. It also removed spaces before reading thousands separators, so
+  "5, 100 mm" matched 5100. And a unit-repeat rule without a boundary read "140 m ± 2 mm" as "140 ± 2 mm".
+  An independent reviewer built each case. Normalise only what is known to be formatting, keep units exactly,
+  and test every named difference against a near miss.
+- **Guard every re-binding the same way.** The approval was re-bound only if it was current, but the
+  translation hash was re-bound unconditionally, which marked a stale translation current. Anything that carries
+  a review forward must check that the review was valid before.
+- **Prefer the renderer over a second parser.** The design review replaced a planned literal grammar with "the
+  slot must read the same". There is one rule for both writing and reading values, and one less parser to
+  get wrong.

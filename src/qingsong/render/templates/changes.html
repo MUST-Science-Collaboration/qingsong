@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge %}{% block title %}Changes · {{ document.id }}{% endblock %}
+{% block body %}
+<p class="small"><a href="{{ prefix }}documents/{{ document.id }}.html">← {{ document.id }}</a></p>
+<h1>Changes to {{ document.id }}</h1>
+{% if summary is string %}
+<p class="hint">No change summary: {{ summary }}</p>
+{% else %}
+<p class="lead">Since <b>{{ summary.since }}</b> (<code>{{ summary.since_ref }}</code>), to {{ summary.until }}.
+{% if summary.approximate %}<br><span class="small">Approximate: {{ summary.since }} was issued before qingsong. Its tag marks the record as checked against the issued file, not the file itself.</span>{% endif %}</p>
+{% if summary.is_empty() %}<p class="hint">Nothing has changed.</p>{% endif %}
+
+{% if summary.added or summary.removed or summary.moved_within %}
+<h2>Added, removed and moved</h2>
+<ul class="change-list">
+{% for record_id in summary.added %}<li>{{ badge("added", "info") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% set record = vault.records.get(record_id) %}{% if record %} {{ site.text(record.title, prefix, document, block=False) }}{% endif %}</li>{% endfor %}
+{% for record_id, places in summary.moved_within.items() %}<li>{{ badge("moved", "info") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a> · section {{ places[0] or "(none)" }} → {{ places[1] or "(none)" }}</li>{% endfor %}
+{% for record_id in summary.removed %}<li>{{ badge("removed", "warning") }} <a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% if summary.moved.get(record_id) %} · moved to {% for home in summary.moved[record_id] %}<a href="{{ prefix }}documents/{{ home }}.html">{{ home }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% if summary.revised %}
+<h2>Revised</h2>
+{% for change in summary.revised %}
+<article class="change-card">
+  <header><a class="rid" href="{{ site.record_link(change.record, prefix) }}">{{ change.record }}</a> <span class="title">{{ site.text(change.title, prefix, document, block=False) }}</span></header>
+  <ul class="events small">{% for event in change.events %}<li>r{{ event.revision }} · {{ event.date }} · {{ event.change_class or event.event }} · {{ event.summary }}{% if event.decision and event.decision not in event.summary %} ({{ event.decision }}){% endif %}</li>{% endfor %}</ul>
+  {% if change.history_rewritten %}<p class="broken small">The earlier history is not a prefix of the later one: history was rewritten.</p>{% endif %}
+  {% if change.maturity %}<p class="small">Maturity {{ change.maturity[0] }} → {{ change.maturity[1] }}</p>{% endif %}
+  {% if change.lifecycle %}<p class="small">{{ change.lifecycle[0] }} → {{ change.lifecycle[1] }}{% if change.superseded_by %}, by {{ change.superseded_by|join(", ") }}{% endif %}</p>{% endif %}
+  {% if change.aliases_added or change.aliases_removed %}<p class="small">Aliases{% if change.aliases_added %} added: {{ change.aliases_added|join(", ") }}{% endif %}{% if change.aliases_removed %} removed: {{ change.aliases_removed|join(", ") }}{% endif %}</p>{% endif %}
+  {% for name in change.fields %}
+  <div class="field-change"><div class="change-target">{% if site.field_labels.get(name) %}<span class="lang en">{{ site.field_labels[name].en }}</span><span class="lang zh">{{ site.field_labels[name].zh }}</span>{% else %}{{ name }}{% endif %}</div>
+  {% if site.is_text(change.before.get(name)) or site.is_text(change.after.get(name)) %}
+    {% for language in site.languages %}<div class="diff lang {{ language }}">{{ site.field_diff(change.before.get(name), change.after.get(name), language) }}</div>{% endfor %}
+  {% else %}
+    <div class="before-after"><pre class="before">{{ site.as_text(change.before.get(name)) }}</pre><pre class="after">{{ site.as_text(change.after.get(name)) }}</pre></div>
+  {% endif %}
+  </div>
+  {% endfor %}
+</article>
+{% endfor %}
+{% endif %}
+
+{% if summary.sections %}
+<h2>Document text</h2>
+{% for section in summary.sections %}
+<article class="change-card">
+  <header><span class="rid">{{ section.key or "before the first section" }}</span> <span class="title">{{ site.text(section.title_after or section.title_before or {"en": ""}, prefix, document, block=False) }}</span> <span class="state">{{ section.status }}</span></header>
+  {% if section.title_before and section.title_after and section.title_before != section.title_after %}
+  {% for language in site.languages %}<div class="diff lang {{ language }}"><b>Title:</b> {{ site.field_diff(section.title_before, section.title_after, language) }}</div>{% endfor %}
+  {% endif %}
+  {% for language in site.languages %}<div class="diff lang {{ language }}">{{ site.blocks_diff(section.blocks_before, section.blocks_after, language) }}</div>{% endfor %}
+</article>
+{% endfor %}
+{% endif %}
+
+{% if summary.front_matter %}
+<h2>Front matter</h2>
+<p>Changed: {{ summary.front_matter|join(", ") }}.</p>
+{% endif %}
+
+{% if summary.bookkeeping %}
+<h2>Approvals and reviews</h2>
+<p class="small">Changes of status that leave the text as it was.</p>
+<ul class="change-list">
+{% for note, records in summary.bookkeeping_groups().items() %}<li>{{ note }}: {% for record_id in records %}<a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</li>{% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+{% endblock %}

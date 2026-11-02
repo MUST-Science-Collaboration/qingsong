@@ -43,6 +43,7 @@
   <div class="doc-number">{{ document.id }}{% if document.releases %} · v{{ document.releases[-1].version }}{% endif %}</div>
   <h1>{{ site.text(document.title, prefix, document, block=False) }}</h1>
   {% for alias in document.aliases %}<span class="alias">{{ alias.id }}</span>{% endfor %}
+  {% if summary and not summary.is_empty() %}<p class="small"><a href="{{ prefix }}documents/{{ document.id }}-changes.html">Changes since {{ summary.since }} →</a></p>{% endif %}
 </header>
 <details class="front"><summary>Change record, responsibilities, acronyms and references</summary>
   <h3>Change record</h3>

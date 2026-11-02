@@ -23,6 +23,8 @@ EventKind = Literal[
     "superseded",
     "withdrawn",
     "renumbered",
+    "released",
+    "slotted",
 ]
 NodeKind = Literal["product", "work", "context"]
 
@@ -42,6 +44,9 @@ class HistoryEvent(StrictModel):
     summary: str
     decision: str | None = None
     via: str | None = None
+    # Only for `slotted` events: the normative hash the move started from and produced.
+    normative_hash_before: str | None = None
+    normative_hash_after: str | None = None
 
 
 class Alias(StrictModel):
@@ -79,10 +84,19 @@ class ValueSlot(StrictModel):
     certainty: Certainty
     issue: str | None = None
     condition: LocalizedText | None = None
+    # Optional, as in Rubin's design specification and stretch goal (docs/SPEC.md §5.2).
+    goal: float | None = None
 
     @model_validator(mode="after")
     def check_numbers(self) -> "ValueSlot":
-        for number in (self.value, self.minimum, self.maximum):
+        if self.goal is not None:
+            if self.relation not in ("le", "lt", "ge", "gt") or self.value is None:
+                raise ValueError("a goal belongs to a limit (le, lt, ge or gt) with a value")
+            if (self.relation in ("le", "lt") and self.goal > self.value) or (
+                self.relation in ("ge", "gt") and self.goal < self.value
+            ):
+                raise ValueError("a goal lies on the better side of the limit")
+        for number in (self.value, self.minimum, self.maximum, self.goal):
             if number is not None and not math.isfinite(number):
                 raise ValueError("values must be finite numbers")
         if self.tolerance and (self.tolerance.plus < 0 or self.tolerance.minus < 0):
@@ -90,6 +104,10 @@ class ValueSlot(StrictModel):
         if self.minimum is not None and self.maximum is not None and self.minimum > self.maximum:
             raise ValueError("minimum is larger than maximum")
         if self.certainty == "tbd":
+            if any(
+                number is not None for number in (self.value, self.minimum, self.maximum, self.goal)
+            ):
+                raise ValueError("a TBD slot carries no number (no value, range or goal)")
             return self
         if self.relation == "range":
             if self.minimum is None or self.maximum is None:
@@ -214,6 +232,9 @@ class Quantity(RecordBase):
     unit: str
     kpp: bool = False
     description: LocalizedText | None = None
+    # A condition to be withstood (e.g. an operating temperature range): a child's range must
+    # cover its parent's instead of lying inside it (docs/SPEC.md §10).
+    environmental: bool | None = None
 
 
 TextHash = Annotated[str, Field(pattern=r"^([0-9a-f]{16})?$")]
@@ -336,6 +357,7 @@ class Release(StrictModel):
     note: LocalizedText | None = None
     tag: str | None = None
     made_with_qingsong: bool
+    engine: str | None = None
 
 
 class FrontMatter(StrictModel):

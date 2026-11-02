@@ -30,7 +30,8 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | ID | Task | Status | Notes |
 | --- | --- | --- | --- |
 | R3-001 | Site: home, interactive tree, flow-down diagram, documents with figures, requirement pages, registers, checks, search, language switch | [x] Done | `qingsong render html` |
-| R3-002 | Change views between releases; review packages; N² matrix | [ ] Next | |
+| R3-002 | Change views between releases | [x] Done 2026-11-02 | `documents/<DOC>-changes.html`, linked from the document page |
+| R3-005 | Review packages for a node's design review; N² interface matrix | [ ] Later | needs interfaces in a real vault |
 | R3-003 | Review: labelled issues raised from findings, proposed fixes with differences, approver decisions (`qingsong issue …`), review page, marks in documents (SPEC §5.6) | [x] Done 2026-11-02 | the Project Scientist's request of 2026-11-02 |
 | R3-004 | The "EN + 中文" view is crowded | [~] Eased | Chinese set off by a rule and spacing; a side-by-side layout is left for later |
 
@@ -42,4 +43,21 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R4-002 | Confirm the generated file opens in Word without repair | [x] Done 2026-11-02 | opens; the "fields that may refer to other files" prompt came from updateFields |
 | R4-004 | No prompt on opening: the table of contents is written out, with links; `--update-fields` restores update-on-open | [x] Done 2026-11-02 | page numbers appear after a field update in Word |
 | R4-005 | The standard MUST style and front page | [ ] Later | the Project Scientist, 2026-11-02: not critical |
-| R4-003 | `qingsong release` with tracked changes against the previous release | [ ] Next | |
+| R4-003 | Releases: `release prepare` (branch), `release tag` (after the merge, at the commit that brought the entry in), `release changes`; `render docx --release V` from the tag | [x] Done 2026-11-02 | SPEC §5.5, revised after an independent review; dry run on a copy of the record |
+| R4-006 | Revision marks in the Word copy of a release | [x] Not needed | the Project Scientist, 2026-11-02: Word is a snapshot; it shows the current version |
+| R3-006 | Review page: choose the person from people.yaml instead of typing an ID | [x] Done 2026-11-02 | the Project Scientist's commands came out with YOUR_ID |
+
+## Phase 5: upper levels and expansion (engine side)
+
+| ID | Task | Status | Notes |
+| --- | --- | --- | --- |
+| R5-001 | `consistency` rules: conflicting values, a child looser than its parent (reversed for environmental quantities), overdue issues | [x] Done 2026-11-02 | SPEC §10; interval semantics tested |
+| R5-002 | `documents` rules: release entries well formed; release tags mark the entry; entries append-only against main | [x] Done 2026-11-02 | |
+| R5-003 | `qingsong export json`, with value intervals, for analysis codes | [x] Done 2026-11-02 | SPEC §12.3 |
+| R5-004 | Forms of requirement (qualitative / quantitative, marked and exported); slot goals; `qingsong slot` moves numbers into slots keeping the meaning and the approval | [x] Done 2026-11-02 | decided by the Project Scientist; design reviewed independently before coding |
+| R5-009 | Slot moves as proposals on the review page, so the approver sees each move before it is applied | [ ] Next | until then, moves are made on a content branch and reviewed in its pull request |
+| R3-007 | `qingsong serve` with a Submit button for review decisions (local only, per-session secret) | [ ] Proposed | the Project Scientist asked about submitting from the page |
+| R5-005 | `qingsong new issue|decision|waiver|interface|condition|source|verification --file draft.yaml` | [x] Done 2026-11-02 | IDs allocated per type, also against main; the draft is left as written |
+| R5-006 | N² interface matrix | [ ] Later | interfaces and conditions already appear in the registers |
+| R5-007 | CI for a record repository: check against main on every pull request, site as an artifact | [ ] Next | needs permission for the private repository |
+| R5-008 | Translation review of figure captions and document text | [ ] Content | the release gate found the pilot document's figure captions not yet marked reviewed |

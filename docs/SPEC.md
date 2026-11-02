@@ -224,6 +224,52 @@ A **quantity** (`quantities/<key>.yaml`) has:
 
 Units are parsed with `pint`.
 
+**Forms of requirement** (accepted, 2026-11-02; details revised after an independent review). A requirement is **qualitative** or **quantitative**. What counts is that it is verifiable: it has a verification method and criteria, and no vague words (`content.writing`).
+- **Derived, never stored.** A requirement with at least one value slot is *quantitative*; one without is *qualitative*. The form is derived from the record, so it cannot drift.
+- **Shown everywhere.**
+  - The HTML marks each requirement with its form. It adds "numbers in text" when the reference-language statement still holds numbers outside slots; years are not counted.
+  - The same condition gives a note in `content.completeness` at `agreed` and above.
+  - The JSON export lists `forms`.
+- **The parse rule.** Only value slots are parsed: relation, numbers, tolerance, unit (`pint`), certainty, condition and goal. Checks and analysis codes never read numbers in prose.
+- **When to use a slot** (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references.
+- **Goals** (optional; the Rubin model is offered, not imposed).
+  - A slot with a limit (`le`, `lt`, `ge`, `gt`) and a value may carry `goal`: a number in the slot's unit, on the better side of the limit.
+  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "≥ [90 %]（目标92.5 %）".
+  - A goal is part of the approved content, so changing it is a `value` change.
+  - Consistency checks ignore goals.
+- **Rendering.** A provisional value has its brackets around the value and unit, not the relation ("≥ [90 %]"), as in the project's documents. There is a space before `%`, as SI requires, and none before angle symbols.
+- **A TBD slot carries no number:** no value, range or goal.
+- **A relation said twice.** A slot that carries its own relation sign, with a relation word next to it in the text ("at least {x}" reading "at least ≥ 40 %"), is a warning of `content.values`.
+
+**Converting between the forms** (accepted, 2026-11-02; details revised after an independent review).
+1. **Moving numbers into slots without changing the meaning:** `qingsong slot ID --file slots.yaml --by P [--dry-run]`.
+   - **Input.** For each slot, the file gives its fields and `replaces`, the literal it replaces in each language of the statement.
+   - **Accepted only when every literal:**
+     - occurs exactly once, and overlaps no other literal of the same move;
+     - is not part of a reference, link, footnote, code or mathematics;
+     - is not glued to a larger expression: a letter, a digit, an operator, a sign (−, ±) or a decimal point next to it;
+     - has no relation word ("at least", "不小于", "以上", …) or qualifier ("per", "total", "每", …) just outside it. Such a word must be included in the literal, so that the slot's data says what the sentence says;
+     - **reads the same as the slot's rendering**, up to a short, named list of formatting differences:
+       - spacing, except between two digits;
+       - thousands separators written without spaces;
+       - relation words written out ("more than", "不小于") against their signs;
+       - `µ`/`μ`, `um`, `percent`, `deg`;
+       - a unit written after both the value and the tolerance;
+       - a unit just after the brackets of a provisional value;
+       - a tolerance group in parentheses.
+
+     There is no grammar of its own: the one renderer is the parse rule. Letter case is kept, except in relation words and TBC/TBD, because units differ by case (mm and Mm).
+   - **Refused when:**
+     - the record has unrecorded changes, so nothing else can be carried into an approval;
+     - a slot's `{name}` already appears anywhere in the record's text.
+
+     A literal that also appears in the rationale, notes or criteria is reported; it stays in prose there.
+   - **What changes.** Only the literals change, to `{slot}`; the rest of the statement is untouched by construction. A translation that was current follows the new text and keeps its review status, because both languages change from one input. A stale translation stays stale. The normative revision is unchanged, so children, verifications and waivers are unaffected.
+   - **The approval** is re-bound to the new text only if it was current before. A stale approval stays stale.
+   - **The `slotted` event** records the normative hash before and after. `integrity.against` accepts a changed normative hash without a new normative revision only when `slotted` events since the reference lead, hash to hash, from the earlier hash to the current one. A value changed after the move is still caught.
+   - **Scope.** The move covers the statement. Numbers in the verification criteria stay in prose.
+2. **Changing what is required** is an ordinary `value` revision: a new normative revision, approval again, and children flagged. Examples: "high transmission" becomes "≥ 90 %", a number is removed, or a value changes.
+
 ### 5.3 Other record types
 
 | Type | ID pattern | Holds |
@@ -310,15 +356,59 @@ A document record holds:
 
 Section numbers and order belong to the document, never to requirement IDs. Earlier document numbers are kept as aliases.
 
-A **release** is cut by `qingsong release <DOC> <version>`. It:
-1. checks that no errors exist;
-2. writes a release entry: version, date, approvals and git tag `release/<DOC>/<version>`;
-3. renders the Word and HTML copies.
+**Release entries.** `releases` lists every issue of the document, oldest first. Each entry holds the version, date, summary `{en, zh}`, the person who released it, an optional note, `made_with_qingsong` and `tag`.
+- **Made with qingsong:** `tag` is `release/<DOC>/<version>`, and `engine` records the qingsong version that prepared it.
+- **Made before qingsong:** `tag` may name a git tag that an approver placed on the commit where the record was verified against the issued document. Later changes are then summarised against it. Without such a tag, the change summary needs an explicit starting point (`--since REF`).
 
-The **change summary** compares the document's requirements at the previous release tag with the current ones:
-- added and removed IDs;
-- revised IDs, with the classes and summaries of the history entries in between;
-- superseded and withdrawn IDs, with their successors.
+**Versions** are dotted numbers (`1.2`). A new version must be higher than every earlier one, compared number by number.
+
+**Releasing takes two steps,** so that the tag marks a reviewed and merged state (proposed, 2026-11-02; revised after an independent review the same day).
+1. **Prepare,** on a branch: `qingsong release prepare DOC V --by P --summary-en S --summary-zh S [--date D]`.
+   - **It refuses, listing every reason:**
+     - an error on the document, on a record in its outline, or an `integrity` error anywhere. An unrelated broken draft elsewhere does not block a release;
+     - P is not an approver;
+     - V is not higher than every earlier version;
+     - a current requirement or figure in the outline lacks a `reviewed`, current translation of a translated field (§7), whatever its maturity: everything printed in an issued document has been read in both languages.
+   - **What it writes.** It appends the release entry and records a `released` event in the document's history. Then it prints the change summary since the previous release. The approver reviews both in the pull request, like any other change.
+   - **Dates.** The entry's date is the date of the approver's release decision: today, unless `--date` is given. The tag carries its own date. Dates may not decrease from one release to the next.
+   - **Rerunning.** `prepare` may run again for the same version while the entry is not yet on the main branch. It then replaces the entry and checks everything again. Once the entry is on main, the version is closed; a correction is a new version.
+2. **Tag,** after the merge: `qingsong release tag DOC V`.
+   - **Which commit is tagged.** It finds the commit on the main branch's first-parent history that first contains the release entry, following renames of the document file. With a squash merge this is the squashed commit; with a merge commit it is the merge. That commit is tagged, whatever commits followed it. Later changes are not part of the release.
+   - **It refuses when:**
+     - no such commit exists;
+     - the vault at that commit has an error of the kinds listed under Prepare;
+     - the tag already exists.
+   - **The tag.** It creates the annotated tag `release/<DOC>/<V>` locally. Pushing the tag is a separate, deliberate `git push`.
+
+**Release entries are append-only.**
+- `documents.release` (error): versions are unique and increase in list order; dates do not decrease; a release made with qingsong names the tag `release/<DOC>/<version>`, its person is an approver, and it records `engine`. This also catches two versions prepared in parallel and merged one after the other.
+- `documents.release_tag`: when the vault is a git repository and a release's tag exists, the tagged commit must contain the same release entry (error). A missing tag is a note, because tagging follows the merge and CI clones may lack tags.
+- `integrity.against`: release entries present at the reference may not change or disappear, like history.
+
+**Issued copies are reproducible.**
+- **Rendering a release.** `qingsong render docx DOC --release V` reads the vault as it was at the release tag and renders it.
+- **Reading an earlier state.** The vault at a git reference is read from the raw stored files (`git ls-tree` and `git cat-file`). No checkout, archive filter or line-ending conversion is involved. A missing reference is an error.
+- **Engine versions.** Records are read with the current schemas. If an old state no longer loads, the message names the engine version recorded in the release (`engine`) to render it with.
+- **Storage.** The issued Word file is not stored in the vault. Its document properties carry the version and the tag.
+
+**The change summary.** `qingsong release changes DOC [--since V|REF] [--until REF]` compares two states of the document. By default it compares the latest release that has a tag with the working tree. With `--until`, the default start is the latest tagged release strictly before that point, and a start that is not earlier than the end is refused. If that release was made before qingsong, the summary is marked as approximate, since nothing checks that the tagged record matched the issued file. It lists:
+- requirements and figures added to the outline and removed from it. A record removed here but present in another document's outline is reported as **moved** to that document;
+- revised records:
+  - the history events whose revision is above the earlier state's revision, with their classes and summaries. If the earlier history is not a prefix of the later one, the summary says that history was rewritten;
+  - the fields that changed, with word-level differences in both languages on the HTML page, and the value slots before and after;
+  - aliases added or removed;
+- maturity changes, and lifecycle changes (superseded or withdrawn, with successors), reported apart from outline changes;
+- records **moved within** the document, from one section to another;
+- changes to the document's own text, by section key:
+  - a changed title, text block, table or definitions list is reported with the section's before and after;
+  - a section whose blocks only changed order is reported as **reordered**;
+  - blocks have no identity of their own, so a moved text block appears as a changed section;
+  - section keys must be unique and non-empty (`structure.outline`, error).
+- front-matter changes, other than the release list itself.
+
+Approvals, confirmations and translation reviews are listed apart from changes of content. A translation edited in the same event as its review is a content change.
+
+The HTML site shows the summary on each document's changes page ("Changes since v1.1"). In Word, the release's entry in the change record carries the summary the approver wrote. The Word copy shows the document as released, without revision marks: Word is a snapshot and one form of output, no longer the reference (decision of 2026-11-02).
 
 ### 5.6 Review: labelled issues and proposed fixes (proposed, 2026-11-02)
 
@@ -513,7 +603,37 @@ A `value` revision of an `agreed` or `baselined` requirement leaves its maturity
 | `change` | Unrecorded change (stamp). Suspect links. Stale approval, verification or waiver. Expired waiver. Baselined change without decision. Approval by a non-approver. Stale or unreviewed translation. |
 | `content` | Exactly one "shall". Vague terms (English and Chinese lists). Bare numbers in a statement (at `agreed` and above). Units valid and matching the quantity's dimension. Tolerance, rationale and verification present according to maturity. Required bilingual fields. |
 | `consistency` | One quantity with conflicting values in current requirements under the same conditions. A child limit looser than its parent's. An environmental range not covering its parent's. An issue past its due point. TBD in a baselined requirement. |
-| `documents` | Each current requirement in a namespace that some document scopes appears in exactly one document's outline. Acronyms resolve to the glossary. A release is blocked while errors exist. |
+| `documents` | Each current requirement in a namespace that some document scopes appears in exactly one document's outline. Acronyms resolve to the glossary. Release entries are well formed (§5.5). A release is blocked while errors exist. |
+
+**Consistency rules in detail** (proposed, 2026-11-02; revised after an independent review the same day).
+
+**The values a slot allows**, as an interval:
+- `le` gives everything up to the value, including it; `lt` excludes it.
+- `ge` gives everything from the value, including it; `gt` excludes it.
+- `eq` gives the value, widened by its tolerance, which is given in the slot's unit.
+- `approx` gives the value widened by its tolerance; without a tolerance, an `approx` slot is not compared.
+- `range` gives the range, ends included; a tolerance on a range is ignored.
+
+Open and closed ends are respected: `< 3` and `≥ 3` share no value, while `≤ 3` and `≥ 3` share one.
+
+**Which slots are compared:**
+- **Numbers.** Only slots that carry numbers. TBD slots are skipped; `provisional` and `tbc` slots are compared, and the message names their certainty.
+- **Units.** Numbers are converted to the quantity's unit with `pint`, ends first, so offset units such as °C convert correctly. Equality allows a relative difference of 10⁻⁹.
+- **Missing units.** A slot without a unit is compared only when its quantity is dimensionless. `content.values` warns about a slot whose quantity has a dimension but whose unit is missing.
+- **Several slots on one quantity.** Within one requirement they are combined first, so a minimum and a maximum written as two slots form one interval.
+- **The same condition.** The reference-language condition texts must match after case, spacing and final punctuation are normalised. No condition at all matches no condition.
+
+**The rules:**
+- `consistency.conflict` (warning): two current requirements allow no common value for one quantity under the same condition, and both cannot be met.
+  - Only requirements allocated to the same node, or to a node and its ancestor, are compared. A quantity used for two different objects then does not produce false conflicts.
+  - Variants are not compared.
+  - The finding is reported on both requirements.
+- `consistency.child_looser` (warning): along a `derives_from` link, the child's combined interval for a quantity under a condition must lie inside the parent's.
+  - A quantity marked `environmental: true` is a condition to be withstood, such as an operating temperature range. For it the direction is reversed: the child's range must cover the parent's.
+  - A budget share that is tighter than its parent passes, as it should.
+- `consistency.issue_due` (warning): an open issue whose `due` is a date (`YYYY-MM-DD`) before the day of the check. A due point that is a named event is not checked.
+
+TBD in a baselined requirement is already an error of `content.open_values`.
 | `external` | Sources carry sha256 and a path. Cited analysis records and files exist when the related repositories are configured. |
 
 ## 11. Commands (proposed)
@@ -524,7 +644,8 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 |---|---|---|
 | `qingsong init PATH` | create an empty vault | 1 |
 | `qingsong check [--against REF]` | run the rules (§10) | 1 |
-| `qingsong new <type> --namespace NS` | allocate an ID and write a skeleton | 1 |
+| `qingsong new requirement --namespace NS` | allocate an ID and write a skeleton | 1 |
+| `qingsong new TYPE --file DRAFT` | allocate an ID for a draft issue, decision, waiver, interface, condition, source or verification, and take it in | 5 |
 | `qingsong revise ID --class C --summary S [--decision D]` | record a change (§8.1) | 1 |
 | `qingsong adopt FILE --summary S` | take a hand-written record file in: adds revision, history and stamp | 1 |
 | `qingsong supersede OLD --with NEW…`, `qingsong withdraw ID --reason R` | lifecycle changes | 1 |
@@ -537,9 +658,11 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong issue raise`, `propose`, `accept`, `reject`, `close` | review items and proposed fixes (§5.6) | 3 |
 | `qingsong import docx FILE --document DOC` | draft records from a Word requirement table, with source locators | 2 |
 | `qingsong render html OUT`, `qingsong serve` | HTML site (§12.1) | 3 |
-| `qingsong render docx DOC --release V`, `qingsong release DOC V` | Word output and releases (§12.2) | 4 |
+| `qingsong render docx DOC [--release V]` | Word output, current or as issued (§12.2) | 4 |
+| `qingsong release prepare DOC V`, `release tag DOC V`, `release changes DOC` | releases and change summaries (§5.5) | 4 |
 | `qingsong baseline create NAME --review REF` | baselines | 6 |
-| `qingsong export json`, `qingsong export reqif` | exchange | later |
+| `qingsong export json` | all records and an index of value slots (§12.3) | 5 |
+| `qingsong export reqif` | exchange with other requirement tools | later |
 
 ## 12. Outputs (accepted principle; proposed design)
 
@@ -558,7 +681,13 @@ Views:
 - **Review package:** for a node's design review.
 - **Search:** in both languages.
 - **Check report.**
-- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note. Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; the page itself never writes to the record.
+- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from `people.yaml` (a single approver is preselected). Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; it refuses until a name is chosen. The page itself never writes to the record.
+- **Submitting decisions from the page** (proposed, 2026-11-02; awaiting the Project Scientist).
+  - **Local server.** `qingsong serve` serves the site from the vault on the reader's own machine, at `127.0.0.1` only.
+  - **The button.** When the page is served this way, a Submit button applies the marked decisions. It runs the same operations as the copied commands, on a new branch (`review/<date>-<person>`), and reports each result and the remaining findings.
+  - **Safeguard.** A secret generated for each session is embedded in the served page and required with every submission. Another web page open in the same browser therefore cannot post decisions.
+  - **When the page is opened as a file** there is no server, and "Copy decisions" stays.
+  - **Later.** Submitting through GitHub (the page opening a pull request) needs a sign-in in the page; it comes later, for reviewers who install nothing.
 - **Review marks in documents:** a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.
 
 Pages follow a light, print-friendly style written for scientists and engineers.
@@ -573,11 +702,28 @@ GitHub Pages is not used for private vaults: its sites are public unless the hos
 - reference documents;
 - bilingual requirement tables, with an optional alias column.
 
-A release may carry tracked changes against the previous release, written per requirement. The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
+A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
 
 ### 12.3 Exchange
 
-- JSON export of all records.
+- **JSON export** (proposed, 2026-11-02; revised after review). `qingsong export json [--output FILE] [--at REF | --release DOC/V]` writes one file, from the working tree or from an earlier state. It holds:
+  - **Header:**
+    - `format: qingsong-export` and `format_version`;
+    - the qingsong version and the project code;
+    - `commit`, which is the commit read, or HEAD for the working tree, and `dirty`, true when the working tree has uncommitted changes. Both are null outside a git repository.
+  - **`records`:** every record as stored, including its revision, normative revision and stamp.
+  - **`nodes`:** the tree, flattened, with each node's reference and parent.
+  - **`values`:** one entry per value slot of a current requirement, holding:
+    - the requirement, slot name, quantity, relation, numbers, unit, certainty, issue and condition, and the requirement's maturity, allocation, revision and normative revision;
+    - the numbers converted to the quantity's unit;
+    - the interval the slot allows (`low`, `high`, `low_open`, `high_open`) as defined above, or null if it is not comparable.
+
+  Rules for the output:
+  - Records are sorted by ID and slots by name, with keys in a fixed order, so two exports compare cleanly.
+  - It holds no absolute paths and no git author or host names.
+  - **Compatibility:** `format_version` changes only for a change that breaks readers, such as a removed or renamed key, or a changed meaning. New keys may be added without it.
+
+  Analysis code reads current values from the export instead of copying numbers out of a document. `--release` reproduces the numbers behind an issued document.
 - ReqIF later, for partners using DOORS or Polarion. This also keeps the data portable to other requirement tools.
 
 ## 13. Engine (accepted)
@@ -641,3 +787,5 @@ Version 0.1 (February 2026) is tagged `legacy-0.1`. It stored items in a Doorsto
 | 2026-11-02 | Check findings are labelled, highlighted in the HTML documents, carry proposed fixes, and are reviewed from one page reachable from the roadmap (§5.6). |
 | 2026-11-02 | Alternative versions are mainly other numbers and IDs (aliases); a requirement may also carry alternative wording (variants). |
 | 2026-11-02 | Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word. |
+| 2026-11-02 | Word is a snapshot and one form of output, not the reference. Released Word copies show the current text without revision marks; changes are read in the HTML. |
+| 2026-11-02 | Requirements may be qualitative or quantitative; verifiability is what counts. Each form is clearly marked; numeric values follow one parse rule (value slots). Goals in the Rubin manner are an option, not enforced. A number moves into a slot without reopening the approval when the move provably keeps the meaning (§5.2). |

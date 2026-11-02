@@ -277,7 +277,7 @@ def test_new_writes_the_text_in_the_origin_language(demo):
 
 def test_approval_binds_the_approved_wording(demo):
     def reword(data):
-        data["statement"]["en"] = data["statement"]["en"].replace("at least", "no less than")
+        data["statement"]["en"] = data["statement"]["en"].replace("transmit", "pass on")
 
     edit_yaml(requirement_file(demo, "INS-SYS-REQ-001"), reword)
     operations.revise(
@@ -346,3 +346,64 @@ def test_missing_git_does_not_crash(demo, monkeypatch):
     assert record.id == "INS-DET-REQ-002"
     findings = checks.run(load(demo), against="main")
     assert any(f.rule == "integrity.against" and "not found" in f.message for f in findings)
+
+
+def test_new_records_from_drafts(demo, tmp_path):
+    """IDs are allocated per type; the draft stays as written; the new records pass the check."""
+    from qingsong import checks
+
+    drafts = {
+        "decision": "title: {en: Use the slow mode, zh: 采用慢速模式}\ndate: 2026-11-02\nby: alice\n"
+        "statement: {en: The slow readout mode is the default., zh: 默认采用慢速读出模式。}\n",
+        "issue": "title: {en: Gain drift, zh: 增益漂移}\nkind: question\nstatus: open\n"
+        "description: {en: Does the gain drift with temperature?, zh: 增益是否随温度漂移？}\n",
+        "interface": "title: {en: Detector to optics, zh: 探测器与光学}\nowner_end: INS-DET\n"
+        "other_end: INS-OPT\n",
+        "condition": "title: {en: Humidity, zh: 湿度}\nnode: SITE\nevidence_basis: assumed\n",
+        "verification": "title: {en: Read noise test, zh: 读出噪声测试}\n"
+        "requirement: INS-DET-REQ-001\nrequirement_normative_revision: 1\nmethod: test\n"
+        "status: planned\n",
+    }
+    created = {}
+    for record_type, text in drafts.items():
+        draft = tmp_path / f"{record_type}.yaml"
+        draft.write_text(text, encoding="utf-8")
+        record = operations.new_from_draft(demo, record_type, draft, "alice", today=day)
+        created[record_type] = record.id
+        assert draft.read_text(encoding="utf-8") == text
+        assert record.history[0].event == "created"
+    assert created == {
+        "decision": "DEC-0002",
+        "issue": "ISS-0002",
+        "interface": "IFC-INS-001",
+        "condition": "SITE-COND-002",
+        "verification": "VER-INS-DET-REQ-001-01",
+    }
+    source = tmp_path / "source.yaml"
+    source.write_text("title: {en: Vendor sheet}\nkind: vendor_document\n", encoding="utf-8")
+    record = operations.new_from_draft(demo, "source", source, "alice", slug="VENDOR-1", today=day)
+    assert record.id == "SRC-VENDOR-1"
+    with pytest.raises(OperationError, match="already exists"):
+        operations.new_from_draft(demo, "source", source, "alice", slug="VENDOR-1", today=day)
+    errors = [
+        finding
+        for finding in checks.run(load(demo))
+        if finding.severity == "error" and finding.record in {*created.values(), record.id}
+    ]
+    assert errors == []
+
+
+def test_new_record_refuses_bad_drafts(demo, tmp_path):
+    draft = tmp_path / "draft.yaml"
+    draft.write_text("id: DEC-0009\ntitle: {en: X}\n", encoding="utf-8")
+    with pytest.raises(OperationError, match="must not contain id"):
+        operations.new_from_draft(demo, "decision", draft, "alice", today=day)
+    draft.write_text("type: issue\ntitle: {en: X}\n", encoding="utf-8")
+    with pytest.raises(OperationError, match="not a decision"):
+        operations.new_from_draft(demo, "decision", draft, "alice", today=day)
+    draft.write_text("title: {en: X}\n", encoding="utf-8")
+    with pytest.raises(OperationError, match="schema|required|Field"):
+        operations.new_from_draft(demo, "decision", draft, "alice", today=day)
+    assert not list((demo / "decisions").glob("DEC-0002*"))
+    with pytest.raises(OperationError, match="new requirement"):
+        operations.new_from_draft(demo, "requirement", draft, "alice", today=day)

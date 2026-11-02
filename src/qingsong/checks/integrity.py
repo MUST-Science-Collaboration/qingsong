@@ -1,5 +1,6 @@
 """Integrity rules: identifiers, paths, references, and comparison with an earlier version."""
 
+import json
 from collections.abc import Iterator
 from io import StringIO
 from pathlib import Path
@@ -313,6 +314,7 @@ def against_reference(context: Context) -> Iterator[Finding]:
         if (
             data.get("normative_hash") != record.normative_hash
             and data.get("normative_revision") == record.normative_revision
+            and not slotted_since(record, data.get("normative_hash"), data.get("revision"))
         ):
             yield Finding(
                 "integrity.against",
@@ -322,6 +324,8 @@ def against_reference(context: Context) -> Iterator[Finding]:
                 record=record_id,
                 fix="record the change as a 'value' change (qingsong revise --class value)",
             )
+        if isinstance(record, Document):
+            yield from changed_releases(record, data.get("releases") or [], ref)
         if lifecycle_rank.get(str(data.get("lifecycle")), 0) > lifecycle_rank[record.lifecycle]:
             yield Finding(
                 "integrity.against",
@@ -337,6 +341,44 @@ def against_reference(context: Context) -> Iterator[Finding]:
             file="tree",
             fix="nodes are retired (status: retired), never removed or moved",
         )
+
+
+def slotted_since(record, earlier_hash: object, earlier_revision: object) -> bool:
+    """The normative hash changed only by recorded moves of numbers into slots: the `slotted`
+    events since the reference lead, hash to hash, from the earlier hash to the current one."""
+    if not isinstance(earlier_revision, int):
+        return False
+    current = earlier_hash
+    moved = False
+    for event in record.history:
+        if event.revision <= earlier_revision or event.event != "slotted":
+            continue
+        if event.normative_hash_before != current:
+            return False
+        current, moved = event.normative_hash_after, True
+    return moved and current == record.normative_hash
+
+
+def comparable(value: object) -> object:
+    return json.loads(json.dumps(value, default=str, sort_keys=True))
+
+
+def changed_releases(document: Document, earlier: list, ref: str) -> Iterator[Finding]:
+    """Release entries are append-only; a release made before qingsong may gain its tag."""
+    current = [entry.model_dump(mode="json", exclude_none=True) for entry in document.releases]
+    for index, old in enumerate(earlier):
+        new = current[index] if index < len(current) else None
+        if new is not None and not new.get("made_with_qingsong") and "tag" not in old:
+            new = {key: value for key, value in new.items() if key != "tag"}
+        if new is None or comparable(old) != comparable(new):
+            version = old.get("version") if isinstance(old, dict) else index + 1
+            yield Finding(
+                "integrity.against",
+                "error",
+                f"release {version} recorded at {ref} was changed or removed",
+                record=document.id,
+                fix="release entries are append-only; a correction is a new version",
+            )
 
 
 def plain_event(event: dict) -> dict:

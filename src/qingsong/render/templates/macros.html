@@ -38,6 +38,8 @@
 {% endif %}
 {% endmacro %}
 
+{% macro form_badge(site, record) %}{% set form = site.form(record) %}<span class="badge form-{{ form }}" title="{{ site.form_hint(record) }}"><span class="lang en">{{ site.form_labels[form].en }}</span><span class="lang zh">{{ site.form_labels[form].zh }}</span>{% if site.numbers_in_text(record) %}<span class="lang en"> · numbers in text</span><span class="lang zh"> · 文中数值</span>{% endif %}</span>{% endmacro %}
+
 {% macro status_badges(record) %}
 {{ badge(record.maturity, "maturity-" ~ record.maturity) }}
 {% if record.lifecycle != "current" %}{{ badge(record.lifecycle, "lifecycle") }}{% endif %}
@@ -52,7 +54,7 @@
       <a class="rid" href="{{ prefix }}r/{{ record.id }}.html">{{ record.id }}</a>
       <span class="title">{{ site.text(record.title, prefix, document, block=False) }}</span>
     </div>
-    <div class="badges">{{ status_badges(record) }}
+    <div class="badges">{{ status_badges(record) }} {{ form_badge(site, record) }}
       {% for alias in record.aliases %}<span class="alias" title="{{ alias.kind }} ID in {{ alias.document }}">{{ alias.id }}</span>{% endfor %}
       {% if site.by_record.get(record.id) %}<a class="badge findings" href="{{ prefix }}r/{{ record.id }}.html#findings">{{ site.by_record[record.id]|length }} check notes</a>{% endif %}
     </div>
