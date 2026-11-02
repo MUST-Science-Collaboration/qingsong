@@ -114,3 +114,7 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 
   Each now has a regression test. Interval code needs tests at every combination of open, closed and infinite
   ends.
+- **CI has no git identity.** Five release tests passed locally and failed on every CI runner: `git tag -a` and
+  merge commits need a committer, which macOS derives from the host and a Linux runner does not. Reproduce CI
+  locally with `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly
+  GIT_CONFIG_VALUE_0=true`; test repositories set their own local identity.
