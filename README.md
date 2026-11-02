@@ -38,6 +38,7 @@ qingsong approve ID --to agreed --by PERSON --ref …
 qingsong issue raise --from-checks --by PERSON  # one issue per untracked finding
 qingsong issue propose ISS-0001 --file fix.yaml --by PERSON
 qingsong issue accept ISS-0001 --proposal 1 --by APPROVER
+qingsong issue apply decisions.yaml           # decisions saved from the review page, all or none
 qingsong render html site                       # open site/index.html, then site/review.html
 qingsong render docx DOC out.docx --version 1.2
 qingsong release changes DOC                    # what changed since the last tagged release

@@ -4,9 +4,10 @@
 {% block body %}
 <h1>Review</h1>
 <p class="lead">Every open question, open value and check finding, with its label and any proposed fix.
-Mark proposals Accept or Reject, choose your name, then use "Copy decisions": it writes the <code>qingsong issue</code> commands
-that apply them. To submit them, paste them to your agent, or run them yourself in the record repository on a branch and open a
-pull request. This page never changes the record.</p>
+Mark proposals Accept or Reject, choose your name, then use "Save decisions": it downloads a decisions file. Hand the file to
+your agent, or apply it yourself with <code>qingsong issue apply FILE</code> in the record repository. All the decisions apply
+together or none does, and a proposal that changed after this page was made is refused. "Copy decisions" copies the same text,
+to paste to an agent. This page never changes the record.</p>
 
 <div class="review-summary">
   <button type="button" class="tile" data-filter="state" data-value="proposed"><b>{{ states.proposed or 0 }}</b> fix proposed</button>
@@ -33,6 +34,7 @@ pull request. This page never changes the record.</p>
     {% if vault.people %}{% for person_id, person in vault.people.people.items() %}<option value="{{ person_id }}">{{ person.name }} ({{ person_id }}){% if person.approver %} · approver{% endif %}</option>{% endfor %}{% endif %}
   </select></label>
   <span id="decision-count">0 marked</span>
+  <button type="button" id="save-decisions">Save decisions</button>
   <button type="button" id="copy-decisions">Copy decisions</button>
   <button type="button" id="clear-decisions">Clear marks</button>
   <textarea id="decision-output" rows="6" readonly hidden></textarea>

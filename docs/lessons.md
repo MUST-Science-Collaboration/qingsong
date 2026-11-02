@@ -139,3 +139,15 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   - an "accepted as written" decision did not survive a move that kept the meaning.
 
   Each was fixed with a test before the record was changed.
+
+## 12. Decisions files (2026-11-02)
+
+- **Record what was read when it was read.** Marks on the review page outlive a re-rendered page. Taking a
+  proposal's hash when the file is saved would vouch for a version the reviewer may never have seen. The hash is
+  taken when the proposal is marked, and a mark whose proposal has changed since is dropped on loading.
+- **Check everything before writing anything, then still be ready to undo.** The decisions file checks every
+  decision first and reports all problems at once. It also restores every file if a step fails later, because
+  the checks repeat only part of what the operations enforce.
+- **Run the page's own script, not a copy of its logic.** Running `review.js` in Node against a rendered page,
+  then applying the downloaded file, tested the format the page actually writes, quotes and Chinese text
+  included.

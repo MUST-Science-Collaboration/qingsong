@@ -726,6 +726,73 @@ def issue_close(
     done(record, as_json, "closed")
 
 
+@issue_app.command("apply")
+def issue_apply(
+    file: Annotated[Path, typer.Argument(help="Decisions file saved from the review page.")],
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Apply a decisions file from the review page: all its decisions, or none."""
+    from qingsong import decisions_file
+
+    root = vault_root(vault)
+    try:
+        result = decisions_file.apply(root, file.resolve(), via)
+    except OperationError as error:
+        fail(error, as_json)
+    touched = {item.id for entry in result.applied for item in entry.written}
+    remaining = [
+        finding
+        for finding in checks.run(load(root))
+        if finding.record in touched and finding.severity == "error"
+    ]
+    kept = result.kept.relative_to(root).as_posix()
+    lines = [
+        f"applied {len(result.applied)} decision{'' if len(result.applied) == 1 else 's'} "
+        f"by {result.decided_by}"
+        + (f" on the branch {result.branch}" if result.branch else "")
+        + (" (new)" if result.started_branch else "")
+    ]
+    for entry in result.applied:
+        decision = entry.decision
+        verb = "accepted" if decision.decision == "accept" else "rejected"
+        revised = [item for item in entry.written if item.id != decision.issue]
+        lines.append(
+            f"{verb} {decision.issue} proposal {decision.proposal}"
+            + (
+                ": " + ", ".join(f"{item.id} at revision {item.revision}" for item in revised)
+                if revised
+                else ""
+            )
+        )
+    lines.append(f"kept the file as {kept}")
+    lines.extend(f"still to do: {finding.line()}" for finding in remaining)
+    lines.append("nothing is committed: commit the changes, then merge as for any change")
+    emit(
+        {
+            "decided_by": result.decided_by,
+            "branch": result.branch,
+            "started_branch": result.started_branch,
+            "kept": kept,
+            "applied": [
+                {
+                    "issue": entry.decision.issue,
+                    "proposal": entry.decision.proposal,
+                    "decision": entry.decision.decision,
+                    "written": [
+                        {"id": item.id, "revision": item.revision} for item in entry.written
+                    ],
+                }
+                for entry in result.applied
+            ],
+            "errors": [finding.as_dict() for finding in remaining],
+        },
+        as_json,
+        "\n".join(lines),
+    )
+
+
 render_app = typer.Typer(no_args_is_help=True, help="Generate documents from the records.")
 app.add_typer(render_app, name="render")
 

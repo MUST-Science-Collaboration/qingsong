@@ -1,6 +1,7 @@
 (function () {
   "use strict";
-  // Review page: filters, and decisions kept in this browser until copied as commands.
+  // Review page: filters, and decisions kept in this browser until saved as a decisions file
+  // (docs/SPEC.md §5.6).
   var project = document.body.dataset.project || "";
   var decisionKey = "qingsong-review-decisions:" + project;
   var reviewerKey = "qingsong-reviewer:" + project;
@@ -14,12 +15,17 @@
   var decisions = {};
   try { decisions = JSON.parse(read(decisionKey, "{}")) || {}; } catch (error) { decisions = {}; }
   function saveDecisions() { write(decisionKey, JSON.stringify(decisions)); }
-  // Keep only marks for proposals that are still open on this page (decided ones drop out).
-  var openKeys = {};
+  // Keep only marks for proposals that are still open on this page and read as they are now: a
+  // mark made on a proposal that has changed since is dropped, so it is read again.
+  var open_hashes = {};
   document.querySelectorAll(".issue-card .proposal[data-key]").forEach(function (box) {
-    if (box.querySelector("button[data-decision]")) { openKeys[box.dataset.key] = true; }
+    if (box.querySelector("button[data-decision]")) { open_hashes[box.dataset.key] = box.dataset.hash || ""; }
   });
-  Object.keys(decisions).forEach(function (key) { if (!openKeys[key]) { delete decisions[key]; } });
+  var dropped = [];
+  Object.keys(decisions).forEach(function (key) {
+    if (!(key in open_hashes)) { delete decisions[key]; return; }
+    if (decisions[key].hash !== open_hashes[key]) { delete decisions[key]; dropped.push(key.replace("#", " proposal ")); }
+  });
   saveDecisions();
 
   // Filters ------------------------------------------------------------------------------------
@@ -81,7 +87,7 @@
         if (current && current.decision === button.dataset.decision) {
           delete decisions[key];
         } else {
-          decisions[key] = {decision: button.dataset.decision, note: note ? note.value : ""};
+          decisions[key] = {decision: button.dataset.decision, note: note ? note.value : "", hash: box.dataset.hash || ""};
         }
         saveDecisions(); paint(); showCount();
       });
@@ -102,49 +108,92 @@
     reviewer.value = known ? remembered : "";
     reviewer.addEventListener("change", function () { write(reviewerKey, reviewer.value); });
   }
-  function quote(text) { return "'" + String(text).replace(/'/g, "'\\''") + "'"; }
-  function byIssueAndNumber(first, second) {
+  function by_issue_and_number(first, second) {
     var a = first.split("#"), b = second.split("#");
     return a[0] === b[0] ? Number(a[1]) - Number(b[1]) : (a[0] < b[0] ? -1 : 1);
   }
-  function commands() {
-    var person = quote(reviewer ? reviewer.value : "");
-    var lines = [];
-    // Rejections first: accepting a proposal closes its issue and rejects the others.
-    var keys = Object.keys(decisions).sort(byIssueAndNumber);
-    keys.sort(function (first, second) {
-      var a = decisions[first].decision === "accept" ? 1 : 0, b = decisions[second].decision === "accept" ? 1 : 0;
-      return a - b || byIssueAndNumber(first, second);
+  // A JSON string is also a YAML double-quoted string once the characters YAML reads as line
+  // breaks or refuses (DEL, C1 controls, NEL, line and paragraph separators, BOM) are escaped.
+  function yaml_string(text) {
+    return JSON.stringify(String(text)).replace(/[\u007f-\u009f\u2028\u2029\ufeff]/g, function (character) {
+      return "\\u" + ("000" + character.charCodeAt(0).toString(16)).slice(-4);
     });
-    keys.forEach(function (key) {
+  }
+  function two_digits(number) { return (number < 10 ? "0" : "") + number; }
+  function local_date(moment) {
+    return moment.getFullYear() + "-" + two_digits(moment.getMonth() + 1) + "-" + two_digits(moment.getDate());
+  }
+  function decisions_text() {
+    var lines = [
+      "# Review decisions. Apply them with: qingsong issue apply FILE",
+      "format: qingsong-decisions/1",
+      "project: " + yaml_string(project),
+      "decided_by: " + yaml_string(reviewer ? reviewer.value : ""),
+      "saved: " + yaml_string(new Date().toISOString()),
+      "decisions:"
+    ];
+    Object.keys(decisions).sort(by_issue_and_number).forEach(function (key) {
       var parts = key.split("#"), decision = decisions[key];
-      if (decision.decision === "accept") {
-        if (decision.note) { lines.push("# " + parts[0] + " proposal " + parts[1] + ": " + decision.note.replace(/\n/g, " ")); }
-        lines.push("qingsong issue accept " + parts[0] + " --proposal " + parts[1] + " --by " + person);
-      } else {
-        lines.push("qingsong issue reject " + parts[0] + " --proposal " + parts[1] + " --by " + person +
-          " --reason " + quote(decision.note || "rejected in review"));
-      }
+      lines.push("  - issue: " + yaml_string(parts[0]));
+      lines.push("    proposal: " + Number(parts[1]));
+      lines.push("    decision: " + (decision.decision === "accept" ? "accept" : "reject"));
+      if (decision.note && decision.note.trim()) { lines.push("    note: " + yaml_string(decision.note.trim())); }
+      lines.push("    proposal_hash: " + yaml_string(decision.hash || ""));
     });
-    return lines.join("\n");
+    return lines.join("\n") + "\n";
   }
   var output = document.getElementById("decision-output");
+  function show(text) {
+    if (!output) { return; }
+    output.hidden = false;
+    output.value = text;
+  }
+  if (dropped.length) {
+    show("# These marks were dropped because the proposal changed since you marked it; read it again:\n# " + dropped.join(", "));
+  }
+  function ready() {
+    if (reviewer && !reviewer.value) {
+      show("# Choose your name under \"You are\" first: the file records who decided.");
+      reviewer.focus();
+      return false;
+    }
+    if (!Object.keys(decisions).length) {
+      show("# No proposal is marked yet.");
+      return false;
+    }
+    return true;
+  }
+  function flash(button, text, label) {
+    button.textContent = text;
+    setTimeout(function () { button.textContent = label; }, 2500);
+  }
+  var save = document.getElementById("save-decisions");
+  if (save) {
+    save.addEventListener("click", function () {
+      if (!ready()) { return; }
+      var text = decisions_text();
+      show(text);
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([text], {type: "text/yaml;charset=utf-8"}));
+      link.download = "decisions_" + (project || "review") + "_" + local_date(new Date()) + "_" + (reviewer ? reviewer.value : "") + ".yaml";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(link.href); }, 2000);
+      flash(save, "Saved", "Save decisions");
+    });
+  }
   var copy = document.getElementById("copy-decisions");
-  if (copy && output) {
+  if (copy) {
     copy.addEventListener("click", function () {
-      if (reviewer && !reviewer.value) {
-        output.hidden = false;
-        output.value = "# Choose your name under \"You are\" first: the commands record who decided.";
-        reviewer.focus();
-        return;
-      }
-      var text = commands();
-      output.hidden = false;
-      output.value = text || "# No proposal is marked yet.";
-      output.focus(); output.select();
-      if (text && navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function () { copy.textContent = "Copied"; }, function () { copy.textContent = "Select and copy"; });
-        setTimeout(function () { copy.textContent = "Copy decisions"; }, 2500);
+      if (!ready()) { return; }
+      var text = decisions_text();
+      show(text);
+      if (output) { output.focus(); output.select(); }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(
+          function () { flash(copy, "Copied", "Copy decisions"); },
+          function () { flash(copy, "Select and copy", "Copy decisions"); });
       }
     });
   }

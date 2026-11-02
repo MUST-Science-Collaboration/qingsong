@@ -60,6 +60,44 @@ def is_dirty(root: Path) -> bool:
     return bool(run_git(root, "status", "--porcelain", "--", ".").stdout.strip())
 
 
+def current_branch(root: Path) -> str | None:
+    """The checked-out branch; None for a detached HEAD or outside a repository."""
+    result = run_git(root, "symbolic-ref", "--quiet", "--short", "HEAD")
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def branch_exists(root: Path, name: str) -> bool:
+    return ref_exists(root, f"refs/heads/{name}")
+
+
+def switch_to_new_branch(root: Path, name: str) -> None:
+    """Start a branch at HEAD and check it out; uncommitted changes come along."""
+    result = run_git(root, "switch", "--quiet", "-c", name)
+    if result.returncode != 0:
+        raise GitError(result.stderr.strip() or f"git switch -c {name} failed")
+
+
+def uncommitted_paths(root: Path) -> list[Path]:
+    """Absolute paths of uncommitted changes, untracked files included, inside the vault folder."""
+    top = run_git(root, "rev-parse", "--show-toplevel").stdout.strip()
+    if not top:
+        return []
+    output = run_git(root, "status", "--porcelain=v1", "-z", "--untracked-files=all", "--", ".")
+    entries = output.stdout.split("\0")
+    paths, index = [], 0
+    while index < len(entries):
+        entry = entries[index]
+        index += 1
+        if len(entry) < 4:
+            continue
+        paths.append(Path(top) / entry[3:])
+        if entry[0] in "RC":
+            index += 1  # a rename or copy is followed by its original path
+    return paths
+
+
 def tag_exists(root: Path, tag: str) -> bool:
     return run_git(root, "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}").returncode == 0
 

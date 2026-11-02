@@ -52,6 +52,7 @@ A vault is a git repository with a `qingsong.toml` file at its root.
   interfaces/ issues/ decisions/ verifications/ waivers/ sources/ baselines/
   documents/<DOC>.yaml    generated-document definitions (§5.5)
   figures/<SYSTEM>/      figure records and image files (§5.4)
+  reviews/<date>_<person>.yaml   decisions files as applied (§5.6)
   templates/              reference style for Word output
 ```
 
@@ -460,7 +461,39 @@ A proposal without changes proposes to **keep the text as written**.
    - `qingsong issue reject ISS --proposal N --reason R` rejects one proposal.
    - `qingsong issue close ISS --outcome answered|withdrawn|fixed --resolution R` closes an issue without a proposal. `fixed` is for a fix made by a separate recorded revision.
    - A keep proposal is refused for an issue that tracks no rule on any record, because it would suppress nothing.
-4. **Agents** prepare proposals; people decide. The HTML review page writes the decisions as commands (§12.1), which an agent or the approver runs.
+4. **Agents** prepare proposals; people decide. The HTML review page saves the decisions as a decisions file (§12.1), which `qingsong issue apply` applies.
+
+**Decisions file** (accepted 2026-11-02). One reviewer's decisions from one sitting:
+
+```yaml
+format: qingsong-decisions/1
+project: DEMO
+decided_by: alice
+saved: 2026-11-02T15:40:00Z
+decisions:
+  - issue: ISS-0001
+    proposal: 2
+    decision: accept           # or reject
+    note: "optional; the reason when rejecting"
+    proposal_hash: 0123456789abcdef
+    decision_record: DEC-0001  # only to accept a change to a baselined record
+```
+
+`qingsong issue apply FILE`:
+- **Checks every decision before writing anything,** and reports every problem at once:
+  - the project code matches the vault;
+  - the person is in `people.yaml`; accepting needs an approver, and rejecting needs an approver or the proposal's author;
+  - the issue is open and the proposal is still proposed;
+  - **the proposal is the one the reviewer read:** `proposal_hash` covers its summary, change class and changes, so a proposal edited after the page was made is refused;
+  - an accepted proposal is not out of date (its base hashes still match), and its records are current, have no unrecorded changes, and, when baselined, come with a `decision_record`;
+  - at most one proposal per issue is accepted, no two accepted proposals change the same field of a record, and no proposal is decided twice;
+  - on `main`, no branch named `review` blocks the review branch.
+- **Applies all or nothing.** Rejections go first, then acceptances, each through `issue reject` and `issue accept`. If any step fails, every file is restored and nothing is applied. A rejection's note becomes its reason, in Chinese if it contains Chinese characters, and "rejected in review" without a note. An acceptance's note stays in the kept file.
+- **Never writes on the main branch.** In a git vault on `main`, it starts the branch `review/<date>-<person>`; with uncommitted changes there it refuses.
+- **Keeps the file** in `reviews/<date>_<person>.yaml` (`_2`, `_3` for later sittings that day), byte for byte as saved. The issue histories record the decisions; the file keeps the notes and what the reviewer saw.
+- **It commits nothing.** The approver, or an agent, commits and merges as for any change.
+
+Out of scope: a local server or a Submit button (evaluated 2026-11-02). A page that writes to the record needs a server, which §1 excludes, and a network-facing write path to secure and maintain beside the commands.
 
 **Checks:**
 - A tracked finding keeps its severity and names its issue.
@@ -656,6 +689,7 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong show ID`, `qingsong list [filters]`, `qingsong find TEXT` | read | 1 |
 | `qingsong schema [TYPE]` | print the JSON Schema for editors and agents | 1 |
 | `qingsong issue raise`, `propose`, `accept`, `reject`, `close` | review items and proposed fixes (§5.6) | 3 |
+| `qingsong issue apply FILE` | apply a decisions file from the review page, all or nothing (§5.6) | 3 |
 | `qingsong import docx FILE --document DOC` | draft records from a Word requirement table, with source locators | 2 |
 | `qingsong render html OUT`, `qingsong serve` | HTML site (§12.1) | 3 |
 | `qingsong render docx DOC [--release V]` | Word output, current or as issued (§12.2) | 4 |
@@ -681,13 +715,8 @@ Views:
 - **Review package:** for a node's design review.
 - **Search:** in both languages.
 - **Check report.**
-- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from `people.yaml` (a single approver is preselected). Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; it refuses until a name is chosen. The page itself never writes to the record.
-- **Submitting decisions from the page** (proposed, 2026-11-02; awaiting the Project Scientist).
-  - **Local server.** `qingsong serve` serves the site from the vault on the reader's own machine, at `127.0.0.1` only.
-  - **The button.** When the page is served this way, a Submit button applies the marked decisions. It runs the same operations as the copied commands, on a new branch (`review/<date>-<person>`), and reports each result and the remaining findings.
-  - **Safeguard.** A secret generated for each session is embedded in the served page and required with every submission. Another web page open in the same browser therefore cannot post decisions.
-  - **When the page is opened as a file** there is no server, and "Copy decisions" stays.
-  - **Later.** Submitting through GitHub (the page opening a pull request) needs a sign-in in the page; it comes later, for reviewers who install nothing.
+- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from `people.yaml` (a single approver is preselected). Marks are kept in the browser. "Save decisions" downloads them as a decisions file (§5.6), and "Copy decisions" copies the same text to paste to an agent; both refuse until a name is chosen. Each proposal on the page carries its `proposal_hash`. The page itself never writes to the record.
+- **Later.** Submitting through GitHub (the page opening a pull request) needs a sign-in in the page; it comes later, for reviewers who install nothing.
 - **Review marks in documents:** a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.
 
 Pages follow a light, print-friendly style written for scientists and engineers.
@@ -789,3 +818,4 @@ Version 0.1 (February 2026) is tagged `legacy-0.1`. It stored items in a Doorsto
 | 2026-11-02 | Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word. |
 | 2026-11-02 | Word is a snapshot and one form of output, not the reference. Released Word copies show the current text without revision marks; changes are read in the HTML. |
 | 2026-11-02 | Requirements may be qualitative or quantitative; verifiability is what counts. Each form is clearly marked; numeric values follow one parse rule (value slots). Goals in the Rubin manner are an option, not enforced. A number moves into a slot without reopening the approval when the move provably keeps the meaning (§5.2). |
+| 2026-11-02 | Review decisions leave the page as a decisions file, applied all or nothing by `qingsong issue apply` and kept in the record. No local server or Submit button (§5.6). |
