@@ -96,7 +96,7 @@ def normalized(text: str) -> str:
     text = re.sub(r"(?<!\d) | (?!\d)", "", text)
     # A unit written after both the value and the tolerance: "140μm±2μm" reads as "140±2μm".
     text = re.sub(r"(\d)([^\d±+/()\[\]−\- ]+)±([\d.]+)\2(?![^\W\d_])", r"\1±\3\2", text)
-    # A unit just after the brackets of a provisional value: "[20000]mm" reads as "[20000mm]".
+    # A unit just after the brackets of a provisional value: "[12000]mm" reads as "[12000mm]".
     text = re.sub(r"\[([^\[\]]+)\]([^\d\s\[\]()±,.;:，。；：]+)", r"[\1\2]", text)
     # A tolerance group in parentheses before an attached unit: "(20±0.5)%" reads as "20±0.5%".
     text = re.sub(r"\(([\d.]+±[\d.]+)\)", r"\1", text)
