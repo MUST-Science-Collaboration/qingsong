@@ -260,7 +260,7 @@ def test_the_command_applies_a_file(demo, tmp_path):
     path = write_decisions(tmp_path, "alice", entries)
     result = CliRunner().invoke(app, ["issue", "apply", str(path), "--vault", str(demo)])
     assert result.exit_code == 0, result.output
-    assert "applied 1 decisions by alice" in result.output
+    assert "applied 1 decision by alice" in result.output
     assert "accepted ISS-0001 proposal 1: INS-DET-REQ-001 at revision" in result.output
     assert "kept the file as reviews/" in result.output
     again = CliRunner().invoke(app, ["issue", "apply", str(path), "--vault", str(demo)])

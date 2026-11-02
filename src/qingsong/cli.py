@@ -749,7 +749,8 @@ def issue_apply(
     ]
     kept = result.kept.relative_to(root).as_posix()
     lines = [
-        f"applied {len(result.applied)} decisions by {result.decided_by}"
+        f"applied {len(result.applied)} decision{'' if len(result.applied) == 1 else 's'} "
+        f"by {result.decided_by}"
         + (f" on the branch {result.branch}" if result.branch else "")
         + (" (new)" if result.started_branch else "")
     ]
