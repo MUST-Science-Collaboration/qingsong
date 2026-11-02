@@ -224,21 +224,38 @@ A **quantity** (`quantities/<key>.yaml`) has:
 
 Units are parsed with `pint`.
 
-**Moving numbers from prose into slots** (proposed, 2026-11-02; awaiting the Project Scientist's decision). A requirement imported from a Word document holds its numbers in prose. A number must move into a slot before the consistency rules (§10) can compare it or the JSON export (§12.3) can list it. Such a move changes nothing a reader sees, so it should not reopen approvals or flag children.
+**Forms of requirement** (accepted, 2026-11-02). A requirement is **qualitative** or **quantitative**. What counts is that it is verifiable: it has a verification method and criteria, and no vague words (`content.writing`).
+- **Derived, never stored.** The form is derived from the record, so it cannot drift:
+  - a requirement with at least one value slot is *quantitative*;
+  - one without slots is *qualitative*;
+  - a qualitative statement that still contains numbers is marked *numbers in text*: readable, but not read by machines.
+- **Shown everywhere.** The HTML shows each requirement's form and lets readers filter by it. The JSON export carries `form`.
+- **The parse rule.** Only value slots are parsed: relation, numbers, tolerance, unit (`pint`), certainty, condition and goal. Checks and analysis codes never read numbers in prose.
+- **When to use a slot** (guidance, not enforced). Use one for a number that another requirement, an interface, a budget or an analysis code depends on. Context numbers stay in prose: standard numbers, dates, references. A number left in an approved statement remains a note (`content.completeness`).
+- **Goals** (optional; the Rubin model is offered, not imposed).
+  - A slot may carry `goal`: a number in the slot's unit, on the better side of a limit: at or below an `le`/`lt` limit, at or above a `ge`/`gt` limit.
+  - It renders as "≥ [90 %] (goal 92.5 %)", in Chinese "（目标92.5 %）".
+  - A goal is not a requirement. Checks ignore it except for its side, and the export lists it.
+  - Other slot types do not take a goal.
+- **Provisional values** render with the brackets around the value, not the relation ("≥ [90 %]"), as in the project's documents.
 
-1. **The operation.** `qingsong slot ID --file slots.yaml --by P` takes, for each slot:
-   - its name;
-   - the literal text it replaces, in each language;
-   - its fields: quantity, relation, value, tolerance, unit, certainty, issue and condition.
-
-   It replaces each literal with `{name}` and adds the slots. Then it renders the statement and criteria in every language. It refuses unless:
-   - each literal occurs exactly once;
-   - the rendered text is identical, character for character, to the text before.
-
-   It records an `editorial` event of kind `slotted` ("values moved into slots; the text reads the same"). The normative revision is unchanged.
-2. **Approvals bind the rendered text.** An approval's text hash is computed over the statement and criteria as rendered, with slots filled in. For a statement without slots this equals today's hash, so existing approvals stay valid.
-3. **Checks accept the move.** `revise` and `integrity.against` accept a changed normative hash without a new normative revision only after a `slotted` event, and only when the rendered text at the reference equals the rendered text now.
-4. **Quantities** are created once per physical quantity and project, e.g. `detector.read_noise`, and shared by every requirement that constrains it.
+**Converting between the forms** (accepted, 2026-11-02).
+1. **Moving numbers into slots without changing the meaning:** `qingsong slot ID --file slots.yaml --by P`.
+   - **Input.** For each slot, the file gives its fields and the literal text it replaces in each language of the statement.
+   - **The literal is parsed.** The grammar covers:
+     - a relation sign: `=`, `≤`/`<=`, `<`, `≥`/`>=`, `>`, `≈`/`~`, or none for equality;
+     - numbers with thousands separators;
+     - a range `a–b`;
+     - `± t` or `+a/−b`;
+     - a unit before or after the tolerance;
+     - square brackets for provisional;
+     - `(TBC)`/`（待确认）` and `TBD`/`待定`;
+     - an optional `(goal x)`/`（目标x）`.
+   - **The literal must mean exactly the slot:** the same relation, numbers equal after unit conversion, the same certainty and the same goal. The literal must occur exactly once in each language.
+   - **The text is rewritten.** Each literal becomes `{slot}`, so the text then reads in the standard rendering. A different spacing or unit position is possible, for example "140 μm ± 2 μm" becomes "140 ± 2 μm". The operation prints the text before and after.
+   - **Recording.** It records an `editorial` change with event `slotted`. The normative revision is unchanged, and the normative hash is rewritten. An existing approval is re-bound to the new text, because the meaning was shown to be the same. The approval keeps its person, date and reference, and the history event says why.
+   - **Checks.** `integrity.against` accepts a changed normative hash without a new normative revision only when a `slotted` event was recorded since the reference.
+2. **Changing what is required** is an ordinary `value` revision: a new normative revision, approval again, and children flagged. Examples: a qualitative "high transmission" becomes "≥ 90 %", a number is removed, or a value changes.
 
 ### 5.3 Other record types
 
@@ -752,3 +769,4 @@ Version 0.1 (February 2026) is tagged `legacy-0.1`. It stored items in a Doorsto
 | 2026-11-02 | Alternative versions are mainly other numbers and IDs (aliases); a requirement may also carry alternative wording (variants). |
 | 2026-11-02 | Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word. |
 | 2026-11-02 | Word is a snapshot and one form of output, not the reference. Released Word copies show the current text without revision marks; changes are read in the HTML. |
+| 2026-11-02 | Requirements may be qualitative or quantitative; verifiability is what counts. Each form is clearly marked; numeric values follow one parse rule (value slots). Goals in the Rubin manner are an option, not enforced. A number moves into a slot without reopening the approval when the move provably keeps the meaning (§5.2). |
