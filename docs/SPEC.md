@@ -265,7 +265,7 @@ Units are parsed with `pint`.
 
      A literal that also appears in the rationale, notes or criteria is reported; it stays in prose there.
    - **What changes.** Only the literals change, to `{slot}`; the rest of the statement is untouched by construction. A translation that was current follows the new text and keeps its review status, because both languages change from one input. A stale translation stays stale. The normative revision is unchanged, so children, verifications and waivers are unaffected.
-   - **The approval** is re-bound to the new text only if it was current before. A stale approval stays stale.
+   - **The approval** is re-bound to the new text only if it was current before. A stale approval stays stale. An "accepted as written" decision (§5.6) is carried over the same way, with a history entry on its issue.
    - **The `slotted` event** records the normative hash before and after. `integrity.against` accepts a changed normative hash without a new normative revision only when `slotted` events since the reference lead, hash to hash, from the earlier hash to the current one. A value changed after the move is still caught.
    - **Scope.** The move covers the statement. Numbers in the verification criteria stay in prose.
 2. **Changing what is required** is an ordinary `value` revision: a new normative revision, approval again, and children flagged. Examples: "high transmission" becomes "≥ 90 %", a number is removed, or a value changes.
