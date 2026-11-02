@@ -393,7 +393,7 @@ def draft_identity(vault: Vault, record_type: str, data: CommentedMap, slug: str
     """The ID a new record of this type receives (docs/SPEC.md §5.3, §6.1)."""
     if record_type == "source":
         if not slug:
-            raise OperationError("a source needs --slug, e.g. MUST-FPS-FIB-RD-v1.1")
+            raise OperationError("a source needs --slug, e.g. DEMO-INS-DET-RD-v1.0")
         record_id = f"SRC-{slug}"
         if not ids.id_matches("source", record_id):
             raise OperationError(f"{record_id} is not a valid source ID")
