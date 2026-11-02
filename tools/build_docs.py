@@ -446,11 +446,27 @@ module_groups = [
 module_path_pattern = re.compile(r"\b(?:[a-z_][a-z0-9_]*\.)+(?=[A-Za-z_])")
 
 
+def without_optional(text: str) -> str:
+    """`Optional[X]` written as `X | None`, as Python 3.14 prints it, so that the reference does
+    not depend on the Python version that builds it."""
+    start = text.find("Optional[")
+    while start != -1:
+        depth, index = 0, start + len("Optional")
+        for index in range(start + len("Optional"), len(text)):
+            depth += {"[": 1, "]": -1}.get(text[index], 0)
+            if depth == 0:
+                break
+        inner = text[start + len("Optional[") : index]
+        text = text[:start] + f"{inner} | None" + text[index + 1 :]
+        start = text.find("Optional[")
+    return text
+
+
 def short_annotation(annotation) -> str:
     if annotation is inspect.Parameter.empty:
         return ""
     text = inspect.formatannotation(annotation)
-    return module_path_pattern.sub("", text)
+    return without_optional(module_path_pattern.sub("", text))
 
 
 def signature_of(function, wrap: bool = True) -> str:
@@ -521,7 +537,7 @@ def field_rows(item) -> list[tuple[str, str, str]]:
 
     rows = []
     if issubclass(item, BaseModel):
-        own = item.__dict__.get("__annotations__", {})
+        own = inspect.get_annotations(item)  # the class's own; not in __dict__ from Python 3.14
         for name, field in item.model_fields.items():
             if name not in own:
                 continue

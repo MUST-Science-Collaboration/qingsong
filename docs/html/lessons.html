@@ -234,6 +234,11 @@ lacks (a requirement left out of its document).</li>
 <li><strong>A test that mixes the real date with a fixed one is a time bomb.</strong> It passed the day it was written
 and failed the next, because history dates must not go backwards. Every call in a test takes the
 fixed date.</li>
+<li><strong>Generated text must not depend on the Python that generates it.</strong> The API reference passed on
+3.11 to 3.13 and failed CI on 3.14. Python 3.14 no longer keeps a class's annotations in its
+<code>__dict__</code>, so the field tables vanished, and it prints <code>Optional[X]</code> as <code>X | None</code>. The builder now
+uses <code>inspect.get_annotations</code> and writes <code>X | None</code> everywhere. Compare the output on every
+supported version before pushing.</li>
 </ul>
 
 </main>
