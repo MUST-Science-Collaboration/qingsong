@@ -80,6 +80,7 @@ def test_a_dry_run_writes_nothing(demo):
     ("statement_en", "slot", "message"),
     [
         (english.replace("of 140", "of at least 140"), aperture(), "'at least' sits next to"),
+        (english.replace("of 140", "longer than 140"), aperture(), "'than' sits next to"),
         (english, aperture(value=141), "a move must keep the meaning"),
         (english.replace("aperture of", "aperture 140 mm ± 2 mm of"), aperture(), "occurs 2 times"),
         (english, aperture(replaces={"en": "140 mm ± 2 mm"}), "in zh as well"),
