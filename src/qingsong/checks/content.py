@@ -333,6 +333,17 @@ def values(context: Context) -> Iterator[Finding]:
                     file=file,
                 )
             if not slot.unit:
+                quantity = vault.records.get(slot.quantity) if slot.quantity else None
+                expected = parse_unit(quantity.unit) if isinstance(quantity, Quantity) else None
+                if expected is not None and not expected.dimensionless:
+                    yield Finding(
+                        "content.values",
+                        "warning",
+                        f"{name} has no unit, but {quantity.id} is measured in {quantity.unit}",
+                        record=record.id,
+                        file=file,
+                        fix="give the slot a unit",
+                    )
                 continue
             unit = parse_unit(slot.unit)
             if unit is None:

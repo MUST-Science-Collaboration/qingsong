@@ -69,8 +69,10 @@ class WordRenderer:
         latin_font: str | None = None,
         east_asian_font: str | None = None,
         update_fields_on_open: bool = False,
+        tag: str | None = None,
     ):
         self.vault = vault
+        self.tag = tag
         self.update_fields_on_open = update_fields_on_open
         self.contents_entries: list[tuple[int, str, str]] = []
         self.document = document
@@ -646,6 +648,15 @@ class WordRenderer:
                 element.text = text
             run._r.append(element)
 
+    def properties(self) -> None:
+        """Document properties: the document number, title, version and, for an issued copy, the
+        release tag (docs/SPEC.md §5.5)."""
+        properties = self.word.core_properties
+        properties.identifier = self.document.id
+        properties.title = next(iter(self.document.title.values()), self.document.id)
+        properties.version = self.version or ""
+        properties.comments = f"release tag {self.tag}" if self.tag else ""
+
     def render(self, output: Path) -> Path:
         self.cover()
         self.page_break()
@@ -653,6 +664,7 @@ class WordRenderer:
         self.outline(self.document.outline, 1)
         self.fill_table_of_contents()
         self.header_and_footer()
+        self.properties()
         output.parent.mkdir(parents=True, exist_ok=True)
         self.word.save(str(output))
         problems = check_package(output)
@@ -681,6 +693,7 @@ def render_docx(
     output: Path,
     version: str | None = None,
     update_fields_on_open: bool = False,
+    tag: str | None = None,
 ) -> Path:
     document = vault.records.get(document_id)
     if not isinstance(document, Document):
@@ -695,5 +708,6 @@ def render_docx(
         fonts.get("latin_font"),
         fonts.get("east_asian_font"),
         update_fields_on_open,
+        tag,
     )
     return renderer.render(output)

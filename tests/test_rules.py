@@ -261,7 +261,62 @@ def stale_proposal(root: Path) -> None:
     operations.revise(root, "INS-DET-REQ-001", "editorial", "reworded", "alice", today=day)
 
 
+def add_slot(record_id: str, name: str, slot: dict):
+    def change(root: Path) -> None:
+        edit_yaml(
+            requirement_file(root, record_id), lambda data: data["values"].__setitem__(name, slot)
+        )
+
+    return change
+
+
+def conflicting_values(root: Path) -> None:
+    slot = {"quantity": "detector.read_noise", "relation": "ge", "value": 5}
+    slot.update({"unit": "count", "certainty": "firm"})
+    add_slot("INS-SYS-REQ-001", "noise", slot)(root)
+
+
+def looser_child(root: Path) -> None:
+    slot = {"quantity": "survey.signal_to_noise", "relation": "ge", "value": 3}
+    slot.update({"unit": "dimensionless", "certainty": "firm"})
+    add_slot("INS-DET-REQ-001", "sn", slot)(root)
+
+
+def overdue_issue(root: Path) -> None:
+    edit_yaml(root / "issues" / "ISS-0001.yaml", lambda data: data.__setitem__("due", "2000-01-01"))
+
+
+def document_file(root: Path) -> Path:
+    return root / "documents" / "DEMO-INS-DET-RD.yaml"
+
+
+def repeated_release(root: Path) -> None:
+    def change(data):
+        data["releases"].append(dict(data["releases"][0]))
+
+    edit_yaml(document_file(root), change)
+
+
+def moved_release_tag(root: Path) -> None:
+    git(root, "init", "-q", "-b", "main")
+    git(root, "-c", "user.name=T", "-c", "user.email=t@example.org", "add", "-A")
+    git(root, "-c", "user.name=T", "-c", "user.email=t@example.org", "commit", "-q", "-m", "base")
+    git(root, "tag", "release/DEMO-INS-DET-RD/1.5")
+
+    def change(data):
+        entry = {"version": "1.5", "date": datetime.date(2026, 2, 1)}
+        entry.update({"summary": {"en": "Second issue"}, "made_with_qingsong": False})
+        data["releases"].append(entry)
+
+    edit_yaml(document_file(root), change)
+
+
 cases = {
+    "consistency.conflict": conflicting_values,
+    "consistency.child_looser": looser_child,
+    "consistency.issue_due": overdue_issue,
+    "documents.release": repeated_release,
+    "documents.release_tag": moved_release_tag,
     "integrity.proposal": unknown_rule_in_issue,
     "change.stale_proposal": stale_proposal,
     "structure.outline": figure_placed_twice,

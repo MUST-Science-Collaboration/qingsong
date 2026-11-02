@@ -94,3 +94,15 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 - **Group review items by the decision they need.** 24 wording findings became three issues: seven
   statements with one rewording proposal, one vague statement, and fifteen compound procedures with a
   keep-as-written proposal. One decision per issue is easier to review than 24 near-identical cards.
+
+## 10. Releases (2026-11-02)
+
+- **Review a workflow design against how git is used, not only against the code.** The first release design tagged
+  HEAD after the merge. An independent review pointed out that with a squash merge followed by another merge, HEAD
+  holds later, unreviewed changes. The tag now goes on the commit of the main branch's first-parent history that
+  first contains the release entry, and the gate runs on that commit.
+- **Dry-run a new gate on the real record before declaring it done.** The release gate, run on a copy of the record,
+  found that the pilot document's figure captions had never been marked as reviewed translations: the bilingual check had
+  covered requirements only.
+- **Check the data a feature needs before building on it.** The consistency rules and the export's value index read
+  value slots, but the pilot record keeps every number in prose. The engine works; the record has to catch up.

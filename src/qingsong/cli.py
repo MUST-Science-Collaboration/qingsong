@@ -662,25 +662,208 @@ def render_word(
             "contents); Word then shows a prompt."
         ),
     ] = False,
+    release_version: Annotated[
+        str | None,
+        typer.Option(
+            "--release",
+            help="Render the document as issued: the vault at the tag of this release.",
+        ),
+    ] = None,
     vault: VaultOption = None,
     as_json: JsonOption = False,
 ) -> None:
     """Generate a Word document from the records (styles from templates/reference.docx).
 
     The table of contents lists every heading; page numbers appear when it is updated in Word."""
+    from qingsong import gitutil
+    from qingsong.release import tag_name
     from qingsong.render.word import render_docx
+    from qingsong.vault import vault_at
 
     try:
-        written = render_docx(
-            loaded(vault),
-            document,
-            output.resolve(),
-            version=version,
-            update_fields_on_open=update_fields,
-        )
-    except ValueError as error:
+        if release_version is None:
+            written = render_docx(
+                loaded(vault),
+                document,
+                output.resolve(),
+                version=version,
+                update_fields_on_open=update_fields,
+            )
+        else:
+            tag = tag_name(document, release_version)
+            with vault_at(vault_root(vault), tag) as issued:
+                written = render_docx(
+                    issued,
+                    document,
+                    output.resolve(),
+                    version=version or release_version,
+                    update_fields_on_open=update_fields,
+                    tag=tag,
+                )
+    except (ValueError, gitutil.GitError) as error:
         fail(error, as_json)
     emit({"docx": str(written)}, as_json, f"wrote {written}")
+
+
+release_app = typer.Typer(
+    no_args_is_help=True, help="Releases of documents: prepare, tag, changes (SPEC §5.5)."
+)
+app.add_typer(release_app, name="release")
+
+
+@release_app.command("prepare")
+def release_prepare(
+    document: Annotated[str, typer.Argument(help="Document ID.")],
+    version: Annotated[str, typer.Argument(help="New version, e.g. 1.2.")],
+    by: PersonOption,
+    summary_en: Annotated[str, typer.Option(help="What this release changes (English).")],
+    summary_zh: Annotated[str, typer.Option(help="What this release changes (Chinese).")],
+    note_en: Annotated[str | None, typer.Option(help="Optional note (English).")] = None,
+    note_zh: Annotated[str | None, typer.Option(help="Optional note (Chinese).")] = None,
+    date: Annotated[
+        str | None, typer.Option(help="Date of the release decision (YYYY-MM-DD); default today.")
+    ] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Write the release entry on a branch, for review; prints the changes since the last release."""
+    import datetime
+
+    from qingsong import release
+
+    root = vault_root(vault)
+    try:
+        release_date = datetime.date.fromisoformat(date) if date else None
+    except ValueError as error:
+        fail(OperationError(f"--date: {error}"), as_json)
+    note = localized(note_en, note_zh) or None
+    try:
+        record = release.prepare(
+            root,
+            document,
+            version,
+            by,
+            localized(summary_en, summary_zh),
+            release_date=release_date,
+            note=note,
+            via=via,
+        )
+    except OperationError as error:
+        fail(error, as_json)
+    try:
+        found = release.changes(root, document)
+        changes_data: Any = found.as_dict()
+        changes_text = "\n".join(found.lines())
+    except OperationError as error:
+        changes_data, changes_text = None, f"(no change summary: {error})"
+    emit(
+        {"id": record.id, "revision": record.revision, "changes": changes_data},
+        as_json,
+        f"prepared {document} {version} (revision {record.revision}); after the merge run "
+        f"qingsong release tag {document} {version}\n{changes_text}",
+    )
+
+
+@release_app.command("tag")
+def release_tag(
+    document: Annotated[str, typer.Argument(help="Document ID.")],
+    version: Annotated[str, typer.Argument(help="Released version.")],
+    at: Annotated[
+        str | None,
+        typer.Option(
+            help="Only for a release made before qingsong: the commit where the record was "
+            "verified against the issued document."
+        ),
+    ] = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Tag a merged release at the commit that brought it to the main branch (local tag only)."""
+    from qingsong import release
+
+    try:
+        tag, commit = release.tag_release(vault_root(vault), document, version, at=at)
+    except OperationError as error:
+        fail(error, as_json)
+    emit(
+        {"tag": tag, "commit": commit},
+        as_json,
+        f"tagged {commit[:12]} as {tag}; publish it with: git push origin {tag}",
+    )
+
+
+@release_app.command("changes")
+def release_changes(
+    document: Annotated[str, typer.Argument(help="Document ID.")],
+    since: Annotated[
+        str | None,
+        typer.Option(
+            help="A release version or a git reference; default: the last tagged release."
+        ),
+    ] = None,
+    until: Annotated[
+        str | None, typer.Option(help="A git reference; default: the working tree.")
+    ] = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Summarise what changed in a document between two states."""
+    from qingsong import release
+
+    try:
+        found = release.changes(vault_root(vault), document, since=since, until=until)
+    except OperationError as error:
+        fail(error, as_json)
+    emit(found.as_dict(), as_json, "\n".join(found.lines()))
+
+
+export_app = typer.Typer(no_args_is_help=True, help="Export the record for other tools.")
+app.add_typer(export_app, name="export")
+
+
+@export_app.command("json")
+def export_json(
+    output: Annotated[
+        Path | None, typer.Option("--output", help="File to write; default: standard output.")
+    ] = None,
+    at: Annotated[str | None, typer.Option(help="Export the vault at this git reference.")] = None,
+    release_name: Annotated[
+        str | None,
+        typer.Option("--release", help="Export the state of a release, written DOC/VERSION."),
+    ] = None,
+    vault: VaultOption = None,
+) -> None:
+    """All records, the tree and an index of value slots, as one JSON file (SPEC §12.3)."""
+    from qingsong import gitutil
+    from qingsong.export import export_vault
+    from qingsong.release import tag_name
+    from qingsong.vault import vault_at
+
+    root = vault_root(vault)
+    if at and release_name:
+        fail(OperationError("give --at or --release, not both"), False)
+    reference = at
+    if release_name:
+        document, _, version = release_name.rpartition("/")
+        if not document or not version:
+            fail(OperationError("--release is written DOC/VERSION"), False)
+        reference = tag_name(document, version)
+    try:
+        if reference:
+            with vault_at(root, reference) as earlier:
+                data = export_vault(earlier, gitutil.commit_of(root, reference), False)
+        else:
+            commit = gitutil.head_commit(root)
+            data = export_vault(load(root), commit, gitutil.is_dirty(root) if commit else None)
+    except gitutil.GitError as error:
+        fail(error, False)
+    text = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if output is None:
+        typer.echo(text, nl=False)
+    else:
+        output.write_text(text, encoding="utf-8")
+        typer.echo(f"wrote {output}", err=True)
 
 
 @app.command()

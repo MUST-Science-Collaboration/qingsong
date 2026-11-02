@@ -23,6 +23,7 @@ EventKind = Literal[
     "superseded",
     "withdrawn",
     "renumbered",
+    "released",
 ]
 NodeKind = Literal["product", "work", "context"]
 
@@ -214,6 +215,9 @@ class Quantity(RecordBase):
     unit: str
     kpp: bool = False
     description: LocalizedText | None = None
+    # A condition to be withstood (e.g. an operating temperature range): a child's range must
+    # cover its parent's instead of lying inside it (docs/SPEC.md §10).
+    environmental: bool | None = None
 
 
 TextHash = Annotated[str, Field(pattern=r"^([0-9a-f]{16})?$")]
@@ -336,6 +340,7 @@ class Release(StrictModel):
     note: LocalizedText | None = None
     tag: str | None = None
     made_with_qingsong: bool
+    engine: str | None = None
 
 
 class FrontMatter(StrictModel):

@@ -52,7 +52,14 @@ def by_maturity(maturity: str | None, concept: str, draft: str, agreed: str, bas
 def run(
     vault: Vault, against: str | None = None, selected: set[str] | None = None
 ) -> list[Finding]:
-    from qingsong.checks import change, content, integrity, structure  # noqa: F401  (registers rules)
+    from qingsong.checks import (  # noqa: F401  (registers rules)
+        change,
+        consistency,
+        content,
+        documents,
+        integrity,
+        structure,
+    )
 
     context = Context(vault, against)
     findings = [
@@ -125,7 +132,14 @@ def apply_review(vault: Vault, findings: list[Finding]) -> list[Finding]:
 
 
 def all_rule_summaries() -> dict[str, str]:
-    from qingsong.checks import change, content, integrity, structure  # noqa: F401
+    from qingsong.checks import (  # noqa: F401
+        change,
+        consistency,
+        content,
+        documents,
+        integrity,
+        structure,
+    )
 
     summaries = dict(load_rules)
     summaries.update({rule_id: entry.summary for rule_id, entry in rules.items()})

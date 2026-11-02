@@ -8,13 +8,15 @@ import re
 import shutil
 from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup
 
-from qingsong import __version__, checks, ids
+from qingsong import __version__, checks, gitutil, ids
 from qingsong.findings import Finding
 from qingsong.hashing import field_value
+from qingsong.operations import OperationError
 from qingsong.render.model import (
     children_of,
     documents_of,
@@ -26,6 +28,9 @@ from qingsong.render.text import blocks, format_slot, inline, substitute_slots
 from qingsong.review import kind_labels
 from qingsong.schema import Document, Figure, Issue, Proposal, ProposedChange, Requirement
 from qingsong.vault import Vault
+
+if TYPE_CHECKING:
+    from qingsong.release import ChangeSummary
 
 static_dir = Path(__file__).parent / "static"
 record_pages = {"requirement": "r", "figure": "f"}
@@ -128,6 +133,7 @@ class Site:
         self.in_documents = requirement_documents(vault)
         self.documents = documents_of(vault)
         self.numberings = {document.id: number_document(document) for document in self.documents}
+        self.changes = {document.id: change_summary(vault, document) for document in self.documents}
         self.figure_document = {
             figure: document_id
             for document_id, numbering in self.numberings.items()
@@ -299,6 +305,37 @@ class Site:
 
         return diff_markup(readable(old), readable(change.text.get(language, "")))
 
+    def is_text(self, value: Any) -> bool:
+        return isinstance(value, dict) and all(isinstance(item, str) for item in value.values())
+
+    def field_diff(self, before: Any, after: Any, language: str) -> Markup:
+        """Word-level difference of one language of a changed text field."""
+        old = before.get(language, "") if isinstance(before, dict) else ""
+        new = after.get(language, "") if isinstance(after, dict) else ""
+        return diff_markup(old, new)
+
+    def as_text(self, value: Any) -> str:
+        if value is None:
+            return "—"
+        return json.dumps(value, ensure_ascii=False, indent=1, default=str)
+
+    def blocks_text(self, blocks: list[dict], language: str) -> str:
+        """The readable text of a section's own blocks, for a before/after difference."""
+        lines: list[str] = []
+        for block in blocks:
+            if "text" in block:
+                lines.append(block["text"].get(language, ""))
+            elif "table" in block:
+                table = block["table"]
+                for row in [table.get("header", []), *table.get("rows", [])]:
+                    lines.append(" | ".join(cell.get(language, "") for cell in row))
+            elif "definitions" in block:
+                lines.append(", ".join(block["definitions"].get("terms", [])))
+        return "\n".join(lines)
+
+    def blocks_diff(self, before: list[dict], after: list[dict], language: str) -> Markup:
+        return diff_markup(self.blocks_text(before, language), self.blocks_text(after, language))
+
     def plain(self, value: dict | None, language: str = "en") -> str:
         if not value:
             return ""
@@ -360,11 +397,19 @@ class Site:
         )
         for document in self.documents:
             self.render(
+                "changes.html",
+                f"documents/{document.id}-changes.html",
+                "../",
+                document=document,
+                summary=self.changes[document.id],
+            )
+            self.render(
                 "document.html",
                 f"documents/{document.id}.html",
                 "../",
                 document=document,
                 numbering=self.numberings[document.id],
+                summary=self.changes[document.id],
             )
         for requirement in requirements:
             self.render("requirement.html", f"r/{requirement.id}.html", "../", record=requirement)
@@ -480,6 +525,18 @@ class Site:
             "window.QINGSONG_INDEX = " + script_json(entries) + ";\n",
             encoding="utf-8",
         )
+
+
+def change_summary(vault: Vault, document: Document) -> "ChangeSummary | str":
+    """The document's changes since its last tagged release, or why there is no summary."""
+    from qingsong.release import changes
+
+    if not gitutil.is_repository(vault.root):
+        return "The vault is not a git repository, so earlier releases cannot be read."
+    try:
+        return changes(vault.root, document.id)
+    except OperationError as error:
+        return str(error)
 
 
 def render_site(vault: Vault, output: Path) -> Path:
