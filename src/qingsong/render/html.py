@@ -27,7 +27,15 @@ from qingsong.render.model import (
 )
 from qingsong.render.text import blocks, format_slot, inline, substitute_slots
 from qingsong.review import kind_labels
-from qingsong.schema import Document, Figure, Issue, Proposal, ProposedChange, Requirement
+from qingsong.schema import (
+    Document,
+    Figure,
+    Issue,
+    Proposal,
+    ProposedChange,
+    Requirement,
+    ValueSlot,
+)
 from qingsong.vault import Vault
 
 if TYPE_CHECKING:
@@ -333,11 +341,31 @@ class Site:
             and all(isinstance(item, str) for item in value.values())
         )
 
-    def field_diff(self, before: Any, after: Any, language: str) -> Markup:
-        """Word-level difference of one language of a changed text field."""
+    def field_diff(
+        self,
+        before: Any,
+        after: Any,
+        language: str,
+        values_before: dict | None = None,
+        values_after: dict | None = None,
+    ) -> Markup:
+        """Word-level difference of one language of a changed text field. With value slots given,
+        the texts are compared as a reader sees them, with the values filled in."""
         old = before.get(language, "") if isinstance(before, dict) else ""
         new = after.get(language, "") if isinstance(after, dict) else ""
+        if values_before is not None or values_after is not None:
+            old = self.filled(old, values_before or {}, language)
+            new = self.filled(new, values_after or {}, language)
         return diff_markup(old, new)
+
+    def filled(self, text: str, values: dict, language: str) -> str:
+        slots = {}
+        for name, fields in values.items():
+            try:
+                slots[name] = ValueSlot.model_validate(fields)
+            except ValueError:
+                continue
+        return re.sub(r"\\(.)", r"\1", substitute_slots(text, slots, language))
 
     def as_text(self, value: Any) -> str:
         if value is None:

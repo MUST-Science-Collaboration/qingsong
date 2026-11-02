@@ -1,6 +1,7 @@
 """Moving numbers into value slots without changing the meaning; forms; goals (docs/SPEC.md §5.2)."""
 
 import datetime
+import re
 
 import pytest
 from conftest import edit_yaml, git, requirement_file
@@ -396,3 +397,26 @@ def test_a_wording_accepted_as_written_stays_accepted(demo):
     after = [f for f in findings(demo, "content.writing") if f.record == record_id]
     assert after and all(f.severity == "info" for f in after)
     assert load(demo).records[issue_id].history[-1].summary.startswith("acceptance of")
+
+
+def test_the_changes_page_shows_a_move_as_a_reader_sees_it(demo_repository, tmp_path):
+    from qingsong import release
+    from qingsong.render.html import render_site
+
+    root = demo_repository
+    write_statement(root, english, chinese)
+
+    def place(data):
+        data["outline"][1]["section"]["blocks"].append({"requirement": record_id})
+
+    edit_yaml(root / "documents" / "DEMO-INS-DET-RD.yaml", place)
+    operations.revise(root, "DEMO-INS-DET-RD", "editorial", "placed", "alice", today=day)
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "aperture, placed")
+    release.tag_release(root, "DEMO-INS-DET-RD", "1.0", at="HEAD")
+    slot_values(root, record_id, aperture(), "alice", today=day)
+    site = render_site(load(root), tmp_path / "site").parent
+    page = (site / "documents" / "DEMO-INS-DET-RD-changes.html").read_text()
+    assert "As a reader sees it" in page
+    # The reader's view: "140 mm ± 2 mm" becomes "140 ± 2 mm"; only the repeated unit goes.
+    assert re.search(r"140 <del>mm ?</del> ?± 2 mm", page)
