@@ -8,6 +8,7 @@ current before, and the history event records the normative hash before and afte
 what `integrity.against` accepts."""
 
 import datetime
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,7 @@ from typing import Any
 from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedMap
 
-from qingsong.hashing import approved_text_hash, normative_hash_of, text_hash
+from qingsong.hashing import approved_text_hash, field_value, normative_hash_of, text_hash
 from qingsong.ids import reference_pattern
 from qingsong.operations import (
     OperationError,
@@ -36,14 +37,41 @@ from qingsong.wording import neighbour_problem
 
 slot_name = re.compile(r"^[a-z][a-z0-9_]*$")
 
-# Formatting differences a move may make. Each is named, so the list stays reviewable.
+# Formatting differences a move may make. Each is named, so the list stays reviewable. Letter case
+# is kept everywhere except in relation words and TBC/TBD: units differ by case (mm, Mm).
 relation_phrases = [
-    (r"no less than|not less than|at least|不小于|不少于|不低于|至少", "≥"),
-    (r"no more than|not more than|at most|up to|不大于|不多于|不超过|至多", "≤"),
+    (r"no less than|not less than|no fewer than|at least|不小于|不少于|不低于|至少", "≥"),
+    (r"no more than|not more than|no greater than|at most|up to|不大于|不多于|不超过|至多", "≤"),
     (r"more than|greater than|超过|大于|多于", ">"),
     (r"less than|fewer than|小于|少于|低于", "<"),
 ]
-unit_aliases = [("µ", "μ"), ("um", "μm"), ("percent", "%"), ("deg", "°")]
+unit_aliases = [
+    (r"µ", "μ"),
+    (r"(?<![A-Za-z])degC(?![A-Za-z])", "°C"),
+    (r"(?<![A-Za-z])um(?![A-Za-z])", "μm"),
+    (r"(?<![A-Za-z])percent(?![A-Za-z])", "%"),
+    (r"(?<![A-Za-z])deg(?![A-Za-z])", "°"),
+]
+# Characters that glue a literal to a larger expression: a number next to them is part of it. A
+# full stop or comma glues only when a digit sits on its other side (a decimal point, a list).
+glue_characters = set("−-+±×/^~_⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉")
+
+
+def glued(text: str, start: int, end: int) -> str | None:
+    """The character that ties the span to a larger expression, if any."""
+
+    def ties(character: str, beyond: str) -> bool:
+        return (
+            (character.isascii() and character.isalnum())
+            or character in glue_characters
+            or (character in ".," and beyond.isdigit())
+        )
+
+    if start > 0 and ties(text[start - 1], text[start - 2] if start > 1 else ""):
+        return text[start - 1]
+    if end < len(text) and ties(text[end], text[end + 1] if end + 1 < len(text) else ""):
+        return text[end]
+    return None
 
 
 def display(text: str) -> str:
@@ -53,19 +81,21 @@ def display(text: str) -> str:
 
 def normalized(text: str) -> str:
     """The comparison form of a literal or a rendered slot."""
-    text = text.casefold()
     for pattern, sign in relation_phrases:
-        text = re.sub(pattern, sign, text)
+        text = re.sub(pattern, sign, text, flags=re.IGNORECASE)
     text = text.replace("<=", "≤").replace(">=", "≥").replace("+/-", "±").replace("~", "≈")
-    text = (
-        text.replace("（", "(").replace("）", ")").replace("待确认", "tbc").replace("待定", "tbd")
-    )
-    for alias, canonical in unit_aliases:
-        text = text.replace(alias, canonical)
-    text = re.sub(r"\s+", "", text)
+    text = text.replace("（", "(").replace("）", ")")
+    text = re.sub(r"(?i)(?<![A-Za-z])tbc(?![A-Za-z])|待确认", "TBC", text)
+    text = re.sub(r"(?i)(?<![A-Za-z])tbd(?![A-Za-z])|待定", "TBD", text)
+    for pattern, canonical in unit_aliases:
+        text = re.sub(pattern, canonical, text)
+    # Thousands separators, read before spaces are removed: "5, 100" stays two numbers.
     text = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", text)
+    # Spaces are removed except between two digits: "1 0" stays apart from "10".
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"(?<!\d) | (?!\d)", "", text)
     # A unit written after both the value and the tolerance: "140μm±2μm" reads as "140±2μm".
-    text = re.sub(r"(\d)([^\d±+/()\[\]−-]+)±([\d.]+)\2", r"\1±\3\2", text)
+    text = re.sub(r"(\d)([^\d±+/()\[\]−\- ]+)±([\d.]+)\2(?![^\W\d_])", r"\1±\3\2", text)
     # A unit just after the brackets of a provisional value: "[20000]mm" reads as "[20000mm]".
     text = re.sub(r"\[([^\[\]]+)\]([^\d\s\[\]()±,.;:，。；：]+)", r"[\1\2]", text)
     # A tolerance group in parentheses before an attached unit: "(20±0.5)%" reads as "20±0.5%".
@@ -73,10 +103,22 @@ def normalized(text: str) -> str:
     return text
 
 
-def inside_reference(text: str, start: int, end: int) -> bool:
-    return any(
-        match.start() < end and start < match.end() for match in reference_pattern.finditer(text)
-    )
+def protected_spans(text: str) -> list[tuple[int, int]]:
+    """References, links, footnotes, code and mathematics: never rewritten by a move."""
+    from qingsong.checks.content import markdown_link, math_or_code
+
+    return [
+        (match.start(), match.end())
+        for pattern in (reference_pattern, markdown_link, math_or_code)
+        for match in pattern.finditer(text)
+    ]
+
+
+def overlaps(first: tuple[int, int], second: tuple[int, int]) -> bool:
+    return first[0] < second[1] and second[0] < first[1]
+
+
+text_fields = ("title", "statement", "rationale", "notes", "suggestions", "verification")
 
 
 def slot_values(
@@ -87,7 +129,7 @@ def slot_values(
     via: str | None = None,
     today: datetime.date | None = None,
     dry_run: bool = False,
-) -> tuple[Requirement, list[tuple[str, str, str]]]:
+) -> tuple[Requirement, list[tuple[str, str, str]], list[str]]:
     """Move numbers into slots. Returns the record and, per language, the statement before and
     after. Refuses, with every reason, unless each move provably keeps the meaning."""
     today = today_date(today)
@@ -129,27 +171,49 @@ def slot_values(
     if problems:
         raise OperationError("cannot move the values:\n  " + "\n  ".join(problems))
 
+    dumped = json.dumps(
+        {name: field_value(record, name) for name in text_fields}, ensure_ascii=False
+    )
+    for name in parsed:
+        if "{" + name + "}" in dumped:
+            problems.append(f"{name}: {{{name}}} already appears in the record's text")
     new_statement = dict(record.statement)
+    warnings: list[str] = []
     for language in languages:
         text = record.statement[language]
+        spans: dict[str, tuple[int, int]] = {}
         for name, slot in parsed.items():
             literal = literals[name][language]
-            count = text.count(literal)
-            if not literal.strip() or count != 1:
+            count = text.count(literal) if literal.strip() else 0
+            if count != 1:
                 problems.append(
                     f"{name} ({language}): {literal!r} occurs {count} times; it must occur once"
                 )
                 continue
             start = text.index(literal)
-            end = start + len(literal)
-            if inside_reference(text, start, end):
-                problems.append(f"{name} ({language}): {literal!r} is part of a reference")
+            span = (start, start + len(literal))
+            if any(overlaps(span, other) for other in protected_spans(text)):
+                problems.append(
+                    f"{name} ({language}): {literal!r} is part of a reference, link, code or "
+                    "mathematics"
+                )
                 continue
-            word = neighbour_problem(text, start, end, language)
+            clash = next((other for other, taken in spans.items() if overlaps(span, taken)), None)
+            if clash:
+                problems.append(f"{name} ({language}): {literal!r} overlaps the text of {clash}")
+                continue
+            tie = glued(text, span[0], span[1])
+            if tie:
+                problems.append(
+                    f"{name} ({language}): {literal!r} is glued to {tie!r}; it is part of a "
+                    "larger expression"
+                )
+                continue
+            word = neighbour_problem(text, span[0], span[1], language)
             if word:
                 problems.append(
                     f"{name} ({language}): {word!r} sits next to {literal!r}; include it in "
-                    "the replaced text so that the relation is checked"
+                    "the replaced text so that the slot says what the sentence says"
                 )
                 continue
             rendered = display(format_slot(slot, language))
@@ -159,11 +223,22 @@ def slot_values(
                     "keep the meaning, so correct the slot, or change the wording by a proposal"
                 )
                 continue
-        if not problems:
-            for name in parsed:
-                new_statement[language] = new_statement[language].replace(
-                    literals[name][language], "{" + name + "}", 1
-                )
+            spans[name] = span
+            for field in ("rationale", "notes", "suggestions"):
+                other = getattr(record, field) or {}
+                if literal in other.get(language, ""):
+                    warnings.append(f"{literal!r} also appears in the {field}; it stays in prose")
+            criteria = record.verification.criteria if record.verification else {}
+            if literal in criteria.get(language, ""):
+                warnings.append(f"{literal!r} also appears in the verification criteria")
+        if problems:
+            continue
+        rewritten = text
+        for name, (start, end) in sorted(spans.items(), key=lambda item: -item[1][0]):
+            rewritten = rewritten[:start] + "{" + name + "}" + rewritten[end:]
+        if any(rewritten.count("{" + name + "}") != 1 for name in parsed):
+            problems.append(f"({language}): a slot would not appear exactly once after the move")
+        new_statement[language] = rewritten
     if problems:
         raise OperationError("cannot move the values:\n  " + "\n  ".join(problems))
 
@@ -181,8 +256,14 @@ def slot_values(
             values[name] = slot.model_dump(mode="json", exclude_none=True)
         origin = old.text_origin
         translation = data.get("translation") or {}
-        if "statement" in translation and origin in new_statement:
-            translation["statement"]["source_hash"] = text_hash(new_statement[origin])
+        state = translation.get("statement")
+        if (
+            state is not None
+            and origin in new_statement
+            and state.get("source_hash") == text_hash(old.statement.get(origin, ""))
+        ):
+            # Only a translation that was current follows the new text; a stale one stays stale.
+            state["source_hash"] = text_hash(new_statement[origin])
         draft = validate(data)
         assert isinstance(draft, Requirement)
         hash_after = normative_hash_of(draft)
@@ -207,7 +288,7 @@ def slot_values(
         (language, record.statement[language], new_statement[language]) for language in languages
     ]
     if dry_run:
-        return record, comparisons
+        return record, comparisons, warnings
     written = edit(vault, record_id, change)
     assert isinstance(written, Requirement)
-    return written, comparisons
+    return written, comparisons, warnings

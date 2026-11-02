@@ -1,19 +1,25 @@
-"""Relation words next to a number or a value slot (docs/SPEC.md §5.2). Shared by the slot move,
-which refuses a literal with such a word outside it, and by the check that flags a slot whose sign
-is said twice ("at least ≥ 40 %")."""
+"""Words next to a number or a value slot (docs/SPEC.md §5.2).
+
+Relation words say what a number is: a limit, a range, an approximation. Qualifiers say what it
+counts: per item, in total, on average. The slot move refuses a literal with either kind just
+outside it, so that the slot's data says what the sentence says. The check for a relation said
+twice ("at least ≥ 40 %") uses the relation words only."""
 
 import re
 
-# Relation words that, next to a literal but outside it, would change what the number means.
-neighbour_words = {
+relation_words = {
     "en": (
         "at least",
         "at most",
         "up to",
         "no more than",
         "no less than",
+        "no fewer than",
+        "no greater than",
         "not more than",
         "not less than",
+        "not exceed",
+        "not exceeding",
         "more than",
         "less than",
         "fewer than",
@@ -38,15 +44,6 @@ neighbour_words = {
         "minimum",
         "max",
         "min",
-        "per",
-        "each",
-        "every",
-        "total",
-        "average",
-        "mean",
-        "median",
-        "rms",
-        "peak",
         "not",
     ),
     "zh": (
@@ -74,21 +71,31 @@ neighbour_words = {
         "大约",
         "约",
         "左右",
-        "每",
-        "平均",
-        "累计",
-        "总",
     ),
+}
+relation_signs = (">=", "<=", "≥", "≤", ">", "<", "≈", "~")
+qualifier_words = {
+    "en": ("per", "each", "every", "total", "average", "mean", "median", "rms", "peak"),
+    "zh": ("每", "平均", "累计", "总"),
 }
 
 
-def neighbour_problem(text: str, start: int, end: int, language: str) -> str | None:
-    """A relation word right before or after the literal, outside it."""
+def neighbour_problem(
+    text: str, start: int, end: int, language: str, qualifiers: bool = True
+) -> str | None:
+    """A relation word (and, with `qualifiers`, a qualifier) right before or after the span."""
+    words = relation_words.get(language, ()) + (
+        qualifier_words.get(language, ()) if qualifiers else ()
+    )
     before = text[max(0, start - 24) : start].casefold()
     after = text[end : end + 24].casefold()
-    for word in neighbour_words.get(language, ()):
+    stripped_before, stripped_after = before.rstrip(), after.lstrip()
+    for sign in relation_signs:
+        if stripped_before.endswith(sign) or stripped_after.startswith(sign):
+            return sign
+    for word in words:
         if language == "zh":
-            if before.rstrip().endswith(word) or after.lstrip().startswith(word):
+            if stripped_before.endswith(word) or stripped_after.startswith(word):
                 return word
         else:
             last_words = " ".join(re.findall(r"[a-z]+", before)[-3:])

@@ -41,6 +41,9 @@ shall_pattern = re.compile(r"\bshall\b", re.IGNORECASE)
 number_pattern = re.compile(r"(?<![\w.-])\d+(?:[.,]\d+)?(?![\w-])")
 
 
+# A number in prose, also when a unit is glued to it ("140mm"); not part of a hyphenated
+# designation such as IEC 60793-1-33.
+prose_number_pattern = re.compile(r"(?<![\w.-])\d+(?:[.,]\d+)*(?![\d-])")
 year_pattern = re.compile(r"^(?:19|20)\d{2}$")
 
 
@@ -48,7 +51,9 @@ def numbers_in_text(record: Requirement) -> list[str]:
     """Numbers written in the reference-language statement rather than in value slots. Years are
     left out: a date in a statement is context, not a value to compare."""
     english = slot_pattern.sub(" ", prose(record.statement.get("en", "")))
-    return [number for number in number_pattern.findall(english) if not year_pattern.match(number)]
+    return [
+        number for number in prose_number_pattern.findall(english) if not year_pattern.match(number)
+    ]
 
 
 def requirement_form(record: Requirement) -> str:
@@ -345,7 +350,9 @@ def values(context: Context) -> Iterator[Finding]:
                 slot = record.values.get(match.group(1))
                 if slot is None or slot.relation in ("eq", "range") or slot.certainty == "tbd":
                     continue
-                word = neighbour_problem(text, match.start(), match.end(), language)
+                word = neighbour_problem(
+                    text, match.start(), match.end(), language, qualifiers=False
+                )
                 if word:
                     yield Finding(
                         "content.values",

@@ -238,27 +238,33 @@ Units are parsed with `pint`.
   - A goal is part of the approved content, so changing it is a `value` change.
   - Consistency checks ignore goals.
 - **Rendering.** A provisional value has its brackets around the value and unit, not the relation ("≥ [90 %]"), as in the project's documents. There is a space before `%`, as SI requires, and none before angle symbols.
+- **A TBD slot carries no number:** no value, range or goal.
 - **A relation said twice.** A slot that carries its own relation sign, with a relation word next to it in the text ("at least {x}" reading "at least ≥ 40 %"), is a warning of `content.values`.
 
 **Converting between the forms** (accepted, 2026-11-02; details revised after an independent review).
 1. **Moving numbers into slots without changing the meaning:** `qingsong slot ID --file slots.yaml --by P [--dry-run]`.
    - **Input.** For each slot, the file gives its fields and `replaces`, the literal it replaces in each language of the statement.
    - **Accepted only when every literal:**
-     - occurs exactly once;
-     - is not part of a reference;
-     - has no relation word just outside it ("at least", "per", "不小于", "以上", …). Such a word must be included in the literal, so that it is checked;
+     - occurs exactly once, and overlaps no other literal of the same move;
+     - is not part of a reference, link, footnote, code or mathematics;
+     - is not glued to a larger expression: a letter, a digit, an operator, a sign (−, ±) or a decimal point next to it;
+     - has no relation word ("at least", "不小于", "以上", …) or qualifier ("per", "total", "每", …) just outside it. Such a word must be included in the literal, so that the slot's data says what the sentence says;
      - **reads the same as the slot's rendering**, up to a short, named list of formatting differences:
-       - spacing;
-       - thousands separators;
+       - spacing, except between two digits;
+       - thousands separators written without spaces;
        - relation words written out ("more than", "不小于") against their signs;
        - `µ`/`μ`, `um`, `percent`, `deg`;
        - a unit written after both the value and the tolerance;
        - a unit just after the brackets of a provisional value;
        - a tolerance group in parentheses.
 
-     There is no grammar of its own: the one renderer is the parse rule.
-   - **Refused** when the record has unrecorded changes, so nothing else can be carried into an approval.
-   - **What changes.** Only the literals change, to `{slot}`; the rest of the statement is untouched by construction. The translation's source hash follows the new text, and its review status is kept, because both languages change from one input. The normative revision is unchanged, so children, verifications and waivers are unaffected.
+     There is no grammar of its own: the one renderer is the parse rule. Letter case is kept, except in relation words and TBC/TBD, because units differ by case (mm and Mm).
+   - **Refused when:**
+     - the record has unrecorded changes, so nothing else can be carried into an approval;
+     - a slot's `{name}` already appears anywhere in the record's text.
+
+     A literal that also appears in the rationale, notes or criteria is reported; it stays in prose there.
+   - **What changes.** Only the literals change, to `{slot}`; the rest of the statement is untouched by construction. A translation that was current follows the new text and keeps its review status, because both languages change from one input. A stale translation stays stale. The normative revision is unchanged, so children, verifications and waivers are unaffected.
    - **The approval** is re-bound to the new text only if it was current before. A stale approval stays stale.
    - **The `slotted` event** records the normative hash before and after. `integrity.against` accepts a changed normative hash without a new normative revision only when `slotted` events since the reference lead, hash to hash, from the earlier hash to the current one. A value changed after the move is still caught.
    - **Scope.** The move covers the statement. Numbers in the verification criteria stay in prose.

@@ -238,7 +238,7 @@ def slot(
 
     try:
         slots = read_yaml(file.resolve())
-        record, comparisons = slot_values(
+        record, comparisons, warnings = slot_values(
             vault_root(vault), record_id, slots, by, via=via, dry_run=dry_run
         )
     except OperationError as error:
@@ -248,11 +248,13 @@ def slot(
     lines = [f"{'would move' if dry_run else 'moved'} values of {record.id}:"]
     for language, before, after in comparisons:
         lines += [f"  {language} before: {before}", f"  {language} after:  {after}"]
+    lines += [f"  note: {warning}" for warning in warnings]
     emit(
         {
             "id": record.id,
             "revision": record.revision,
             "dry_run": dry_run,
+            "notes": warnings,
             "statements": [
                 {"language": language, "before": before, "after": after}
                 for language, before, after in comparisons

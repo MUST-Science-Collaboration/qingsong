@@ -53,7 +53,7 @@ def findings(root, rule: str, against: str | None = None):
 
 def test_a_move_keeps_the_meaning_and_the_approval(demo):
     write_statement(demo, english, chinese)
-    record, comparisons = slot_values(demo, record_id, aperture(), "alice", today=day)
+    record, comparisons, _ = slot_values(demo, record_id, aperture(), "alice", today=day)
     assert record.statement["en"].endswith("over a clear aperture of {aperture}.")
     assert "{aperture}通光孔径" in record.statement["zh"]
     assert record.values["aperture"].tolerance.plus == 2
@@ -71,7 +71,7 @@ def test_a_dry_run_writes_nothing(demo):
     write_statement(demo, english, chinese)
     path = requirement_file(demo, record_id)
     before = path.read_text(encoding="utf-8")
-    _, comparisons = slot_values(demo, record_id, aperture(), "alice", today=day, dry_run=True)
+    _, comparisons, _ = slot_values(demo, record_id, aperture(), "alice", today=day, dry_run=True)
     assert path.read_text(encoding="utf-8") == before
     assert "{aperture}" in comparisons[0][2]
 
@@ -114,7 +114,7 @@ def test_a_stale_approval_stays_stale(demo):
     operations.revise(
         demo, record_id, "editorial", "statement reworded", "alice", translation="reviewed"
     )
-    record, _ = slot_values(demo, record_id, aperture(), "alice", today=day)
+    record, _, _ = slot_values(demo, record_id, aperture(), "alice", today=day)
     assert record.approval.text_hash != approved_text_hash(record, "en")
     assert [f for f in findings(demo, "change.approval") if f.record == record_id]
 
@@ -134,7 +134,7 @@ def test_relation_words_inside_the_literal_are_read(demo):
         "issue": "ISS-0001",
         "replaces": {"en": "more than [20,000] mm", "zh": "超过[20,000] mm"},
     }
-    record, _ = slot_values(demo, record_id, {"aperture": slot}, "alice", today=day)
+    record, _, _ = slot_values(demo, record_id, {"aperture": slot}, "alice", today=day)
     assert "{aperture}" in record.statement["en"] and "{aperture}" in record.statement["zh"]
 
 
@@ -208,3 +208,140 @@ def test_forms_are_shown_and_exported(demo, tmp_path):
     data = json.loads(json.dumps(export_vault(load(demo), None, None)))
     assert data["forms"]["DEMO-SCI-REQ-001"] == "qualitative"
     assert data["forms"][record_id] == "quantitative"
+
+
+# Regression tests for the independent review of the slot move (2026-11-02).
+
+
+def test_a_stale_translation_stays_stale(demo):
+    """Finding 1: the move may not mark a stale translation current."""
+    write_statement(demo, english, chinese, approve=False)
+
+    def reword_origin(data):
+        data["statement"]["zh"] = chinese.replace("每个", "各")
+
+    edit_yaml(requirement_file(demo, record_id), reword_origin)
+    operations.revise(demo, record_id, "editorial", "zh reworded", "alice", today=day)
+    assert [f for f in findings(demo, "change.translation") if f.record == record_id]
+    slot_values(demo, record_id, aperture(), "alice", today=day)
+    assert [f for f in findings(demo, "change.translation") if f.record == record_id]
+
+
+@pytest.mark.parametrize(
+    ("written", "slot", "reason"),
+    [
+        ("5 Mm", {"relation": "eq", "value": 5, "unit": "mm"}, "case of a unit (finding 2)"),
+        ("5 MK", {"relation": "eq", "value": 5, "unit": "mK"}, "case of a unit (finding 2)"),
+        (
+            "140 m ± 2 mm",
+            {"relation": "eq", "value": 140, "unit": "mm", "tolerance": {"plus": 2, "minus": 2}},
+            "units of value and tolerance (finding 3)",
+        ),
+        ("5, 100 mm", {"relation": "eq", "value": 5100, "unit": "mm"}, "a list (finding 4)"),
+        ("1 0 mm", {"relation": "eq", "value": 10, "unit": "mm"}, "spaced digits (finding 4)"),
+    ],
+)
+def test_different_values_do_not_read_the_same(demo, written, slot, reason):
+    write_statement(
+        demo,
+        english.replace("140 mm ± 2 mm", written),
+        chinese.replace("140 mm ± 2 mm", written),
+        approve=False,
+    )
+    fields = {**slot, "certainty": "firm", "replaces": {"en": written, "zh": written}}
+    with pytest.raises(OperationError, match="a move must keep the meaning"):
+        slot_values(demo, record_id, {"aperture": fields}, "alice", today=day)
+
+
+def test_overlapping_literals_and_old_placeholders_are_refused(demo):
+    """Finding 5."""
+    write_statement(demo, english, chinese, approve=False)
+    both = aperture()
+    both["tolerance_only"] = {
+        "relation": "eq",
+        "value": 2,
+        "unit": "mm",
+        "certainty": "firm",
+        "replaces": {"en": "2 mm", "zh": "2 mm"},
+    }
+    with pytest.raises(OperationError, match="overlaps the text of aperture|glued"):
+        slot_values(demo, record_id, both, "alice", today=day)
+
+    def placeholder(data):
+        data["notes"] = {"en": "See {aperture}.", "zh": "见{aperture}。"}
+
+    edit_yaml(requirement_file(demo, record_id), placeholder)
+    operations.revise(demo, record_id, "editorial", "notes", "alice", translation="reviewed")
+    with pytest.raises(OperationError, match="already appears in the record's text"):
+        slot_values(demo, record_id, aperture(), "alice", today=day)
+
+
+def test_literals_in_links_and_glued_numbers_are_refused(demo):
+    """Finding 6, and numbers that belong to a larger expression."""
+    linked = english.replace(
+        "over a clear aperture of 140 mm ± 2 mm", "per [the sheet](https://x.org/a/140mm)"
+    )
+    write_statement(demo, linked, chinese.replace("140 mm ± 2 mm", "140mm"), approve=False)
+    slot = {"relation": "eq", "value": 140, "unit": "mm", "certainty": "firm"}
+    slot["replaces"] = {"en": "140mm", "zh": "140mm"}
+    with pytest.raises(OperationError, match="part of a reference, link"):
+        slot_values(demo, record_id, {"aperture": slot}, "alice", today=day)
+    write_statement(
+        demo,
+        english.replace("140 mm ± 2 mm", "−140 mm"),
+        chinese.replace("140 mm ± 2 mm", "−140 mm"),
+        approve=False,
+    )
+    slot["replaces"] = {"en": "140 mm", "zh": "140 mm"}
+    with pytest.raises(OperationError, match="glued"):
+        slot_values(demo, record_id, {"aperture": slot}, "alice", today=day)
+
+
+def test_a_tbd_slot_carries_no_number():
+    """Finding 7."""
+    with pytest.raises(ValueError, match="TBD slot carries no number"):
+        ValueSlot.model_validate({"relation": "le", "value": 999, "certainty": "tbd"})
+
+
+def test_qualifiers_are_not_a_relation_said_twice(demo):
+    """Finding 8: 'peak {x}' is fine; '≥ {x}' with a ge slot is said twice."""
+
+    def peak(data):
+        data["statement"]["en"] = (
+            "The peak reflectance of every lens surface shall be {reflectance}."
+        )
+
+    edit_yaml(requirement_file(demo, record_id), peak)
+    assert not [
+        f
+        for f in findings(demo, "content.values")
+        if f.record == record_id and "again" in f.message
+    ]
+
+    def doubled(data):
+        data["statement"]["en"] = "The reflectance of every lens surface shall be ≤ {reflectance}."
+
+    edit_yaml(requirement_file(demo, record_id), doubled)
+    assert [
+        f
+        for f in findings(demo, "content.values")
+        if f.record == record_id and "again" in f.message
+    ]
+
+
+def test_numbers_glued_to_units_count_and_shared_literals_are_noted(demo):
+    """Finding 9."""
+    from qingsong.checks.content import numbers_in_text
+
+    write_statement(demo, english, chinese, approve=False)
+
+    def criteria(data):
+        data["verification"]["criteria"]["en"] = "Measure the 140 mm ± 2 mm aperture."
+        data["statement"]["en"] = data["statement"]["en"].replace("from 400 to 900 nm", "at 650nm")
+
+    edit_yaml(requirement_file(demo, record_id), criteria)
+    operations.revise(demo, record_id, "editorial", "criteria", "alice", translation="reviewed")
+    record = load(demo).records[record_id]
+    assert "650" in numbers_in_text(record)
+    _, _, notes = slot_values(demo, record_id, aperture(), "alice", today=day, dry_run=True)
+    assert any("verification criteria" in note for note in notes)

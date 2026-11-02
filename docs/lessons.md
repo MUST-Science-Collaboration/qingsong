@@ -118,3 +118,17 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   merge commits need a committer, which macOS derives from the host and a Linux runner does not. Reproduce CI
   locally with `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly
   GIT_CONFIG_VALUE_0=true`; test repositories set their own local identity.
+
+## 11. Moving numbers into slots (2026-11-02)
+
+- **A proof by comparison is only as good as its normalisation.** The first version of the slot move lower-cased
+  everything, so "5 Mm" matched a slot in mm. It also removed spaces before reading thousands separators, so
+  "5, 100 mm" matched 5100. And a unit-repeat rule without a boundary read "140 m ± 2 mm" as "140 ± 2 mm".
+  An independent reviewer built each case. Normalise only what is known to be formatting, keep units exactly,
+  and test every named difference against a near miss.
+- **Guard every re-binding the same way.** The approval was re-bound only if it was current, but the
+  translation hash was re-bound unconditionally, which marked a stale translation current. Anything that carries
+  a review forward must check that the review was valid before.
+- **Prefer the renderer over a second parser.** The design review replaced a planned literal grammar with "the
+  slot must read the same". There is one rule for both writing and reading values, and one less parser to
+  get wrong.

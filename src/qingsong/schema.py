@@ -104,6 +104,10 @@ class ValueSlot(StrictModel):
         if self.minimum is not None and self.maximum is not None and self.minimum > self.maximum:
             raise ValueError("minimum is larger than maximum")
         if self.certainty == "tbd":
+            if any(
+                number is not None for number in (self.value, self.minimum, self.maximum, self.goal)
+            ):
+                raise ValueError("a TBD slot carries no number (no value, range or goal)")
             return self
         if self.relation == "range":
             if self.minimum is None or self.maximum is None:
