@@ -122,17 +122,17 @@ def test_a_stale_approval_stays_stale(demo):
 def test_relation_words_inside_the_literal_are_read(demo):
     write_statement(
         demo,
-        english.replace("140 mm ± 2 mm", "more than [20,000] mm"),
-        chinese.replace("140 mm ± 2 mm", "超过[20,000] mm"),
+        english.replace("140 mm ± 2 mm", "more than [12,000] mm"),
+        chinese.replace("140 mm ± 2 mm", "超过[12,000] mm"),
         approve=False,
     )
     slot = {
         "relation": "gt",
-        "value": 20000,
+        "value": 12000,
         "unit": "mm",
         "certainty": "provisional",
         "issue": "ISS-0001",
-        "replaces": {"en": "more than [20,000] mm", "zh": "超过[20,000] mm"},
+        "replaces": {"en": "more than [12,000] mm", "zh": "超过[12,000] mm"},
     }
     record, _, _ = slot_values(demo, record_id, {"aperture": slot}, "alice", today=day)
     assert "{aperture}" in record.statement["en"] and "{aperture}" in record.statement["zh"]
@@ -168,12 +168,12 @@ def test_a_relation_said_twice_is_flagged(demo):
 
 def test_normalisation_names_its_differences():
     assert normalized("140 μm ± 2 μm") == normalized("140 ± 2 μm")
-    assert normalized("≥ [7,500]") == normalized("≥ [7500]")
+    assert normalized("≥ [3,500]") == normalized("≥ [3500]")
     assert normalized("at least [90 %]") == normalized("≥ [90 %]")
     assert normalized("140 µm") == normalized("140 μm")
     assert normalized("(20 ± 0.5)%") == normalized("20 ± 0.5 %")
-    assert normalized("[20,000] mm") == normalized("[20,000 mm]")
-    assert normalized("[20,000] mm") != normalized("[20,000 m]")
+    assert normalized("[12,000] mm") == normalized("[12,000 mm]")
+    assert normalized("[12,000] mm") != normalized("[12,000 m]")
     assert normalized("90 %") != normalized("≥ 90 %")
     assert normalized("140 mm") != normalized("140 m")
 
