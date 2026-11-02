@@ -44,7 +44,8 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R4-004 | No prompt on opening: the table of contents is written out, with links; `--update-fields` restores update-on-open | [x] Done 2026-11-02 | page numbers appear after a field update in Word |
 | R4-005 | The standard MUST style and front page | [ ] Later | the Project Scientist, 2026-11-02: not critical |
 | R4-003 | Releases: `release prepare` (branch), `release tag` (after the merge, at the commit that brought the entry in), `release changes`; `render docx --release V` from the tag | [x] Done 2026-11-02 | SPEC §5.5, revised after an independent review; dry run on a copy of the record |
-| R4-006 | Revision marks in the Word copy of a release | [ ] Question | open question to the Project Scientist; the change record table already carries the release summary |
+| R4-006 | Revision marks in the Word copy of a release | [x] Not needed | the Project Scientist, 2026-11-02: Word is a snapshot; it shows the current version |
+| R3-006 | Review page: choose the person from people.yaml instead of typing an ID | [x] Done 2026-11-02 | the Project Scientist's commands came out with YOUR_ID |
 
 ## Phase 5: upper levels and expansion (engine side)
 

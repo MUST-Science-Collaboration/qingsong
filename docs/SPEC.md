@@ -238,7 +238,7 @@ Units are parsed with `pint`.
    It records an `editorial` event of kind `slotted` ("values moved into slots; the text reads the same"). The normative revision is unchanged.
 2. **Approvals bind the rendered text.** An approval's text hash is computed over the statement and criteria as rendered, with slots filled in. For a statement without slots this equals today's hash, so existing approvals stay valid.
 3. **Checks accept the move.** `revise` and `integrity.against` accept a changed normative hash without a new normative revision only after a `slotted` event, and only when the rendered text at the reference equals the rendered text now.
-4. **Quantities** are created once per physical quantity and project, e.g. `fibre.core_diameter`, and shared by every requirement that constrains it.
+4. **Quantities** are created once per physical quantity and project, e.g. `detector.read_noise`, and shared by every requirement that constrains it.
 
 ### 5.3 Other record types
 
@@ -378,7 +378,7 @@ Section numbers and order belong to the document, never to requirement IDs. Earl
 
 Approvals, confirmations and translation reviews are listed apart from changes of content. A translation edited in the same event as its review is a content change.
 
-The HTML site shows the summary on each document's changes page ("Changes since v1.1"). In Word, the release's entry in the change record carries the summary the approver wrote. Revision marks in the Word copy are an open question for the Project Scientist.
+The HTML site shows the summary on each document's changes page ("Changes since v1.1"). In Word, the release's entry in the change record carries the summary the approver wrote. The Word copy shows the document as released, without revision marks: Word is a snapshot and one form of output, no longer the reference (decision of 2026-11-02).
 
 ### 5.6 Review: labelled issues and proposed fixes (proposed, 2026-11-02)
 
@@ -651,7 +651,7 @@ Views:
 - **Review package:** for a node's design review.
 - **Search:** in both languages.
 - **Check report.**
-- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note. Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; the page itself never writes to the record.
+- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note, and chooses their name from `people.yaml` (a single approver is preselected). Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; it refuses until a name is chosen. The page itself never writes to the record.
 - **Review marks in documents:** a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.
 
 Pages follow a light, print-friendly style written for scientists and engineers.
@@ -666,7 +666,7 @@ GitHub Pages is not used for private vaults: its sites are public unless the hos
 - reference documents;
 - bilingual requirement tables, with an optional alias column.
 
-A release may carry tracked changes against the previous release, written per requirement. The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
+A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
 
 ### 12.3 Exchange
 
@@ -751,3 +751,4 @@ Version 0.1 (February 2026) is tagged `legacy-0.1`. It stored items in a Doorsto
 | 2026-11-02 | Check findings are labelled, highlighted in the HTML documents, carry proposed fixes, and are reviewed from one page reachable from the roadmap (§5.6). |
 | 2026-11-02 | Alternative versions are mainly other numbers and IDs (aliases); a requirement may also carry alternative wording (variants). |
 | 2026-11-02 | Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word. |
+| 2026-11-02 | Word is a snapshot and one form of output, not the reference. Released Word copies show the current text without revision marks; changes are read in the HTML. |

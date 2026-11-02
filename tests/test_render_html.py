@@ -174,3 +174,13 @@ def test_difference_marks_words_and_chinese_characters():
         "read noise of <del>3</del><ins>4</ins> e"
     )
     assert str(diff_markup("应为三", "应为四<")) == "应为<del>三</del><ins>四&lt;</ins>"
+
+
+def test_review_page_offers_people_not_free_text(demo, tmp_path):
+    """The decision commands name a person from people.yaml; a single approver is preselected."""
+    site = render_site(load(demo), tmp_path / "site").parent
+    page = (site / "review.html").read_text()
+    assert '<select id="reviewer" data-default="alice">' in page
+    assert '<option value="bob">' in page and "YOUR_ID" not in page
+    script = (site / "static" / "review.js").read_text()
+    assert "YOUR_ID" not in script and "Choose your name" in script

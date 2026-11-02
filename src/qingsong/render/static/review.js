@@ -97,8 +97,10 @@
 
   var reviewer = document.getElementById("reviewer");
   if (reviewer) {
-    reviewer.value = read(reviewerKey, "");
-    reviewer.addEventListener("input", function () { write(reviewerKey, reviewer.value.trim()); });
+    var remembered = read(reviewerKey, "") || reviewer.getAttribute("data-default") || "";
+    var known = Array.prototype.some.call(reviewer.options, function (option) { return option.value === remembered; });
+    reviewer.value = known ? remembered : "";
+    reviewer.addEventListener("change", function () { write(reviewerKey, reviewer.value); });
   }
   function quote(text) { return "'" + String(text).replace(/'/g, "'\\''") + "'"; }
   function byIssueAndNumber(first, second) {
@@ -106,7 +108,7 @@
     return a[0] === b[0] ? Number(a[1]) - Number(b[1]) : (a[0] < b[0] ? -1 : 1);
   }
   function commands() {
-    var person = quote((reviewer && reviewer.value.trim()) || "YOUR_ID");
+    var person = quote(reviewer ? reviewer.value : "");
     var lines = [];
     // Rejections first: accepting a proposal closes its issue and rejects the others.
     var keys = Object.keys(decisions).sort(byIssueAndNumber);
@@ -130,6 +132,12 @@
   var copy = document.getElementById("copy-decisions");
   if (copy && output) {
     copy.addEventListener("click", function () {
+      if (reviewer && !reviewer.value) {
+        output.hidden = false;
+        output.value = "# Choose your name under \"You are\" first: the commands record who decided.";
+        reviewer.focus();
+        return;
+      }
       var text = commands();
       output.hidden = false;
       output.value = text || "# No proposal is marked yet.";
