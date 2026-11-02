@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "macros.html" import requirement_card, badge, issue_label %}
+{% block title %}{{ record.id }}{% endblock %}
+{% block body %}
+<div class="breadcrumbs"><a href="{{ prefix }}tree.html#{{ record.allocated_to }}">{{ record.allocated_to }}</a> ›
+  {% for document_id in site.in_documents.get(record.id, []) %}<a href="{{ prefix }}documents/{{ document_id }}.html#{{ record.id }}">{{ document_id }} §{{ site.numberings[document_id].requirements[record.id] }}</a> {% endfor %}</div>
+{{ requirement_card(site, record, prefix) }}
+<div class="relations">
+  <div><h3>Derives from</h3>{% if record.derives_from %}<ul class="plain">{% for link in record.derives_from %}{% set parent = vault.records.get(link.id) %}<li><a href="{{ site.href(link.id, prefix) }}">{{ link.id }}</a> {% if parent %}{{ site.text(parent.title, prefix, block=False) }}{% if link.normative_revision < parent.normative_revision %} {{ badge("suspect: parent changed", "bad") }}{% endif %}{% endif %}</li>{% endfor %}</ul>{% else %}<p class="hint">No parent{% if record.justified_by %}; justified by <a href="{{ site.href(record.justified_by, prefix) }}">{{ record.justified_by }}</a>{% else %} (to be justified){% endif %}.</p>{% endif %}</div>
+  <div><h3>Derived requirements</h3>{% set children = site.children.get(record.id, []) %}{% if children %}<ul class="plain">{% for child_id in children %}<li><a href="{{ site.href(child_id, prefix) }}">{{ child_id }}</a> {{ site.text(vault.records[child_id].title, prefix, block=False) }}</li>{% endfor %}</ul>{% else %}<p class="hint">None.</p>{% endif %}</div>
+  <div><h3>Issues and sources</h3><ul class="plain">
+    {% for issue in site.issues_by_record.get(record.id, []) %}<li>{{ issue_label(site, issue.kind) }} <a href="{{ site.href(issue.id, prefix) }}">{{ issue.id }}</a> {{ site.text(issue.title, prefix, block=False) }} · {{ site.state_labels[site.issue_state(issue)] }}</li>{% endfor %}
+    {% for citation in record.sources %}<li><a href="{{ site.href(citation.source, prefix) }}">{{ citation.source }}</a> · {{ citation.locator }}</li>{% endfor %}
+  </ul></div>
+</div>
+{% set findings = site.by_record.get(record.id, []) %}
+<h3 id="findings">Check notes</h3>
+{% if findings %}<ul class="findings">{% for finding in findings %}<li class="{{ finding.severity }}">{{ badge(finding.severity, finding.severity) }} <code>{{ finding.rule }}</code> {{ finding.message }}</li>{% endfor %}</ul>{% else %}<p class="hint">No findings.</p>{% endif %}
+<h3>History</h3>
+<ol class="history">{% for event in record.history|reverse %}<li><span class="date">{{ event.date }}</span> revision {{ event.revision }} · <b>{{ event.event }}</b>{% if event.change_class %} ({{ event.change_class }}){% endif %} · {{ event.summary }} · {{ event.by }}{% if event.via %} via {{ event.via }}{% endif %}{% if event.decision %} · <a href="{{ site.href(event.decision, prefix) }}">{{ event.decision }}</a>{% endif %}</li>{% endfor %}</ol>
+<p class="small">Revision {{ record.revision }} · normative revision {{ record.normative_revision }} · text written first in {{ record.text_origin }}{% for name, state in record.translation.items() %} · {{ name }} translation {{ state.status }}{% endfor %}</p>
+{% endblock %}

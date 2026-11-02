@@ -1,0 +1,16 @@
+id: environment.temperature
+type: quantity
+title: {en: Ambient temperature, zh: 环境温度}
+dimension: "[temperature]"
+unit: degC
+lifecycle: current
+revision: 1
+normative_revision: 1
+normative_hash: 33561e760e1341e6
+history:
+  - revision: 1
+    date: 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+stamp: a65494d6c3f5bbed

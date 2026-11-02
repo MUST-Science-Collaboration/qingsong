@@ -1,0 +1,40 @@
+id: DEMO-INS-DET-RD
+type: document
+title: {en: Detector Requirements, zh: 探测器需求文档}
+scope: [INS-DET]
+front:
+  roles:
+    - {role: {en: Author, zh: 作者}, person: alice}
+    - {role: {en: Checked by, zh: 校对}, person: bob}
+    - {role: {en: Approved by, zh: 批准}, person: alice}
+  reference_documents: [SRC-DEMO-INS-DET-RD-v1.0]
+  acronyms: [SN, FWHM]
+outline:
+  - section:
+      key: introduction
+      title: {en: Introduction, zh: 简介}
+      blocks:
+        - text:
+            en: This document gives the requirements of the detector; [[DEMO-INS-DET-RD#performance]] lists them.
+            zh: 本文件给出探测器的需求，见[[DEMO-INS-DET-RD#performance]]。
+        - definitions:
+            terms: [batch, theta_in]
+  - section:
+      key: performance
+      title: {en: Performance, zh: 性能}
+      blocks:
+        - requirement: INS-DET-REQ-001
+        - figure: INS-DET-FIG-001
+        - table:
+            caption: {en: Readout modes, zh: 读出模式}
+            header: [{en: Mode, zh: 模式}, {en: Pixel rate, zh: 像素速率}]
+            rows:
+              - [{en: Slow, zh: 慢速}, {en: 100 kHz, zh: 100 kHz}]
+              - [{en: Fast, zh: 快速}, {en: 1 MHz, zh: 1 MHz}]
+releases:
+  - version: "1.0"
+    date: 2026-01-15
+    summary: {en: First issue (Word), zh: 首次发布（Word）}
+    made_with_qingsong: false
+aliases:
+  - {id: DEMO-DET-RD, kind: legacy, document: DEMO document register, to_version: "1.0"}

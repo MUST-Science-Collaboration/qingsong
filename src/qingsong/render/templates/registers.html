@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, issue_label %}
+{% block title %}Registers{% endblock %}
+{% block body %}
+<h1>Registers</h1>
+<h2 id="issues">Issues (open values and questions)</h2>
+<p class="small">Each issue, with its proposed fixes, is reviewed on the <a href="review.html">review page</a>.</p>
+<table class="list"><tr><th>ID</th><th>Kind</th><th>Status</th><th>Description</th><th>Owner</th><th>Due</th><th>Records</th></tr>
+{% for record in registers.issue %}<tr id="{{ record.id }}"><td><a href="review.html#{{ record.id }}">{{ record.id }}</a></td><td>{{ issue_label(site, record.kind) }}</td><td>{{ record.status }}</td><td>{{ site.text(record.description, prefix) }}{% if record.closure_plan %}<div class="small">{{ site.text(record.closure_plan, prefix, block=False) }}</div>{% endif %}</td><td>{{ record.owner or "" }}</td><td>{{ record.due or "" }}</td><td>{% for target in record.records %}<a href="{{ site.href(target, prefix) }}">{{ target }}</a> {% endfor %}</td></tr>{% endfor %}
+</table>
+<h2 id="decisions">Decisions</h2>
+{% if registers.decision %}<table class="list"><tr><th>ID</th><th>Date</th><th>By</th><th>Decision</th></tr>{% for record in registers.decision %}<tr id="{{ record.id }}"><td>{{ record.id }}</td><td>{{ record.date }}</td><td>{{ record.by }}</td><td>{{ site.text(record.statement, prefix) }}</td></tr>{% endfor %}</table>{% else %}<p class="hint">None yet.</p>{% endif %}
+<h2 id="sources">Sources</h2>
+<table class="list"><tr><th>ID</th><th>Kind</th><th>Number</th><th>Title</th><th>Version</th><th>sha256</th></tr>
+{% for record in registers.source %}<tr id="{{ record.id }}"><td>{{ record.id }}</td><td>{{ record.kind.replace("_", " ") }}</td><td>{{ record.number or "" }}</td><td>{{ site.text(record.title, prefix, block=False) }}</td><td>{{ record.version or "" }}</td><td><code class="small">{{ (record.sha256 or "")[:12] }}</code></td></tr>{% endfor %}
+</table>
+{% for kind in ["condition", "quantity", "interface", "verification", "waiver", "baseline"] %}{% if registers[kind] %}
+<h2 id="{{ kind }}s">{{ kind|capitalize }}s</h2>
+<table class="list">{% for record in registers[kind] %}<tr id="{{ record.id }}"><td>{{ record.id }}</td><td>{{ site.text(record.title, prefix, block=False) }}</td></tr>{% endfor %}</table>
+{% endif %}{% endfor %}
+{% endblock %}

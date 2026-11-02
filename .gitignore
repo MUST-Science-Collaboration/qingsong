@@ -1,108 +1,25 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-.gemini/
-qingsong-doorstop.skill
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
+# Environments and tool caches
+.venv/
+.ruff_cache/
 .pytest_cache/
+.coverage
+htmlcov/
 
-# Translations
-*.mo
-*.pot
+# Generated HTML sites
+site/
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# IDE
-.idea/
+# Local assistant and editor files
+.gemini/
 .vscode/
-*.swp
-*.swo
-*~
+.idea/
+qingsong-doorstop.skill
 
 # OS
 .DS_Store
-Thumbs.db
-
-# Project-specific
-index/*.sqlite
-index/qingsong.sqlite
-*.db
-
-# Generated files
-tools/qingsong/generated/enums.py
-
-# Temporary files
-*.tmp
-*.bak
-
-# Doorstop cache
-.doorstop.skip

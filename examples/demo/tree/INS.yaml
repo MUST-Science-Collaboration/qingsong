@@ -1,0 +1,23 @@
+parent: DEMO
+node: INS
+structural_code: IN
+names: {en: "Instrument", zh: "仪器"}
+kind: product
+status: active
+children:
+  - node: DET
+    structural_code: IN.01
+    names: {en: "Detector", zh: "探测器"}
+    kind: product
+    status: active
+  - node: OPT
+    structural_code: IN.02
+    names: {en: "Optics", zh: "光学系统"}
+    kind: product
+    status: active
+    text_origin: zh
+  - node: AIT
+    structural_code: IN.09
+    names: {en: "Integration and test", zh: "集成与测试"}
+    kind: work
+    status: active

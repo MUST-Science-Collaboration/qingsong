@@ -1,0 +1,11 @@
+id: ISS-0001
+type: issue
+title: {en: Provisional read-noise limit, zh: 读出噪声暂定限值}
+kind: provisional
+status: open
+description:
+  en: The read-noise limit is provisional until the first detector is characterized.
+  zh: 读出噪声限值在首片探测器完成表征之前为暂定值。
+owner: alice
+due: first detector characterization
+records: [INS-DET-REQ-001]

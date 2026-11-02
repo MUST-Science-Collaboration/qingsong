@@ -1,0 +1,11 @@
+people:
+  alice:
+    name: Alice Example
+    organization: Demo Observatory
+    github: alice-example
+    languages: [en, zh]
+    approver: true
+  bob:
+    name: Bob Example
+    organization: Demo Observatory
+    languages: [en]

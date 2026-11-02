@@ -1,0 +1,6 @@
+id: detector.read_noise
+type: quantity
+title: {en: Detector read noise, zh: 探测器读出噪声}
+symbol: σ~read~
+dimension: "[]"
+unit: count

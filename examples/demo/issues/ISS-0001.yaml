@@ -1,0 +1,44 @@
+id: ISS-0001
+type: issue
+title: {en: Provisional read-noise limit, zh: 读出噪声暂定限值}
+kind: provisional
+status: open
+description:
+  en: The read-noise limit is provisional until the first detector is characterized.
+  zh: 读出噪声限值在首片探测器完成表征之前为暂定值。
+owner: alice
+due: first detector characterization
+records: [INS-DET-REQ-001]
+lifecycle: current
+revision: 2
+normative_revision: 1
+normative_hash: 44136fa355b3678a
+history:
+  - revision: 1
+    date: 2026-11-01
+    by: alice
+    event: created
+    summary: written for the demo vault
+  - revision: 2
+    date: 2026-11-01
+    by: bob
+    event: revised
+    summary: proposal 1
+stamp: f7530a46adf91ba3
+proposals:
+  - number: 1
+    date: 2026-11-01
+    by: bob
+    summary:
+      en: State how the read noise is combined over amplifiers.
+      zh: 说明如何合并各放大器的读出噪声。
+    status: proposed
+    changes:
+      - record: INS-DET-REQ-001
+        field: notes
+        text:
+          en: Measured at the operating temperature in the slow readout mode, as the median over all amplifiers.
+          zh: 在工作温度下以慢读出模式测量，取所有读出放大器的中位数。
+        base:
+          en: ff0c976b00ee147a
+          zh: 4f40cc1a39931b2d

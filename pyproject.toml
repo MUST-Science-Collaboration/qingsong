@@ -1,78 +1,41 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.10.4,<0.11"]
+build-backend = "uv_build"
 
 [project]
 name = "qingsong"
-version = "0.1.0"
-description = "Lightweight project management system for the MUST Telescope project"
+version = "0.2.0.dev0"
+description = "Requirements kept as checked, versioned engineering records, rendered as documents"
 readme = "README.md"
-license = "MIT"
-requires-python = ">=3.11"
-authors = [
-    { name = "MUST Project Team" }
-]
-keywords = ["requirements", "project-management", "doorstop", "telescope", "MUST"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Astronomy",
-]
-
+requires-python = ">=3.11,<3.15"
+license-files = ["LICENSE"]
+authors = [{ name = "MUST Science Collaboration" }]
+keywords = ["requirements", "systems engineering", "traceability", "telescope"]
 dependencies = [
-    "doorstop>=3.0",
-    "typer>=0.9.0",
-    "pydantic>=2.0",
-    "ruamel.yaml>=0.18",
-    "rich>=13.0",
-    "streamlit>=1.28",
-    "networkx>=3.0",
-    "pandas>=2.0",
-    "fpdf2>=2.8.6",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0",
-    "pre-commit>=3.0",
+    "jinja2>=3.1,<4",
+    "pint>=0.24,<1",
+    "pydantic>=2.7,<3",
+    "python-docx>=1.1,<2",
+    "ruamel-yaml>=0.18,<0.19",
+    "typer>=0.12,<1",
 ]
 
 [project.scripts]
 qingsong = "qingsong.cli:app"
 
-[tool.hatch.build.targets.wheel]
-packages = ["tools/qingsong"]
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.14,<1", "pre-commit>=4,<5"]
 
-[tool.hatch.build.targets.sdist]
-include = [
-    "/tools",
-    "/meta",
-    "/doorstop",
-]
-
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]
-
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true
+[tool.uv]
+environments = ["sys_platform == 'darwin'", "sys_platform == 'linux'"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
+addopts = "-ra -p no:cacheprovider"
 
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "N"]

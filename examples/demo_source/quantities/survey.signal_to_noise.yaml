@@ -1,0 +1,6 @@
+id: survey.signal_to_noise
+type: quantity
+title: {en: Signal-to-noise ratio per pixel, zh: 每像素信噪比}
+dimension: "[]"
+unit: dimensionless
+kpp: true

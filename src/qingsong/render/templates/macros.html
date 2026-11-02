@@ -1,0 +1,74 @@
+{% macro badge(text, kind) %}<span class="badge {{ kind }}">{{ text }}</span>{% endmacro %}
+
+{% macro issue_label(site, kind, href=None, extra="") %}{% set names = site.kind_labels[kind] %}<{{ "a" if href else "span" }} class="label label-{{ kind }}"{% if href %} href="{{ href }}"{% endif %}><span class="lang en">{{ names.en }}</span><span class="lang zh">{{ names.zh }}</span>{{ extra }}</{{ "a" if href else "span" }}>{% endmacro %}
+
+{% macro proposal_block(site, issue, proposal, prefix, controls=True) %}
+<div class="proposal status-{{ proposal.status }}" data-key="{{ issue.id }}#{{ proposal.number }}">
+  <div class="proposal-head"><b>Proposal {{ proposal.number }}</b> {{ badge(proposal.status, "proposal-" ~ proposal.status) }}
+    <span class="small">{{ proposal.by }}{% if proposal.via %} via {{ proposal.via }}{% endif %} · {{ proposal.date }}{% if proposal.change_class != "editorial" %} · {{ proposal.change_class }} change{% endif %}</span></div>
+  <div class="proposal-summary">{{ site.text(proposal.summary, prefix, block=False) }}</div>
+  {% for change in proposal.changes %}
+  <div class="change">
+    <div class="change-target"><a href="{{ site.record_link(change.record, prefix) }}">{{ change.record }}</a> · <span class="lang en">{{ site.field_labels[change.field].en }}</span><span class="lang zh">{{ site.field_labels[change.field].zh }}</span></div>
+    {% for language in site.languages if language in change.text %}<div class="diff lang {{ language }}" lang="{{ language }}">{{ site.change_diff(change, language) }}</div>{% endfor %}
+  </div>
+  {% else %}
+  <p class="keep"><span class="lang en">Keep the text as written.</span><span class="lang zh">保持原文不变。</span></p>
+  {% endfor %}
+  {% if proposal.reason %}<p class="small">Reason: {{ site.text(proposal.reason, prefix, block=False) }}</p>{% endif %}
+  {% if controls and proposal.status == "proposed" %}
+  <div class="decide"><button type="button" data-decision="accept">Accept</button><button type="button" data-decision="reject">Reject</button><input class="decision-note" type="text" placeholder="Note or reason (optional)"></div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{% macro review_marks(site, record, prefix) %}
+{% set open_issues = site.open_issues_of(record.id) %}{% set untracked = site.untracked.get(record.id, []) %}
+{% if open_issues or untracked %}
+<aside class="review-marks">
+  {% for issue in open_issues %}{{ issue_label(site, issue.kind, prefix ~ "review.html#" ~ issue.id, " · " ~ issue.id ~ (" · fix proposed" if site.open_proposals(issue) else "")) }} {% endfor %}
+  {% for finding in untracked %}<a class="label label-untracked" href="{{ prefix }}review.html#untracked" title="{{ finding.message }}">{{ finding.rule }} · no issue yet</a> {% endfor %}
+  {% for issue in open_issues %}{% for proposal in site.open_proposals(issue) %}
+  <details class="proposal-inline"><summary>Proposed fix {{ issue.id }} P{{ proposal.number }}: {{ site.plain(proposal.summary) }}</summary>
+    {{ proposal_block(site, issue, proposal, prefix, controls=False) }}
+    <p class="small"><a href="{{ prefix }}review.html#{{ issue.id }}">Decide on the review page</a></p>
+  </details>
+  {% endfor %}{% endfor %}
+</aside>
+{% endif %}
+{% endmacro %}
+
+{% macro status_badges(record) %}
+{{ badge(record.maturity, "maturity-" ~ record.maturity) }}
+{% if record.lifecycle != "current" %}{{ badge(record.lifecycle, "lifecycle") }}{% endif %}
+{{ badge(record.level, "level") }}
+{% endmacro %}
+
+{% macro requirement_card(site, record, prefix, document=None, number=None) %}
+<article class="requirement{% if site.open_issues_of(record.id) or site.untracked.get(record.id) %} flagged{% endif %}" id="{{ record.id }}">
+  <header>
+    <div class="requirement-heading">
+      {% if number %}<span class="number">{{ number }}</span>{% endif %}
+      <a class="rid" href="{{ prefix }}r/{{ record.id }}.html">{{ record.id }}</a>
+      <span class="title">{{ site.text(record.title, prefix, document, block=False) }}</span>
+    </div>
+    <div class="badges">{{ status_badges(record) }}
+      {% for alias in record.aliases %}<span class="alias" title="{{ alias.kind }} ID in {{ alias.document }}">{{ alias.id }}</span>{% endfor %}
+      {% if site.by_record.get(record.id) %}<a class="badge findings" href="{{ prefix }}r/{{ record.id }}.html#findings">{{ site.by_record[record.id]|length }} check notes</a>{% endif %}
+    </div>
+  </header>
+  {{ review_marks(site, record, prefix) }}
+  <section class="part statement"><h4><span class="lang en">Requirement</span><span class="lang zh">需求</span></h4>{{ site.text(record.statement, prefix, document, values=record["values"]) }}</section>
+  {% if record.values %}
+  <table class="values"><tr><th>Value</th><th>Relation</th><th colspan="2">As written</th><th>Certainty</th></tr>
+  {% for name, slot in record.values.items() %}<tr><td><code>{{ name }}</code></td><td>{{ slot.relation }}</td><td colspan="2">{{ site.slot_text(slot) }}</td><td>{{ badge(slot.certainty, "certainty-" ~ slot.certainty) }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+  {% if record.rationale %}<section class="part"><h4><span class="lang en">Rationale</span><span class="lang zh">原因</span></h4>{{ site.text(record.rationale, prefix, document) }}</section>{% endif %}
+  {% if record.notes %}<section class="part"><h4><span class="lang en">Notes</span><span class="lang zh">说明</span></h4>{{ site.text(record.notes, prefix, document) }}</section>{% endif %}
+  {% if record.suggestions %}<section class="part"><h4><span class="lang en">Suggestions</span><span class="lang zh">建议</span></h4>{{ site.text(record.suggestions, prefix, document) }}</section>{% endif %}
+  {% if record.verification %}<section class="part"><h4><span class="lang en">Verification</span><span class="lang zh">验收方式</span></h4>
+    <div class="methods">{% for method in record.verification.methods %}{{ badge(method.replace("_", " "), "method") }}{% endfor %}</div>
+    {{ site.text(record.verification.criteria, prefix, document) }}</section>{% endif %}
+</article>
+{% endmacro %}

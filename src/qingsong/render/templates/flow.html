@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Flow-down{% endblock %}
+{% block body %}
+<h1>Flow-down</h1>
+<p class="lead">Requirements in their levels, from science to components. Lines run from a requirement to the requirement it derives from; a dashed red line is a suspect link (the parent changed since the link was confirmed). Hover to follow a chain; click to open a requirement.</p>
+<div class="flow-controls"><label>System <select id="flow-filter"><option value="">all</option></select></label></div>
+<div class="flow-canvas" id="flow-canvas"></div>
+{% endblock %}
+{% block scripts %}<script>window.QINGSONG_FLOW = {{ flow|safe }};</script><script src="{{ prefix }}static/flow.js"></script>{% endblock %}

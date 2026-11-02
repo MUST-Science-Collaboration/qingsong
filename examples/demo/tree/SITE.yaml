@@ -1,0 +1,5 @@
+parent: DEMO
+node: SITE
+names: {en: "Site", zh: "台址"}
+kind: context
+status: active

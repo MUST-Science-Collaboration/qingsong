@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Product tree{% endblock %}
+{% block body %}
+<h1>Product tree</h1>
+<p class="lead">Click a node to open or close it and to see its details. Numbers are requirement counts in each subtree. <span class="legend"><span class="key product"></span>product <span class="key work"></span>work package <span class="key context"></span>context (recorded, not specified) <span class="key placeholder"></span>placeholder</span></p>
+<div class="tree-layout">
+  <div class="tree-canvas" id="tree-canvas"></div>
+  <aside class="tree-panel" id="tree-panel"><p class="hint">Select a node.</p></aside>
+</div>
+<div class="tree-actions"><button id="expand-all">Expand all</button> <button id="collapse-all">Collapse to systems</button></div>
+{% endblock %}
+{% block scripts %}<script>window.QINGSONG_TREE = {{ tree|safe }};</script><script src="{{ prefix }}static/tree.js"></script>{% endblock %}

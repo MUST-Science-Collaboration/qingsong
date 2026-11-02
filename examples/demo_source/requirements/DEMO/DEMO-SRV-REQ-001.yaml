@@ -1,0 +1,25 @@
+id: DEMO-SRV-REQ-001
+type: requirement
+title: {en: Continuum signal-to-noise, zh: 连续谱信噪比}
+statement:
+  en: Spectra of the faintest targets shall reach a signal-to-noise ratio per pixel of {sn}.
+  zh: 最暗目标的光谱每像素信噪比应达到{sn}。
+values:
+  sn:
+    quantity: survey.signal_to_noise
+    relation: ge
+    value: 5
+    unit: dimensionless
+    certainty: firm
+rationale:
+  en: Redshift success for the faintest targets ([[DEMO-SCI-REQ-001]]).
+  zh: 保证最暗目标的红移成功率（[[DEMO-SCI-REQ-001]]）。
+level: survey
+allocated_to: DEMO
+derives_from:
+  - {id: DEMO-SCI-REQ-001, normative_revision: 1}
+verification:
+  methods: [analysis]
+  criteria: {en: Exposure-time calculation., zh: 曝光时间计算。}
+maturity: draft
+text_origin: en

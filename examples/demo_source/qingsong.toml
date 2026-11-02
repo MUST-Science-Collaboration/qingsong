@@ -1,0 +1,39 @@
+# Configuration of the fictional DEMO vault used in the documentation and tests.
+[project]
+code = "DEMO"
+names = { en = "Demo Survey Telescope", zh = "演示巡天望远镜" }
+
+[languages]
+reference = "en"
+second = "zh"
+default_text_origin = "en"
+bilingual_fields = ["title", "statement", "rationale", "verification.criteria"]
+
+[[levels]]
+name = "science"
+names = { en = "Science requirements", zh = "科学需求" }
+
+[[levels]]
+name = "survey"
+names = { en = "Survey requirements", zh = "巡天需求" }
+
+[[levels]]
+name = "system"
+names = { en = "System requirements", zh = "系统需求" }
+
+[[levels]]
+name = "element"
+names = { en = "System-level requirements of each major system", zh = "各分系统顶层需求" }
+
+[[levels]]
+name = "subsystem"
+names = { en = "Subsystem requirements", zh = "子系统需求" }
+
+[[levels]]
+name = "component"
+names = { en = "Component requirements", zh = "部件需求" }
+
+[top_namespaces]
+DEMO-SCI = "science"
+DEMO-SRV = "survey"
+DEMO-SYS = "system"

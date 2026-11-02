@@ -1,0 +1,17 @@
+id: SITE-COND-001
+type: condition
+title: {en: Night-time air temperature, zh: 夜间气温}
+node: SITE
+description:
+  en: Range of night-time air temperature over two years of site monitoring.
+  zh: 两年台址监测中的夜间气温范围。
+values:
+  night_temperature:
+    quantity: environment.temperature
+    relation: range
+    minimum: -20
+    maximum: 10
+    unit: degC
+    certainty: firm
+evidence_basis: measured
+date: 2025-12-31

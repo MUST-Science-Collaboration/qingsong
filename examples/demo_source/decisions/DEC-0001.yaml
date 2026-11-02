@@ -1,0 +1,9 @@
+id: DEC-0001
+type: decision
+title: {en: Instrument temperature design range, zh: 仪器设计温度范围}
+date: 2026-01-10
+by: alice
+statement:
+  en: The instrument is designed for the site's night-time range with 5 °C margin on each side.
+  zh: 仪器按台址夜间温度范围设计，两端各留5 °C余量。
+records: [DEMO-SYS-REQ-001]

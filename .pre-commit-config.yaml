@@ -1,50 +1,24 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-        args: [--unsafe]
-      - id: check-added-large-files
-        args: ['--maxkb=500']
+      - id: check-toml
       - id: check-merge-conflict
-      - id: detect-private-key
-
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
-    hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-      - id: ruff-format
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
 
   - repo: local
     hooks:
-      - id: qingsong-meta-validate
-        name: Qingsong Meta Validation
-        entry: uv run qingsong meta validate
+      - id: ruff_check
+        name: Ruff checks
+        entry: uv run --frozen ruff check --fix
         language: system
-        pass_filenames: false
-        files: ^meta/.*\.yaml$
-
-      - id: qingsong-validate
-        name: Qingsong Full Validation
-        entry: uv run qingsong validate
+        types: [python]
+      - id: ruff_format
+        name: Ruff formatting
+        entry: uv run --frozen ruff format
         language: system
-        pass_filenames: false
-        files: ^doorstop/.*\.ya?ml$
-
-      - id: qingsong-cache-build
-        name: Qingsong Cache Refresh
-        entry: uv run qingsong cache build
-        language: system
-        pass_filenames: false
-        files: ^(doorstop|meta)/.*\.ya?ml$
-
-      - id: no-hard-delete
-        name: No Hard Delete Check
-        entry: python -c "import sys; sys.exit(0)"  # Placeholder - actual check in CI
-        language: system
-        pass_filenames: false
-        stages: [commit]
-
+        types: [python]
