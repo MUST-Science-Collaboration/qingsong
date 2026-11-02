@@ -132,3 +132,10 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 - **Prefer the renderer over a second parser.** The design review replaced a planned literal grammar with "the
   slot must read the same". There is one rule for both writing and reading values, and one less parser to
   get wrong.
+- **Run a new operation on the real record before calling it done.** The first real slot moves found three gaps that
+  the demo did not:
+  - "longer than" passed the neighbour check, so any comparative now counts;
+  - the closing `~` of a subscript ("n~d~ ≥ 20") was read as "approximately";
+  - an "accepted as written" decision did not survive a move that kept the meaning.
+
+  Each was fixed with a test before the record was changed.
