@@ -99,6 +99,9 @@ def check(
                 {
                     "errors": errors,
                     "warnings": warnings,
+                    "tracked": sum(
+                        1 for finding in findings if finding.issue and finding.severity != "info"
+                    ),
                     "findings": [finding.as_dict() for finding in findings],
                 },
                 ensure_ascii=False,
@@ -108,8 +111,10 @@ def check(
     else:
         for finding in findings:
             typer.echo(finding.line())
+        tracked = sum(1 for finding in findings if finding.issue and finding.severity != "info")
         typer.echo(
             f"{errors} errors, {warnings} warnings, {len(findings) - errors - warnings} notes"
+            + (f"; {tracked} of the errors and warnings are tracked by issues" if tracked else "")
         )
     raise typer.Exit(1 if errors else 0)
 
@@ -417,6 +422,202 @@ def find(text: str, vault: VaultOption = None, as_json: JsonOption = False) -> N
     )
 
 
+issue_app = typer.Typer(
+    no_args_is_help=True, help="Review items: issues, proposed fixes and decisions (SPEC §5.6)."
+)
+app.add_typer(issue_app, name="issue")
+
+
+def localized(english: str | None, chinese: str | None) -> dict[str, str]:
+    return {language: text for language, text in (("en", english), ("zh", chinese)) if text}
+
+
+@issue_app.command("raise")
+def issue_raise(
+    by: PersonOption,
+    from_checks: Annotated[
+        bool, typer.Option("--from-checks", help="Raise issues for untracked check warnings.")
+    ] = False,
+    rule: Annotated[
+        list[str] | None,
+        typer.Option(help="With --from-checks: only these rules. By hand: the rule tracked."),
+    ] = None,
+    group: Annotated[
+        bool, typer.Option(help="With --from-checks: one issue per rule for all its records.")
+    ] = False,
+    kind: Annotated[str | None, typer.Option(help="Label of a hand-raised issue.")] = None,
+    title: Annotated[str | None, typer.Option(help="Title (English).")] = None,
+    title_zh: Annotated[str | None, typer.Option(help="Title (Chinese).")] = None,
+    description: Annotated[str | None, typer.Option(help="Description (English).")] = None,
+    description_zh: Annotated[str | None, typer.Option(help="Description (Chinese).")] = None,
+    record: Annotated[list[str] | None, typer.Option(help="Record concerned (repeat).")] = None,
+    owner: Annotated[str | None, typer.Option(help="Person who owns the issue.")] = None,
+    due: Annotated[str | None, typer.Option(help="Due date or named event.")] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Raise issues: from the check findings, or one written by hand."""
+    from qingsong import review
+
+    root = vault_root(vault)
+    try:
+        if from_checks:
+            written = review.raise_from_checks(
+                root, by, set(rule) if rule else None, group, owner, via
+            )
+        else:
+            if not (kind and title and description):
+                raise OperationError("give --kind, --title and --description, or --from-checks")
+            if rule and len(rule) > 1:
+                raise OperationError("a hand-raised issue tracks at most one --rule")
+            written = [
+                review.raise_issue(
+                    root,
+                    kind,
+                    localized(title, title_zh),
+                    localized(description, description_zh),
+                    record or [],
+                    by,
+                    owner,
+                    due,
+                    via,
+                    rule[0] if rule else None,
+                )
+            ]
+    except OperationError as error:
+        fail(error, as_json)
+    emit(
+        [item.id for item in written],
+        as_json,
+        "\n".join(f"raised {item.id}: {item.title.get('en', '')}" for item in written)
+        or "nothing to raise: every warning is tracked",
+    )
+
+
+@issue_app.command("propose")
+def issue_propose(
+    issue_id: Annotated[str, typer.Argument(metavar="ISSUE")],
+    by: PersonOption,
+    file: Annotated[
+        Path | None,
+        typer.Option(help="YAML with summary {en, zh}, change_class and changes."),
+    ] = None,
+    keep: Annotated[
+        bool, typer.Option("--keep", help="Propose to keep the text as written.")
+    ] = False,
+    summary: Annotated[str | None, typer.Option(help="With --keep: why (English).")] = None,
+    summary_zh: Annotated[str | None, typer.Option(help="With --keep: why (Chinese).")] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Add a proposed fix to an open issue."""
+    from qingsong import review
+    from qingsong.operations import load_round_trip
+    from qingsong.schema import plain
+
+    try:
+        if keep == (file is not None):
+            raise OperationError("give either --file or --keep")
+        if keep:
+            if not summary:
+                raise OperationError("--keep needs --summary")
+            content: dict = {"summary": localized(summary, summary_zh), "changes": []}
+        else:
+            assert file is not None
+            content = plain(load_round_trip(file.resolve()))
+            unknown = set(content) - {"summary", "change_class", "changes"}
+            if unknown:
+                raise OperationError(f"unknown keys in {file.name}: {', '.join(sorted(unknown))}")
+            if not content.get("changes"):
+                raise OperationError(f"{file.name} has no changes; use --keep to keep the text")
+        record = review.propose(
+            vault_root(vault),
+            issue_id,
+            by,
+            content.get("summary") or {},
+            content.get("changes") or [],
+            content.get("change_class", "editorial"),
+            via,
+        )
+    except OperationError as error:
+        fail(error, as_json)
+    done(record, as_json, "proposed in")
+
+
+@issue_app.command("accept")
+def issue_accept(
+    issue_id: Annotated[str, typer.Argument(metavar="ISSUE")],
+    proposal: Annotated[int, typer.Option(help="Number of the proposal to accept.")],
+    by: PersonOption,
+    decision: Annotated[
+        str | None, typer.Option(help="Decision record, required for baselined targets.")
+    ] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Accept a proposal (approvers only): apply its changes and close the issue."""
+    from qingsong import review
+
+    try:
+        written = review.accept(vault_root(vault), issue_id, proposal, by, decision, via)
+    except OperationError as error:
+        fail(error, as_json)
+    emit(
+        [{"id": item.id, "revision": item.revision} for item in written],
+        as_json,
+        "\n".join(f"{item.id} now at revision {item.revision}" for item in written),
+    )
+
+
+@issue_app.command("reject")
+def issue_reject(
+    issue_id: Annotated[str, typer.Argument(metavar="ISSUE")],
+    proposal: Annotated[int, typer.Option(help="Number of the proposal to reject.")],
+    reason: Annotated[str, typer.Option(help="Why (English).")],
+    by: PersonOption,
+    reason_zh: Annotated[str | None, typer.Option(help="Why (Chinese).")] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Reject a proposal (an approver), or withdraw it (its author)."""
+    from qingsong import review
+
+    try:
+        record = review.reject(
+            vault_root(vault), issue_id, proposal, by, localized(reason, reason_zh), via
+        )
+    except OperationError as error:
+        fail(error, as_json)
+    done(record, as_json, "rejected a proposal of")
+
+
+@issue_app.command("close")
+def issue_close(
+    issue_id: Annotated[str, typer.Argument(metavar="ISSUE")],
+    outcome: Annotated[str, typer.Option(help="answered, withdrawn or fixed.")],
+    resolution: Annotated[str, typer.Option(help="How it was resolved (English).")],
+    by: PersonOption,
+    resolution_zh: Annotated[str | None, typer.Option(help="How (Chinese).")] = None,
+    via: ViaOption = None,
+    vault: VaultOption = None,
+    as_json: JsonOption = False,
+) -> None:
+    """Close an issue without accepting a proposal (approvers only)."""
+    from qingsong import review
+
+    try:
+        record = review.close(
+            vault_root(vault), issue_id, outcome, localized(resolution, resolution_zh), by, via
+        )
+    except OperationError as error:
+        fail(error, as_json)
+    done(record, as_json, "closed")
+
+
 render_app = typer.Typer(no_args_is_help=True, help="Generate documents from the records.")
 app.add_typer(render_app, name="render")
 
@@ -441,14 +642,29 @@ def render_word(
     version: Annotated[
         str | None, typer.Option(help="Version shown on the cover and header.")
     ] = None,
+    update_fields: Annotated[
+        bool,
+        typer.Option(
+            help="Ask Word to update all fields on opening (page numbers in the table of "
+            "contents); Word then shows a prompt."
+        ),
+    ] = False,
     vault: VaultOption = None,
     as_json: JsonOption = False,
 ) -> None:
-    """Generate a Word document from the records (styles from templates/reference.docx)."""
+    """Generate a Word document from the records (styles from templates/reference.docx).
+
+    The table of contents lists every heading; page numbers appear when it is updated in Word."""
     from qingsong.render.word import render_docx
 
     try:
-        written = render_docx(loaded(vault), document, output.resolve(), version=version)
+        written = render_docx(
+            loaded(vault),
+            document,
+            output.resolve(),
+            version=version,
+            update_fields_on_open=update_fields,
+        )
     except ValueError as error:
         fail(error, as_json)
     emit({"docx": str(written)}, as_json, f"wrote {written}")

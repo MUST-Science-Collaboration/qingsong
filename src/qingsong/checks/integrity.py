@@ -369,3 +369,64 @@ def figure_files(context: Context) -> Iterator[Finding]:
                     file=relative_file(vault, record.id),
                     fix="update its sha256 and record the change with qingsong revise",
                 )
+
+
+@rule("integrity.proposal", "issues name known rules; proposals name known records and fields")
+def proposals(context: Context) -> Iterator[Finding]:
+    from qingsong.checks import all_rule_summaries
+    from qingsong.schema import Issue
+
+    vault = context.vault
+    known_rules = set(all_rule_summaries())
+    for record in vault.records.values():
+        if not isinstance(record, Issue):
+            continue
+        file = relative_file(vault, record.id)
+        if record.rule and record.rule not in known_rules:
+            yield Finding(
+                "integrity.proposal",
+                "error",
+                f"unknown check rule {record.rule}",
+                record=record.id,
+                file=file,
+                fix="see qingsong rules",
+            )
+        numbers = [proposal.number for proposal in (record.proposals or [])]
+        if len(numbers) != len(set(numbers)):
+            yield Finding(
+                "integrity.proposal",
+                "error",
+                "proposal numbers repeat",
+                record=record.id,
+                file=file,
+            )
+        for proposal in record.proposals or []:
+            for change in proposal.changes:
+                target = vault.records.get(change.record)
+                if target is None:
+                    yield Finding(
+                        "integrity.proposal",
+                        "error",
+                        f"proposal {proposal.number} changes unknown record {change.record}",
+                        record=record.id,
+                        file=file,
+                    )
+                elif change.field.split(".")[0] not in type(target).model_fields:
+                    yield Finding(
+                        "integrity.proposal",
+                        "error",
+                        f"proposal {proposal.number}: {change.record} has no field {change.field}",
+                        record=record.id,
+                        file=file,
+                    )
+        if record.status == "closed" and any(
+            p.status == "proposed" for p in (record.proposals or [])
+        ):
+            yield Finding(
+                "integrity.proposal",
+                "error",
+                "a closed issue still has open proposals",
+                record=record.id,
+                file=file,
+                fix="close issues with qingsong issue accept or close",
+            )

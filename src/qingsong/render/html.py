@@ -1,7 +1,10 @@
 """Static HTML site (docs/SPEC.md §12.1): works offline from a folder; no external resources."""
 
 import datetime
+import difflib
+import html
 import json
+import re
 import shutil
 from collections import Counter
 from pathlib import Path
@@ -9,8 +12,9 @@ from pathlib import Path
 from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup
 
-from qingsong import __version__, checks
+from qingsong import __version__, checks, ids
 from qingsong.findings import Finding
+from qingsong.hashing import field_value
 from qingsong.render.model import (
     children_of,
     documents_of,
@@ -19,7 +23,8 @@ from qingsong.render.model import (
     tree_data,
 )
 from qingsong.render.text import blocks, format_slot, inline, substitute_slots
-from qingsong.schema import Document, Figure, Requirement
+from qingsong.review import kind_labels
+from qingsong.schema import Document, Figure, Issue, Proposal, ProposedChange, Requirement
 from qingsong.vault import Vault
 
 static_dir = Path(__file__).parent / "static"
@@ -39,6 +44,34 @@ words = {
     "en": {"section": "Section", "figure": "Figure"},
     "zh": {"section": "第{}节", "figure": "图"},
 }
+field_labels = {
+    "title": {"en": "Title", "zh": "标题"},
+    "statement": {"en": "Requirement", "zh": "需求"},
+    "rationale": {"en": "Rationale", "zh": "原因"},
+    "notes": {"en": "Notes", "zh": "说明"},
+    "suggestions": {"en": "Suggestions", "zh": "建议"},
+    "verification.criteria": {"en": "Verification", "zh": "验收方式"},
+}
+state_labels = {"proposed": "Fix proposed", "open": "Open", "closed": "Closed"}
+diff_token = re.compile(r"\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]")
+
+
+def diff_markup(old: str, new: str) -> Markup:
+    """Word-level difference (character level for Chinese): deleted text struck, new text marked."""
+    before, after = diff_token.findall(old), diff_token.findall(new)
+    parts = []
+    matcher = difflib.SequenceMatcher(None, before, after, autojunk=False)
+    for operation, start, end, new_start, new_end in matcher.get_opcodes():
+        removed = html.escape("".join(before[start:end]))
+        added = html.escape("".join(after[new_start:new_end]))
+        if operation == "equal":
+            parts.append(removed)
+            continue
+        if removed:
+            parts.append(f"<del>{removed}</del>")
+        if added:
+            parts.append(f"<ins>{added}</ins>")
+    return Markup("".join(parts).replace("\n", "<br>"))
 
 
 def script_json(data) -> str:
@@ -64,6 +97,33 @@ class Site:
         for finding in self.findings:
             if finding.record:
                 self.by_record.setdefault(finding.record, []).append(finding)
+        self.issues = sorted(
+            (record for record in vault.records.values() if isinstance(record, Issue)),
+            key=lambda record: ids.sort_key(record.id),
+        )
+        self.issues_by_record: dict[str, list[Issue]] = {}
+        for issue in self.issues:
+            targets = [*issue.records]
+            targets += [
+                change.record for proposal in issue.proposals or [] for change in proposal.changes
+            ]
+            for target in dict.fromkeys(targets):
+                self.issues_by_record.setdefault(target, []).append(issue)
+        for record in vault.records.values():
+            if isinstance(record, Requirement):
+                listed = [*record.issues, *(slot.issue for slot in record.values.values())]
+                for issue_id in dict.fromkeys(item for item in listed if item):
+                    issue = vault.records.get(issue_id)
+                    known = self.issues_by_record.setdefault(record.id, [])
+                    if isinstance(issue, Issue) and issue not in known:
+                        known.append(issue)
+        self.untracked: dict[str, list[Finding]] = {}
+        for finding in self.findings:
+            if finding.record and finding.issue is None and finding.severity != "info":
+                self.untracked.setdefault(finding.record, []).append(finding)
+        self.kind_labels = kind_labels
+        self.field_labels = field_labels
+        self.state_labels = state_labels
         self.children = children_of(vault)
         self.in_documents = requirement_documents(vault)
         self.documents = documents_of(vault)
@@ -94,6 +154,8 @@ class Site:
             return f"{prefix}{record_pages[record.type]}/{record_id}.html"
         if isinstance(record, Document):
             return f"{prefix}documents/{record_id}.html"
+        if isinstance(record, Issue):
+            return f"{prefix}review.html#{record_id}"
         return f"{prefix}registers.html#{record_id}"
 
     def resolver(self, prefix: str, document: Document | None):
@@ -193,6 +255,50 @@ class Site:
     def slot_text(self, slot) -> str:
         return format_slot(slot, "en").replace("\\", "")
 
+    # review --------------------------------------------------------------------------------
+    def issue_state(self, issue: Issue) -> str:
+        if issue.status == "closed":
+            return "closed"
+        if any(proposal.status == "proposed" for proposal in issue.proposals or []):
+            return "proposed"
+        return "open"
+
+    def open_issues_of(self, record_id: str) -> list[Issue]:
+        return [
+            issue for issue in self.issues_by_record.get(record_id, []) if issue.status == "open"
+        ]
+
+    def open_proposals(self, issue: Issue) -> list[Proposal]:
+        return [proposal for proposal in issue.proposals or [] if proposal.status == "proposed"]
+
+    def issue_documents(self, issue: Issue) -> list[str]:
+        found: dict[str, None] = {}
+        for record_id in issue.records:
+            for document_id in self.in_documents.get(record_id, []):
+                found[document_id] = None
+        return list(found)
+
+    def record_link(self, record_id: str, prefix: str) -> str:
+        """A requirement inside a document opens at its place in the document."""
+        documents = self.in_documents.get(record_id, [])
+        if documents:
+            return f"{prefix}documents/{documents[0]}.html#{record_id}"
+        return self.href(record_id, prefix)
+
+    def change_diff(self, change: ProposedChange, language: str) -> Markup:
+        """The difference as a reader sees it: references shown by their labels."""
+        record = self.vault.records.get(change.record)
+        current = field_value(record, change.field) if record is not None else None
+        old = current.get(language, "") if isinstance(current, dict) else ""
+        resolve = self.resolver("", None)
+
+        def readable(text: str) -> str:
+            return ids.reference_pattern.sub(
+                lambda match: resolve(match.group(1), match.group(2), language)[0], text
+            )
+
+        return diff_markup(readable(old), readable(change.text.get(language, "")))
+
     def plain(self, value: dict | None, language: str = "en") -> str:
         if not value:
             return ""
@@ -227,11 +333,7 @@ class Site:
             record.maturity for record in requirements if record.lifecycle == "current"
         )
         levels = Counter(record.level for record in requirements if record.lifecycle == "current")
-        open_issues = [
-            record
-            for record in self.vault.records.values()
-            if record.type == "issue" and record.status == "open"
-        ]
+        open_issues = [issue for issue in self.issues if issue.status == "open"]
         events = sorted(
             ((event, record) for record in self.vault.records.values() for event in record.history),
             key=lambda item: (item[0].date, item[1].id),
@@ -278,6 +380,27 @@ class Site:
             for kind in register_types
         }
         self.render("registers.html", "registers.html", "", registers=registers)
+        order = {"proposed": 0, "open": 1, "closed": 2}
+        reviewed = sorted(
+            self.issues,
+            key=lambda issue: (order[self.issue_state(issue)], ids.sort_key(issue.id)),
+        )
+        kinds = Counter(issue.kind for issue in self.issues if issue.status == "open")
+        states = Counter(self.issue_state(issue) for issue in self.issues)
+        untracked_by_rule: dict[str, list[Finding]] = {}
+        for findings in self.untracked.values():
+            for finding in findings:
+                untracked_by_rule.setdefault(finding.rule, []).append(finding)
+        self.render(
+            "review.html",
+            "review.html",
+            "",
+            issues=reviewed,
+            kinds=kinds,
+            states=states,
+            untracked_by_rule=dict(sorted(untracked_by_rule.items())),
+            rules=checks.all_rule_summaries(),
+        )
         rules = checks.all_rule_summaries()
         grouped: dict[str, list[Finding]] = {}
         for finding in self.findings:

@@ -7,7 +7,7 @@
   <a class="card {{ 'bad' if severity.error else 'good' }}" href="checks.html"><div class="big">{{ severity.error or 0 }}</div><div>errors</div><div class="small">{{ severity.warning or 0 }} warnings · {{ severity.info or 0 }} notes</div></a>
   <a class="card" href="tree.html"><div class="big">{{ vault.nodes|length }}</div><div>nodes in the product tree</div></a>
   <a class="card" href="flow.html"><div class="big">{{ requirements|length }}</div><div>requirements</div><div class="small">{% for name, count in maturity.items() %}{{ count }} {{ name }}{% if not loop.last %} · {% endif %}{% endfor %}</div></a>
-  <a class="card" href="registers.html#issues"><div class="big">{{ open_issues|length }}</div><div>open issues</div><div class="small">TBD, TBC, provisional values, questions</div></a>
+  <a class="card" href="review.html"><div class="big">{{ open_issues|length }}</div><div>open issues</div><div class="small">{{ open_issues|selectattr("proposals")|list|length }} with proposals · {{ site.untracked|length }} records with untracked findings · review them</div></a>
 </div>
 <h2>Requirements by level</h2>
 <div class="level-bars">

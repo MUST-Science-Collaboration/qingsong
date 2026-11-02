@@ -129,7 +129,7 @@ Flow-down rules (checked):
 - **Direction.** `derives_from` points only to requirements at a higher level. Levels may be skipped.
 - **Siblings.** A budget shared between siblings is expressed by each share deriving from the higher-level budget requirement, never by sibling-to-sibling derivation.
 - **Science.** `science` requirements have no parent. They carry a `justification`.
-- **Parentless requirements below science.** They must cite a decision in `justified_by`. Otherwise the check raises a **TBJ** ("to be justified") issue.
+- **Parentless requirements below science.** They must cite a decision in `justified_by`. Otherwise the check raises a **TBJ** ("to be justified") finding. It is a warning, to be tracked by a `tbj` issue (§5.6), up to `agreed`, and an error in a baseline (decision of 2026-11-02: approval concerns a requirement's content, and complete traceability is required at baseline).
 - **Allocation.** The children of one parent may be allocated to different branches of the tree.
 
 ### 4.3 Namespaces (accepted)
@@ -320,6 +320,63 @@ The **change summary** compares the document's requirements at the previous rele
 - revised IDs, with the classes and summaries of the history entries in between;
 - superseded and withdrawn IDs, with their successors.
 
+### 5.6 Review: labelled issues and proposed fixes (proposed, 2026-11-02)
+
+The Project Scientist asked (2026-11-02) for three things:
+- what the checks find should be labelled clearly and highlighted in the HTML documents;
+- a fix can be proposed alongside it;
+- one place, reachable from the project page, where all of it is reviewed.
+
+Check findings are computed and come and go with the text. To carry a label, an owner and a proposed fix they need a record, so **issues are the review items**. A finding becomes reviewable when an issue tracks it.
+
+**Labels.** The issue `kind` is its label, shown in the same words and colour on every page:
+
+| Kind | Label | Usually raised from |
+|---|---|---|
+| `tbd`, `tbc`, `provisional` | TBD, TBC, Provisional | open values (`content.open_values`, `content.values`) |
+| `tbj` | No parent (TBJ) | `structure.justification` |
+| `wording` | Wording | `content.writing`: not exactly one "shall", vague terms |
+| `translation` | Translation | `change.translation`, or a reviewer: the two languages differ in meaning |
+| `question` | Question | anyone |
+| `conflict` | Conflict | two records disagree |
+
+**Issue fields added:**
+- `rule`: the check rule whose findings the issue tracks. The findings of that rule on the issue's `records` are then *tracked*.
+- `proposals`: proposed fixes, numbered 1, 2, … within the issue.
+- `outcome`, set on closing: `fixed`, `accepted_as_written`, `answered` or `withdrawn`.
+- `accepted`: for `accepted_as_written`, the review hash (below) of each record at the time of acceptance.
+
+**Proposal.** A proposal holds:
+- `number`, `date`, `by` (a person) and `via` (an agent);
+- `summary` `{en, zh}` and `change_class` (`editorial` by default, `value` or `reallocate`; §8.1);
+- `status`: `proposed`, `accepted` or `rejected`, and `reason` for a rejection;
+- `changes`: each one names `record`, `field` and the new `text` per language. Allowed fields: `title`, `statement`, `rationale`, `notes`, `suggestions` and `verification.criteria`. `base` holds the text hash, per language, of the text being replaced.
+
+A proposal without changes proposes to **keep the text as written**.
+
+**Review hash.** A hash of a record's prose fields and values in every language. An acceptance made against one review hash does not cover a later wording.
+
+**Lifecycle:**
+1. **Raise.**
+   - `qingsong issue raise --from-checks [--rule R] [--group]` writes one issue per untracked finding, or, with `--group`, one issue per rule covering all its records. Kind and title come from the rule.
+   - `qingsong issue raise --kind K --title T --description D --record ID…` writes one by hand.
+2. **Propose.** `qingsong issue propose ISS --file proposal.yaml`, or `--keep --summary S`.
+   - The command numbers the proposal, fills in the date, the person and the base hashes, and checks that each record and field exist.
+   - Anyone in `people.yaml` may propose.
+3. **Decide.** Only an approver may do this.
+   - `qingsong issue accept ISS --proposal N` applies the changes through `revise`, with the proposal's class and a summary naming the issue and proposal. It refuses when a base hash no longer matches. Changes given in both languages mark the translation reviewed. A change given in only one language leaves the other to be updated (`change.translation`).
+   - Accepting a keep proposal records the review hashes.
+   - Either way the issue closes, with outcome `fixed` or `accepted_as_written`, and the other open proposals become `rejected`.
+   - `qingsong issue reject ISS --proposal N --reason R` rejects one proposal.
+   - `qingsong issue close ISS --outcome answered|withdrawn --resolution R` closes an issue without a proposal.
+4. **Agents** prepare proposals; people decide. The HTML review page writes the decisions as commands (§12.1), which an agent or the approver runs.
+
+**Checks:**
+- A tracked finding keeps its severity and names its issue.
+- A finding on a record accepted as written, whose review hash is unchanged, becomes a note (`info`) naming the issue. Once the text changes it is a warning again.
+- `change.stale_proposal` (warning): an open proposal whose base no longer matches the record.
+- `integrity.proposal` (error): a proposal names an unknown record, field or rule, or numbers repeat.
+
 ## 6. Identity (accepted)
 
 ### 6.1 IDs
@@ -476,6 +533,7 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 | `qingsong renumber --unmerged OLD NEW` | move a record not yet on main to a free number | 1 |
 | `qingsong show ID`, `qingsong list [filters]`, `qingsong find TEXT` | read | 1 |
 | `qingsong schema [TYPE]` | print the JSON Schema for editors and agents | 1 |
+| `qingsong issue raise`, `propose`, `accept`, `reject`, `close` | review items and proposed fixes (§5.6) | 3 |
 | `qingsong import docx FILE --document DOC` | draft records from a Word requirement table, with source locators | 2 |
 | `qingsong render html OUT`, `qingsong serve` | HTML site (§12.1) | 3 |
 | `qingsong render docx DOC --release V`, `qingsong release DOC V` | Word output and releases (§12.2) | 4 |
@@ -499,6 +557,8 @@ Views:
 - **Review package:** for a node's design review.
 - **Search:** in both languages.
 - **Check report.**
+- **Review:** every issue as a labelled card with its records, proposed fixes as word-level differences in both languages, and untracked findings. It can be filtered by label, status and document, and it is linked from the home page and the project roadmap. The viewer marks proposals Accept or Reject, with a note. Marks are kept in the browser, and "Copy decisions" turns them into `qingsong issue` commands to run or hand to an agent; the page itself never writes to the record.
+- **Review marks in documents:** a requirement with an open issue or an untracked finding is marked in the document view with its labels and its proposed fix. A switch hides the marks for clean reading. Word output never carries them.
 
 Pages follow a light, print-friendly style written for scientists and engineers.
 
@@ -577,3 +637,6 @@ Version 0.1 (February 2026) is tagged `legacy-0.1`. It stored items in a Doorsto
 | 2026-11-01 | Schedules are out of scope; risks later. |
 | 2026-11-01 | HTML is first-class and Word is for formal distribution. HTML is distributed as an artifact or served locally. |
 | 2026-11-01 | Record content lives in a private vault repository. This public repository holds only the engine and synthetic examples. |
+| 2026-11-02 | Check findings are labelled, highlighted in the HTML documents, carry proposed fixes, and are reviewed from one page reachable from the roadmap (§5.6). |
+| 2026-11-02 | Alternative versions are mainly other numbers and IDs (aliases); a requirement may also carry alternative wording (variants). |
+| 2026-11-02 | Word output must open without prompts. The table of contents is written out; page numbers come with a field update in Word. |

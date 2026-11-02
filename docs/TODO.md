@@ -31,11 +31,15 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | --- | --- | --- | --- |
 | R3-001 | Site: home, interactive tree, flow-down diagram, documents with figures, requirement pages, registers, checks, search, language switch | [x] Done | `qingsong render html` |
 | R3-002 | Change views between releases; review packages; N² matrix | [ ] Next | |
+| R3-003 | Review: labelled issues raised from findings, proposed fixes with differences, approver decisions (`qingsong issue …`), review page, marks in documents (SPEC §5.6) | [x] Done 2026-11-02 | the Project Scientist's request of 2026-11-02 |
+| R3-004 | The "EN + 中文" view is crowded | [~] Eased | Chinese set off by a rule and spacing; a side-by-side layout is left for later |
 
 ## Phase 4: Word (first slice done 2026-11-02)
 
 | ID | Task | Status | Notes |
 | --- | --- | --- | --- |
 | R4-001 | `qingsong render docx`: MUST layout, bilingual requirements, figures, tables, TOC field, header/footer | [x] Done | pilot: 610 of 612 body units of v1.1 reproduced; 2 intended differences |
-| R4-002 | Confirm the generated file opens in Word without repair | [ ] Project Scientist | not possible unattended |
+| R4-002 | Confirm the generated file opens in Word without repair | [x] Done 2026-11-02 | opens; the "fields that may refer to other files" prompt came from updateFields |
+| R4-004 | No prompt on opening: the table of contents is written out, with links; `--update-fields` restores update-on-open | [x] Done 2026-11-02 | page numbers appear after a field update in Word |
+| R4-005 | The standard MUST style and front page | [ ] Later | the Project Scientist, 2026-11-02: not critical |
 | R4-003 | `qingsong release` with tracked changes against the previous release | [ ] Next | |

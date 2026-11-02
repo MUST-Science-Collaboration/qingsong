@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import requirement_card, badge %}
+{% from "macros.html" import requirement_card, badge, issue_label %}
 {% block title %}{{ record.id }}{% endblock %}
 {% block body %}
 <div class="breadcrumbs"><a href="{{ prefix }}tree.html#{{ record.allocated_to }}">{{ record.allocated_to }}</a> ›
@@ -9,7 +9,7 @@
   <div><h3>Derives from</h3>{% if record.derives_from %}<ul class="plain">{% for link in record.derives_from %}{% set parent = vault.records.get(link.id) %}<li><a href="{{ site.href(link.id, prefix) }}">{{ link.id }}</a> {% if parent %}{{ site.text(parent.title, prefix, block=False) }}{% if link.normative_revision < parent.normative_revision %} {{ badge("suspect: parent changed", "bad") }}{% endif %}{% endif %}</li>{% endfor %}</ul>{% else %}<p class="hint">No parent{% if record.justified_by %}; justified by <a href="{{ site.href(record.justified_by, prefix) }}">{{ record.justified_by }}</a>{% else %} (to be justified){% endif %}.</p>{% endif %}</div>
   <div><h3>Derived requirements</h3>{% set children = site.children.get(record.id, []) %}{% if children %}<ul class="plain">{% for child_id in children %}<li><a href="{{ site.href(child_id, prefix) }}">{{ child_id }}</a> {{ site.text(vault.records[child_id].title, prefix, block=False) }}</li>{% endfor %}</ul>{% else %}<p class="hint">None.</p>{% endif %}</div>
   <div><h3>Issues and sources</h3><ul class="plain">
-    {% for issue_id in record.issues %}{% set issue = vault.records.get(issue_id) %}<li><a href="{{ site.href(issue_id, prefix) }}">{{ issue_id }}</a> {% if issue %}{{ badge(issue.kind, "issue") }} {{ badge(issue.status, "lifecycle") }}{% endif %}</li>{% endfor %}
+    {% for issue in site.issues_by_record.get(record.id, []) %}<li>{{ issue_label(site, issue.kind) }} <a href="{{ site.href(issue.id, prefix) }}">{{ issue.id }}</a> {{ site.text(issue.title, prefix, block=False) }} · {{ site.state_labels[site.issue_state(issue)] }}</li>{% endfor %}
     {% for citation in record.sources %}<li><a href="{{ site.href(citation.source, prefix) }}">{{ citation.source }}</a> · {{ citation.locator }}</li>{% endfor %}
   </ul></div>
 </div>

@@ -150,3 +150,27 @@ def test_value_slots_read_as_written():
         format_slot(slot(relation="eq", value=9.8, unit="m/s^2", certainty="firm"), "en")
         == "9.8 m/s²"
     )
+
+
+def test_review_page_and_marks_show_issues_and_proposals(demo, tmp_path):
+    site = render_site(load(demo), tmp_path / "site").parent
+    review_page = (site / "review.html").read_text()
+    assert 'id="ISS-0001"' in review_page and 'data-kind="provisional"' in review_page
+    assert 'data-key="ISS-0001#1"' in review_page
+    assert "<ins>" in review_page and "as the median over all amplifiers" in review_page
+    document = (site / "documents" / "DEMO-INS-DET-RD.html").read_text()
+    assert 'class="requirement flagged"' in document
+    assert 'class="review-marks"' in document and "review.html#ISS-0001" in document
+    assert "Proposed fix ISS-0001 P1" in document
+    assert (site / "static" / "review.js").exists()
+    index = (site / "index.html").read_text()
+    assert 'href="review.html"' in index
+
+
+def test_difference_marks_words_and_chinese_characters():
+    from qingsong.render.html import diff_markup
+
+    assert str(diff_markup("read noise of 3 e", "read noise of 4 e")) == (
+        "read noise of <del>3</del><ins>4</ins> e"
+    )
+    assert str(diff_markup("应为三", "应为四<")) == "应为<del>三</del><ins>四&lt;</ins>"

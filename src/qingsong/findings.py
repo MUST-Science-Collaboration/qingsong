@@ -13,6 +13,7 @@ class Finding:
     record: str | None = None
     file: str | None = None
     fix: str | None = None
+    issue: str | None = None
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -20,4 +21,6 @@ class Finding:
     def line(self) -> str:
         where = self.record or self.file or "vault"
         text = f"{self.severity.upper():7s} {self.rule:34s} {where}: {self.message}"
+        if self.issue:
+            text += f" [{self.issue}]"
         return text + (f"\n        fix: {self.fix}" if self.fix else "")

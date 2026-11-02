@@ -1,7 +1,7 @@
 """Check registry and runner (docs/SPEC.md §10)."""
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from qingsong.findings import Finding, severity_order
@@ -73,7 +73,7 @@ def run(
                 )
             )
     return sorted(
-        findings,
+        apply_review(vault, findings),
         key=lambda finding: (
             severity_order[finding.severity],
             finding.rule,
@@ -81,6 +81,45 @@ def run(
             finding.file or "",
         ),
     )
+
+
+def apply_review(vault: Vault, findings: list[Finding]) -> list[Finding]:
+    """Findings that an issue covers (docs/SPEC.md §5.6): an open issue tracking the rule on the
+    record is named; an acceptance as written turns the finding into a note while the record's
+    review hash is unchanged."""
+    from qingsong.hashing import review_hash
+    from qingsong.schema import Issue
+
+    tracked: dict[tuple[str, str], str] = {}
+    accepted: dict[tuple[str, str], tuple[str, str]] = {}
+    for record in vault.records.values():
+        if not isinstance(record, Issue) or not record.rule:
+            continue
+        if record.status == "open":
+            for target in record.records:
+                tracked.setdefault((record.rule, target), record.id)
+        elif record.outcome == "accepted_as_written":
+            for target, digest in (record.accepted or {}).items():
+                accepted[(record.rule, target)] = (record.id, digest)
+    result = []
+    for finding in findings:
+        key = (finding.rule, finding.record or "")
+        target = vault.records.get(finding.record or "")
+        if key in accepted and target is not None and finding.severity != "error":
+            issue_id, digest = accepted[key]
+            if review_hash(target) == digest:
+                finding = replace(
+                    finding,
+                    severity="info",
+                    message=f"{finding.message} (accepted as written in {issue_id})",
+                    issue=issue_id,
+                )
+                result.append(finding)
+                continue
+        if key in tracked:
+            finding = replace(finding, issue=tracked[key])
+        result.append(finding)
+    return result
 
 
 def all_rule_summaries() -> dict[str, str]:

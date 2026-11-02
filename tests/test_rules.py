@@ -241,7 +241,29 @@ def figure_placed_twice(root: Path) -> None:
     edit_yaml(root / "documents" / "DEMO-INS-DET-RD.yaml", change)
 
 
+def unknown_rule_in_issue(root: Path) -> None:
+    edit_yaml(
+        root / "issues" / "ISS-0001.yaml", lambda data: data.__setitem__("rule", "content.colour")
+    )
+
+
+def stale_proposal(root: Path) -> None:
+    from qingsong import review
+
+    day = datetime.date(2026, 11, 2)
+    change = {"record": "INS-DET-REQ-001", "field": "rationale", "text": {"en": "New reason."}}
+    review.propose(root, "ISS-0001", "bob", {"en": "reword"}, [change], today=day)
+
+    def reword(data):
+        data["rationale"]["en"] = "The rationale was edited after the proposal."
+
+    edit_yaml(requirement_file(root, "INS-DET-REQ-001"), reword)
+    operations.revise(root, "INS-DET-REQ-001", "editorial", "reworded", "alice", today=day)
+
+
 cases = {
+    "integrity.proposal": unknown_rule_in_issue,
+    "change.stale_proposal": stale_proposal,
     "structure.outline": figure_placed_twice,
     "content.references": malformed_reference,
     "content.evidence": compliant_without_evidence,

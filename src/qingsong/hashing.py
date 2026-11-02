@@ -52,6 +52,31 @@ def normative_hash_of(record: RecordBase) -> str:
     return short_hash(canonical_json({name: field_value(record, name) for name in fields}))
 
 
+review_fields = (
+    "title",
+    "statement",
+    "values",
+    "rationale",
+    "notes",
+    "suggestions",
+    "verification.criteria",
+)
+
+
+def review_hash(record: RecordBase) -> str:
+    """Hash of a record's prose and values in every language: what an issue accepted as written
+    covers (docs/SPEC.md §5.6)."""
+    return short_hash(canonical_json({name: field_value(record, name) for name in review_fields}))
+
+
+def field_text_hashes(record: RecordBase, dotted: str) -> dict[str, str]:
+    """Hash of each language's text of one field; the base of a proposed change."""
+    value = field_value(record, dotted)
+    if not isinstance(value, dict):
+        return {}
+    return {language: text_hash(text) for language, text in value.items()}
+
+
 def approved_text_hash(record: RecordBase, language: str) -> str:
     """Hash of the approved wording: statement and verification criteria in the reference language."""
     statement = field_value(record, "statement") or {}

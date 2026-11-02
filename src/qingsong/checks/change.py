@@ -269,3 +269,37 @@ def stale_evidence(context: Context) -> Iterator[Finding]:
                 record=record.id,
                 file=file,
             )
+
+
+@rule("change.stale_proposal", "open proposals still match the text they would replace")
+def stale_proposals(context: Context) -> Iterator[Finding]:
+    from qingsong.hashing import field_text_hashes
+    from qingsong.schema import Issue
+
+    vault = context.vault
+    for record in vault.records.values():
+        if not isinstance(record, Issue) or record.status != "open":
+            continue
+        for proposal in record.proposals or []:
+            if proposal.status != "proposed":
+                continue
+            for change in proposal.changes:
+                target = vault.records.get(change.record)
+                if target is None:
+                    continue
+                current = field_text_hashes(target, change.field)
+                changed = [
+                    language
+                    for language, base in change.base.items()
+                    if current.get(language, "") != base
+                ]
+                if changed:
+                    yield Finding(
+                        "change.stale_proposal",
+                        "warning",
+                        f"proposal {proposal.number}: {change.record} {change.field} "
+                        f"({', '.join(changed)}) changed after the proposal was made",
+                        record=record.id,
+                        file=relative_file(vault, record.id),
+                        fix="reject the proposal and propose again on the current text",
+                    )

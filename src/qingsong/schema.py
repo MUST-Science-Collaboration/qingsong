@@ -216,15 +216,47 @@ class Quantity(RecordBase):
     description: LocalizedText | None = None
 
 
+TextHash = Annotated[str, Field(pattern=r"^([0-9a-f]{16})?$")]
+IssueKind = Literal[
+    "tbd", "tbc", "provisional", "tbj", "wording", "translation", "question", "conflict"
+]
+
+
+class ProposedChange(StrictModel):
+    record: str
+    field: Literal[
+        "title", "statement", "rationale", "notes", "suggestions", "verification.criteria"
+    ]
+    text: LocalizedText = Field(min_length=1)
+    base: dict[str, TextHash] = Field(default_factory=dict)
+
+
+class Proposal(StrictModel):
+    number: int = Field(ge=1)
+    date: datetime.date
+    by: str
+    via: str | None = None
+    summary: LocalizedText
+    change_class: ChangeClass = "editorial"
+    status: Literal["proposed", "accepted", "rejected"]
+    reason: LocalizedText | None = None
+    changes: list[ProposedChange] = Field(default_factory=list)
+
+
 class Issue(RecordBase):
     type: Literal["issue"]
-    kind: Literal["tbd", "tbc", "provisional", "tbj", "question", "conflict"]
+    kind: IssueKind
     status: Literal["open", "closed"]
     description: LocalizedText
     owner: str | None = None
     due: str | None = None
     closure_plan: LocalizedText | None = None
     records: list[str] = Field(default_factory=list)
+    # Fields added after records existed default to None, so that existing stamps stay valid.
+    rule: str | None = None
+    proposals: list[Proposal] | None = None
+    outcome: Literal["fixed", "accepted_as_written", "answered", "withdrawn"] | None = None
+    accepted: dict[str, TextHash] | None = None
     resolution: LocalizedText | None = None
 
 

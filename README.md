@@ -4,9 +4,12 @@ qingsong keeps a project's requirements as **engineering records**: small text f
 
 It is being rebuilt for the MUltiplexed Survey Telescope (MUST). The project's own records live in a separate, private repository; this repository holds only the engine and fictional examples.
 
-> **Status: rebuild in progress (version 0.2.0.dev0).** Phase 0 (specification, reset, tooling) is under way. The package does not yet read or check records. The earlier version 0.1 is preserved under the git tag `legacy-0.1`.
+> **Status: rebuild in progress (version 0.2.0.dev0).**
+> - Done: the core engine (records, IDs, change recording, checks), the HTML site with the review page, and Word output.
+> - Next: releases with tracked changes.
+> - The earlier version 0.1 is preserved under the git tag `legacy-0.1`.
 
-## What it will do
+## What it does
 
 - **Permanent identifiers.** A requirement such as `INS-DET-REQ-012` keeps its ID for life; it is never renumbered or reused. Earlier or vendor numbers are kept as aliases.
 - **Rules for change.** Editorial changes, value changes and changes of intent are distinguished; obsolete requirements are withdrawn, never deleted; dependent requirements are flagged when a parent changes.
@@ -15,8 +18,25 @@ It is being rebuilt for the MUltiplexed Survey Telescope (MUST). The project's o
 - **Continuous checks.** Every change is checked for structure, flow-down, units, conflicting values and unrecorded edits.
 - **Two languages.** English is the reference; the main content is also kept in Chinese.
 - **Generated documents.** A static HTML site for reading and tracing requirements, and Word files for formal releases.
+- **Review.** What the checks find is raised as labelled issues and highlighted in the HTML documents. Fixes are proposed with word-level differences in both languages and decided by an approver from one review page.
 
 The design is in [docs/SPEC.md](docs/SPEC.md).
+
+## Commands
+
+```bash
+qingsong check                                  # run every rule
+qingsong new requirement --namespace INS-DET …  # allocate the next ID
+qingsong revise ID --class editorial --summary … --by PERSON   # record a change
+qingsong approve ID --to agreed --by PERSON --ref …
+qingsong issue raise --from-checks --by PERSON  # one issue per untracked finding
+qingsong issue propose ISS-0001 --file fix.yaml --by PERSON
+qingsong issue accept ISS-0001 --proposal 1 --by APPROVER
+qingsong render html site                       # open site/index.html, then site/review.html
+qingsong render docx DOC out.docx --version 1.2
+```
+
+`qingsong --help` lists all commands; every command accepts `--json`. A fictional demo vault is in [examples/demo](examples/demo).
 
 ## Development
 

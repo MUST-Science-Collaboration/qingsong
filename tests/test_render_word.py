@@ -1,5 +1,6 @@
 """The Word renderer writes a valid package with numbered, bilingual content."""
 
+import re
 import zipfile
 
 import docx
@@ -32,3 +33,27 @@ def test_package_check_finds_directory_entries(tmp_path):
     problems = check_package(path)
     assert any("directory entry" in problem for problem in problems)
     assert any("integers" in problem for problem in problems)
+
+
+def test_table_of_contents_is_filled_without_an_update_prompt(demo, tmp_path):
+    """Word asks "fields that may refer to other files" when updateFields is set; the table of
+    contents is filled instead, each entry linked to a bookmark on its heading."""
+    output = render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx")
+    with zipfile.ZipFile(output) as package:
+        settings = package.read("word/settings.xml").decode("utf-8")
+        body = package.read("word/document.xml").decode("utf-8")
+    assert "updateFields" not in settings
+    assert body.count('w:fldCharType="begin"') == body.count('w:fldCharType="end"')
+    assert "TOC \\o" in body
+    anchors = re.findall(r'w:anchor="(_Toc\d+)"', body)
+    bookmarks = set(re.findall(r'w:bookmarkStart w:id="\d+" w:name="(_Toc\d+)"', body))
+    assert anchors and set(anchors) == bookmarks
+    texts = [paragraph.text for paragraph in docx.Document(str(output)).paragraphs]
+    toc = texts.index("TABLE OF CONTENTS")
+    assert "1. Introduction (简介)" in texts[toc + 1 : toc + 12]
+
+    prompted = render_docx(
+        load(demo), "DEMO-INS-DET-RD", tmp_path / "prompted.docx", update_fields_on_open=True
+    )
+    with zipfile.ZipFile(prompted) as package:
+        assert "updateFields" in package.read("word/settings.xml").decode("utf-8")

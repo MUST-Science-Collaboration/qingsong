@@ -182,9 +182,11 @@ def justification(context: Context) -> Iterator[Finding]:
                     file=file,
                 )
         elif not requirement.justified_by:
+            # Approval concerns a requirement's content; a missing parent stays a tracked
+            # warning until the requirement enters a baseline, where traceability is complete.
             yield Finding(
                 "structure.justification",
-                severity,
+                by_maturity(requirement.maturity, "info", "warning", "warning", "error"),
                 "no parent and no justifying decision: to be justified (TBJ)",
                 record=requirement.id,
                 file=file,

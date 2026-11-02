@@ -98,3 +98,12 @@ def relative_path(record_type: str, record_id: str) -> Path:
 
 def references_in_text(text: str) -> list[tuple[str, str | None]]:
     return [(match.group(1), match.group(2)) for match in reference_pattern.finditer(text)]
+
+
+def sort_key(record_id: str) -> tuple:
+    """Order IDs with their numbers compared as numbers (REQ-9 before REQ-10)."""
+    return tuple(
+        (0, int(part), "") if part.isdigit() else (1, 0, part)
+        for part in re.split(r"(\d+)", record_id)
+        if part
+    )

@@ -68,8 +68,11 @@ class WordRenderer:
         template: Path | None,
         latin_font: str | None = None,
         east_asian_font: str | None = None,
+        update_fields_on_open: bool = False,
     ):
         self.vault = vault
+        self.update_fields_on_open = update_fields_on_open
+        self.contents_entries: list[tuple[int, str, str]] = []
         self.document = document
         self.numbering = number_document(document)
         self.numberings = {record.id: number_document(record) for record in documents_of(vault)}
@@ -387,22 +390,70 @@ class WordRenderer:
         self.page_break()
 
     def table_of_contents(self) -> None:
+        """A paragraph that marks where the table of contents goes; `fill_table_of_contents`
+        replaces it once every heading is known."""
         self.paragraph("TABLE OF CONTENTS", bold=True)
-        paragraph = self.word.add_paragraph()
-        run = paragraph.add_run()
-        begin = OxmlElement("w:fldChar")
-        begin.set(qn("w:fldCharType"), "begin")
-        instruction = OxmlElement("w:instrText")
-        instruction.set(qn("xml:space"), "preserve")
-        instruction.text = 'TOC \\o "1-3" \\h \\z \\u'
-        separate = OxmlElement("w:fldChar")
-        separate.set(qn("w:fldCharType"), "separate")
-        placeholder = OxmlElement("w:t")
-        placeholder.text = "The table of contents is updated when the document is opened."
-        end = OxmlElement("w:fldChar")
-        end.set(qn("w:fldCharType"), "end")
-        for element in (begin, instruction, separate, placeholder, end):
-            run._r.append(element)
+        self.contents_marker = self.word.add_paragraph()
+
+    def fill_table_of_contents(self) -> None:
+        """A TOC field whose result already lists every heading of levels 1 to 3, each linked to a
+        bookmark on its heading. Word shows it as it is, without asking to update fields when the
+        document opens. Page numbers appear when the field is updated (F9, or Update Field); with
+        `update_fields_on_open`, Word instead rebuilds the table on opening, after asking."""
+        marker = getattr(self, "contents_marker", None)
+        if marker is None:
+            return
+
+        def field_run(kind: str | None, text: str | None = None):
+            run = OxmlElement("w:r")
+            if kind:
+                element = OxmlElement("w:fldChar")
+                element.set(qn("w:fldCharType"), kind)
+            else:
+                element = OxmlElement("w:instrText")
+                element.set(qn("xml:space"), "preserve")
+                element.text = text
+            run.append(element)
+            return run
+
+        entries: list = []
+        for level, text, bookmark in self.contents_entries:
+            style = f"toc {level}"
+            paragraph = self.word.add_paragraph(
+                style=style if style in self.style_names() else None
+            )
+            self.runs(paragraph, text, "en")
+            link = OxmlElement("w:hyperlink")
+            link.set(qn("w:anchor"), bookmark)
+            link.set(qn("w:history"), "1")
+            for run in paragraph._p.findall(qn("w:r")):
+                link.append(run)
+            paragraph._p.append(link)
+            entries.append(paragraph._p)
+        if not entries:
+            paragraph = self.word.add_paragraph()
+            self.add_run(paragraph, "Update this field to build the table of contents.")
+            entries.append(paragraph._p)
+        first = entries[0]
+        position = 1 if first.find(qn("w:pPr")) is not None else 0
+        for offset, run in enumerate(
+            (
+                field_run("begin"),
+                field_run(None, 'TOC \\o "1-3" \\h \\z \\u'),
+                field_run("separate"),
+            )
+        ):
+            first.insert(position + offset, run)
+        closing = self.word.add_paragraph()
+        closing._p.append(field_run("end"))
+        entries.append(closing._p)
+        for element in entries:
+            marker._p.addprevious(element)
+        marker._p.getparent().remove(marker._p)
+        if self.update_fields_on_open:
+            self.request_field_update()
+
+    def request_field_update(self) -> None:
         settings = self.word.settings.element
         update = settings.find(qn("w:updateFields"))
         if update is None:
@@ -423,6 +474,21 @@ class WordRenderer:
         style = f"Heading {min(level, 5)}"
         paragraph = self.word.add_paragraph(style=style if style in self.style_names() else None)
         self.runs(paragraph, text, "en")
+        if level <= 3:
+            number = len(self.contents_entries) + 1
+            bookmark = f"_Toc{number:08d}"
+            start = OxmlElement("w:bookmarkStart")
+            start.set(qn("w:id"), str(number))
+            start.set(qn("w:name"), bookmark)
+            end = OxmlElement("w:bookmarkEnd")
+            end.set(qn("w:id"), str(number))
+            first_run = paragraph._p.find(qn("w:r"))
+            if first_run is not None:
+                first_run.addprevious(start)
+            else:
+                paragraph._p.append(start)
+            paragraph._p.append(end)
+            self.contents_entries.append((level, text, bookmark))
 
     def outline(self, blocks: list[Block], depth: int) -> None:
         for block in blocks:
@@ -585,6 +651,7 @@ class WordRenderer:
         self.page_break()
         self.front_matter()
         self.outline(self.document.outline, 1)
+        self.fill_table_of_contents()
         self.header_and_footer()
         output.parent.mkdir(parents=True, exist_ok=True)
         self.word.save(str(output))
@@ -608,13 +675,25 @@ def check_package(path: Path) -> list[str]:
     return problems
 
 
-def render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None) -> Path:
+def render_docx(
+    vault: Vault,
+    document_id: str,
+    output: Path,
+    version: str | None = None,
+    update_fields_on_open: bool = False,
+) -> Path:
     document = vault.records.get(document_id)
     if not isinstance(document, Document):
         raise ValueError(f"no document {document_id}")
     template = vault.root / "templates" / "reference.docx"
     fonts = (vault.config.documents or {}) if vault.config else {}
     renderer = WordRenderer(
-        vault, document, version, template, fonts.get("latin_font"), fonts.get("east_asian_font")
+        vault,
+        document,
+        version,
+        template,
+        fonts.get("latin_font"),
+        fonts.get("east_asian_font"),
+        update_fields_on_open,
     )
     return renderer.render(output)

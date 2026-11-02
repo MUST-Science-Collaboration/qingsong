@@ -14,11 +14,13 @@
     <a href="{{ prefix }}tree.html">Product tree</a>
     <a href="{{ prefix }}flow.html">Flow-down</a>
     {% for document in site.documents %}<a href="{{ prefix }}documents/{{ document.id }}.html" title="{{ site.plain(document.title) }}">{{ document.id }}</a>{% endfor %}
+    <a href="{{ prefix }}review.html">Review{% set open_count = site.issues|selectattr("status", "equalto", "open")|list|length %}{% if open_count %} <span class="count">{{ open_count }}</span>{% endif %}</a>
     <a href="{{ prefix }}registers.html">Registers</a>
     <a href="{{ prefix }}checks.html">Checks</a>
   </nav>
   <div class="tools">
     <div class="search"><input type="search" id="search" placeholder="Search ID, alias, text…" autocomplete="off"><div id="search-results" class="search-results"></div></div>
+    <button type="button" id="marks-switch" class="marks-switch" title="Show or hide review marks (labels and proposed fixes) in documents">Marks on</button>
     <div class="language-switch" role="group" aria-label="Language">
       <button data-show="en">EN</button><button data-show="zh">中文</button><button data-show="both" class="active">EN + 中文</button>
     </div>

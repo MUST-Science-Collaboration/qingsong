@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, issue_label, proposal_block %}
+{% block title %}Review{% endblock %}
+{% block body %}
+<h1>Review</h1>
+<p class="lead">Every open question, open value and check finding, with its label and any proposed fix.
+Mark proposals Accept or Reject, then use "Copy decisions": it writes the <code>qingsong issue</code> commands
+that apply them, to run yourself or to give to an agent. This page never changes the record.</p>
+
+<div class="review-summary">
+  <button type="button" class="tile" data-filter="state" data-value="proposed"><b>{{ states.proposed or 0 }}</b> fix proposed</button>
+  <button type="button" class="tile" data-filter="state" data-value="open"><b>{{ states.open or 0 }}</b> open, no proposal yet</button>
+  <a class="tile" href="#untracked"><b>{{ untracked_by_rule.values()|map("length")|sum }}</b> findings without an issue</a>
+  <button type="button" class="tile" data-filter="state" data-value="closed"><b>{{ states.closed or 0 }}</b> closed</button>
+</div>
+
+<div class="review-filters">
+  <span class="filter-name">Label</span>
+  <button type="button" class="chip active" data-filter="kind" data-value="">All</button>
+  {% for kind, count in kinds.most_common() %}<button type="button" class="chip" data-filter="kind" data-value="{{ kind }}">{{ issue_label(site, kind) }} {{ count }}</button>{% endfor %}
+  <span class="filter-name">State</span>
+  <button type="button" class="chip active" data-filter="state" data-value="">All</button>
+  {% for state in ["proposed", "open", "closed"] %}<button type="button" class="chip" data-filter="state" data-value="{{ state }}">{{ site.state_labels[state] }}</button>{% endfor %}
+  {% if site.documents %}<span class="filter-name">Document</span>
+  <select data-filter="document"><option value="">All</option>{% for document in site.documents %}<option value="{{ document.id }}">{{ document.id }}</option>{% endfor %}</select>{% endif %}
+</div>
+
+<div class="decision-bar">
+  <label>Your ID <input id="reviewer" type="text" placeholder="as in people.yaml" size="14"></label>
+  <span id="decision-count">0 marked</span>
+  <button type="button" id="copy-decisions">Copy decisions</button>
+  <button type="button" id="clear-decisions">Clear marks</button>
+  <textarea id="decision-output" rows="6" readonly hidden></textarea>
+</div>
+
+<p id="filter-empty" class="hint" hidden>No issue matches the filters.</p>
+{% for issue in issues %}
+{% set state = site.issue_state(issue) %}
+<article class="issue-card state-{{ state }}" id="{{ issue.id }}" data-kind="{{ issue.kind }}" data-state="{{ state }}" data-documents="{{ site.issue_documents(issue)|join(' ') }}">
+  <header>
+    {{ issue_label(site, issue.kind) }}
+    <span class="rid">{{ issue.id }}</span>
+    <span class="title">{{ site.text(issue.title, prefix, block=False) }}</span>
+    <span class="state">{{ site.state_labels[state] }}{% if issue.outcome %} · {{ issue.outcome.replace("_", " ") }}{% endif %}</span>
+  </header>
+  <div class="issue-meta small">{% if issue.owner %}Owner {{ issue.owner }}{% endif %}{% if issue.due %} · due {{ issue.due }}{% endif %}{% if issue.rule %} · tracks <code>{{ issue.rule }}</code>{% endif %}</div>
+  {% if issue.records %}<ul class="issue-records">{% for record_id in issue.records %}{% set target = vault.records.get(record_id) %}<li><a href="{{ site.record_link(record_id, prefix) }}">{{ record_id }}</a>{% if target %} {{ site.text(target.title, prefix, block=False) }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+  <div class="issue-description">{{ site.text(issue.description, prefix) }}</div>
+  {% if issue.closure_plan %}<div class="small"><b>Plan:</b> {{ site.text(issue.closure_plan, prefix, block=False) }}</div>{% endif %}
+  {% for proposal in issue.proposals or [] %}{{ proposal_block(site, issue, proposal, prefix) }}{% endfor %}
+  {% if issue.status == "open" and not site.open_proposals(issue) %}<p class="small hint">No fix proposed yet. Agents add one with <code>qingsong issue propose {{ issue.id }} --file …</code>.</p>{% endif %}
+  {% if issue.resolution %}<div class="resolution"><b>Resolution:</b> {{ site.text(issue.resolution, prefix, block=False) }}</div>{% endif %}
+</article>
+{% endfor %}
+
+<h2 id="untracked">Check findings without an issue</h2>
+{% if untracked_by_rule %}
+<p class="small">These findings are not yet tracked. <code>qingsong issue raise --from-checks --rule RULE</code> raises one issue per record (add <code>--group</code> for one issue per rule).</p>
+{% for rule_id, findings in untracked_by_rule.items() %}
+<details class="rule-group" open><summary><code>{{ rule_id }}</code> · {{ rules.get(rule_id, "") }} · {{ findings|length }}</summary>
+<ul class="findings">{% for finding in findings %}<li>{{ badge(finding.severity, finding.severity) }} <a href="{{ site.record_link(finding.record, prefix) }}">{{ finding.record }}</a>: {{ finding.message }}</li>{% endfor %}</ul>
+</details>
+{% endfor %}
+{% else %}<p class="hint">None: every warning is tracked by an issue.</p>{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ prefix }}static/review.js"></script>{% endblock %}

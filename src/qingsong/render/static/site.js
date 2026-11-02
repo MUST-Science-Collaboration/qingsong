@@ -18,6 +18,18 @@
     button.addEventListener("click", function () { show(button.dataset.show); });
   });
 
+  // Review marks (labels and proposed fixes) in documents, shown unless the viewer hides them.
+  var marks = document.getElementById("marks-switch");
+  function showMarks(on) {
+    document.body.classList.toggle("hide-marks", !on);
+    if (marks) { marks.textContent = on ? "Marks on" : "Marks off"; marks.classList.toggle("active", on); }
+    try { localStorage.setItem("qingsong-marks", on ? "on" : "off"); } catch (error) { /* storage unavailable */ }
+  }
+  var savedMarks = null;
+  try { savedMarks = localStorage.getItem("qingsong-marks"); } catch (error) { savedMarks = null; }
+  showMarks(savedMarks !== "off");
+  if (marks) { marks.addEventListener("click", function () { showMarks(document.body.classList.contains("hide-marks")); }); }
+
   // Search over IDs, aliases, titles and texts (both languages).
   var input = document.getElementById("search");
   var results = document.getElementById("search-results");

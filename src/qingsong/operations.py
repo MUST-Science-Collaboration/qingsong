@@ -14,6 +14,7 @@ from typing import Any
 from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import YAMLError
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 from qingsong import gitutil, ids
 from qingsong.hashing import (
@@ -99,7 +100,8 @@ def translation_entries(
     """Translation state for bilingual fields present in both languages.
 
     With `existing`, entries whose source hash is still current are kept as they are; only stale
-    or missing entries are (re)written."""
+    or missing entries are (re)written. A review (`status` reviewed) also marks current entries
+    as reviewed by the person, unless that person already reviewed them."""
     languages = set(languages_of(vault))
     origin = getattr(record, "text_origin", None)
     entries: dict[str, Any] = dict(existing or {})
@@ -111,7 +113,8 @@ def translation_entries(
             continue
         current_hash = text_hash(value[origin])
         old = entries.get(name)
-        if existing is not None and old is not None and old.get("source_hash") == current_hash:
+        current = old is not None and old.get("source_hash") == current_hash
+        if existing is not None and current and (status != "reviewed" or old.get("by") == person):
             continue
         entry: dict[str, Any] = {"source_hash": current_hash, "status": status}
         if status == "reviewed":
@@ -157,9 +160,31 @@ def load_round_trip(path: Path) -> CommentedMap:
     return data
 
 
+def literal_blocks(value: Any) -> Any:
+    """Write new multi-line texts as literal blocks (|-) instead of quoted strings with escapes.
+    Texts that a literal block cannot hold exactly (trailing spaces, tabs, leading indentation
+    or a final newline) are left as they are."""
+    if isinstance(value, dict):
+        for key in list(value):
+            value[key] = literal_blocks(value[key])
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = literal_blocks(item)
+    elif (
+        type(value) is str
+        and "\n" in value
+        and "\t" not in value
+        and not value.endswith("\n")
+        and not value.startswith((" ", "\n"))
+        and not any(line != line.rstrip() for line in value.split("\n"))
+    ):
+        return LiteralScalarString(value)
+    return value
+
+
 def serialize(data: CommentedMap) -> str:
     buffer = io.StringIO()
-    round_trip_yaml().dump(data, buffer)
+    round_trip_yaml().dump(literal_blocks(data), buffer)
     return buffer.getvalue()
 
 
