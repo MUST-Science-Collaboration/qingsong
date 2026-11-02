@@ -614,7 +614,8 @@ All commands accept `--vault PATH`. Without it, qingsong uses the nearest parent
 |---|---|---|
 | `qingsong init PATH` | create an empty vault | 1 |
 | `qingsong check [--against REF]` | run the rules (§10) | 1 |
-| `qingsong new <type> --namespace NS` | allocate an ID and write a skeleton | 1 |
+| `qingsong new requirement --namespace NS` | allocate an ID and write a skeleton | 1 |
+| `qingsong new TYPE --file DRAFT` | allocate an ID for a draft issue, decision, waiver, interface, condition, source or verification, and take it in | 5 |
 | `qingsong revise ID --class C --summary S [--decision D]` | record a change (§8.1) | 1 |
 | `qingsong adopt FILE --summary S` | take a hand-written record file in: adds revision, history and stamp | 1 |
 | `qingsong supersede OLD --with NEW…`, `qingsong withdraw ID --reason R` | lifecycle changes | 1 |

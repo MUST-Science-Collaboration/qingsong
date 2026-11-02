@@ -32,6 +32,7 @@ The design is in [docs/SPEC.md](docs/SPEC.md).
 ```bash
 qingsong check                                  # run every rule
 qingsong new requirement --namespace INS-DET …  # allocate the next ID
+qingsong new decision --file draft.yaml --by PERSON   # also issue, interface, condition, source…
 qingsong revise ID --class editorial --summary … --by PERSON   # record a change
 qingsong approve ID --to agreed --by PERSON --ref …
 qingsong issue raise --from-checks --by PERSON  # one issue per untracked finding

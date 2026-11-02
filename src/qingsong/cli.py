@@ -170,6 +170,46 @@ def new_requirement(
     done(record, as_json, "created")
 
 
+new_record_help = {
+    "issue": "an issue, numbered across the project (ISS-NNNN)",
+    "decision": "a decision, numbered across the project (DEC-NNNN)",
+    "waiver": "a waiver, numbered across the project (WVR-NNNN)",
+    "interface": "an interface, numbered within the system of its owner_end (IFC-SYS-NNN)",
+    "condition": "a condition of a context node, numbered per node (NODE-COND-NNN)",
+    "source": "a source document, named by --slug (SRC-slug)",
+    "verification": "a verification of a requirement, numbered per requirement (VER-ID-NN)",
+}
+
+
+def register_new_record(record_type: str, described: str) -> None:
+    def command(
+        file: Annotated[
+            Path, typer.Option("--file", help="Draft YAML: every field except id and bookkeeping.")
+        ],
+        by: PersonOption,
+        slug: Annotated[
+            str | None, typer.Option(help="Sources only: the name after SRC-, e.g. DEMO-RD-v1.0.")
+        ] = None,
+        via: ViaOption = None,
+        vault: VaultOption = None,
+        as_json: JsonOption = False,
+    ) -> None:
+        try:
+            record = operations.new_from_draft(
+                vault_root(vault), record_type, file.resolve(), by, slug=slug, via=via
+            )
+        except OperationError as error:
+            fail(error, as_json)
+        done(record, as_json, "created")
+
+    command.__doc__ = f"Create {described} from a draft file; the draft is left as it is."
+    new_app.command(record_type)(command)
+
+
+for _record_type, _described in new_record_help.items():
+    register_new_record(_record_type, _described)
+
+
 @app.command()
 def adopt(
     file: Path,

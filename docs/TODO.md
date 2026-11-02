@@ -54,7 +54,7 @@ The architecture is in [SPEC.md](SPEC.md). The rebuild plan and the MUST-specifi
 | R5-002 | `documents` rules: release entries well formed; release tags mark the entry; entries append-only against main | [x] Done 2026-11-02 | |
 | R5-003 | `qingsong export json`, with value intervals, for analysis codes | [x] Done 2026-11-02 | SPEC §12.3 |
 | R5-004 | Move numbers from prose into value slots without making approvals stale when the rendered text is unchanged | [ ] Design | the pilot record holds every number in prose, so the consistency rules and the export's value index have nothing to read yet |
-| R5-005 | `qingsong new` for issues, decisions, interfaces, conditions and sources | [ ] Next | decisions are written by hand and adopted today |
-| R5-006 | Interface and condition registers; N² matrix | [ ] Next | |
+| R5-005 | `qingsong new issue|decision|waiver|interface|condition|source|verification --file draft.yaml` | [x] Done 2026-11-02 | IDs allocated per type, also against main; the draft is left as written |
+| R5-006 | N² interface matrix | [ ] Later | interfaces and conditions already appear in the registers |
 | R5-007 | CI for a record repository: check against main on every pull request, site as an artifact | [ ] Next | needs permission for the private repository |
 | R5-008 | Translation review of figure captions and document text | [ ] Content | the release gate found the pilot document's figure captions not yet marked reviewed |
