@@ -32,7 +32,15 @@
   {% for name in change.fields %}
   <div class="field-change"><div class="change-target">{% if site.field_labels.get(name) %}<span class="lang en">{{ site.field_labels[name].en }}</span><span class="lang zh">{{ site.field_labels[name].zh }}</span>{% else %}{{ name }}{% endif %}</div>
   {% if site.is_text(change.before.get(name)) or site.is_text(change.after.get(name)) %}
+    {% if name == "statement" and "values" in change.fields %}
+    <div class="small">As a reader sees it, with the values filled in:</div>
+    {% for language in site.languages %}<div class="diff lang {{ language }}">{{ site.field_diff(change.before.get(name), change.after.get(name), language, change.before.get("values") or {}, change.after.get("values") or {}) }}</div>{% endfor %}
+    <details class="small"><summary>As stored, with slot names</summary>
     {% for language in site.languages %}<div class="diff lang {{ language }}">{{ site.field_diff(change.before.get(name), change.after.get(name), language) }}</div>{% endfor %}
+    </details>
+    {% else %}
+    {% for language in site.languages %}<div class="diff lang {{ language }}">{{ site.field_diff(change.before.get(name), change.after.get(name), language) }}</div>{% endfor %}
+    {% endif %}
   {% else %}
     <div class="before-after"><pre class="before">{{ site.as_text(change.before.get(name)) }}</pre><pre class="after">{{ site.as_text(change.after.get(name)) }}</pre></div>
   {% endif %}
