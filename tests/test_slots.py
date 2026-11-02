@@ -369,3 +369,30 @@ def test_an_approximation_sign_next_to_a_value_is_refused(demo):
     )
     with pytest.raises(OperationError, match="'~' sits next to"):
         slot_values(demo, record_id, aperture(), "alice", today=day)
+
+
+def test_a_wording_accepted_as_written_stays_accepted(demo):
+    """An acceptance as written, like an approval, carries over a move that keeps the meaning."""
+    from qingsong import review
+
+    write_statement(
+        demo, english.replace("shall be", "shall have and shall be"), chinese, approve=False
+    )
+    issue_id = review.raise_issue(
+        demo,
+        "wording",
+        {"en": "Two shall"},
+        {"en": "Compound."},
+        [record_id],
+        "alice",
+        rule="content.writing",
+        today=day,
+    ).id
+    review.propose(demo, issue_id, "alice", {"en": "keep"}, [], today=day)
+    review.accept(demo, issue_id, 1, "alice", today=day)
+    tracked = [f for f in findings(demo, "content.writing") if f.record == record_id]
+    assert tracked and all(f.severity == "info" for f in tracked)
+    slot_values(demo, record_id, aperture(), "alice", today=day)
+    after = [f for f in findings(demo, "content.writing") if f.record == record_id]
+    assert after and all(f.severity == "info" for f in after)
+    assert load(demo).records[issue_id].history[-1].summary.startswith("acceptance of")

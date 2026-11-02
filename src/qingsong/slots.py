@@ -16,7 +16,13 @@ from typing import Any
 from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedMap
 
-from qingsong.hashing import approved_text_hash, field_value, normative_hash_of, text_hash
+from qingsong.hashing import (
+    approved_text_hash,
+    field_value,
+    normative_hash_of,
+    review_hash,
+    text_hash,
+)
 from qingsong.ids import reference_pattern
 from qingsong.operations import (
     OperationError,
@@ -31,7 +37,7 @@ from qingsong.operations import (
     validate,
 )
 from qingsong.render.text import format_slot
-from qingsong.schema import Requirement, ValueSlot
+from qingsong.schema import Issue, Requirement, ValueSlot
 from qingsong.vault import load
 from qingsong.wording import neighbour_problem
 
@@ -289,6 +295,46 @@ def slot_values(
     ]
     if dry_run:
         return record, comparisons, warnings
+    old_review = review_hash(record)
     written = edit(vault, record_id, change)
     assert isinstance(written, Requirement)
+    rebind_accepted_wording(root, record_id, old_review, review_hash(written), person, via, today)
     return written, comparisons, warnings
+
+
+def rebind_accepted_wording(
+    root: Path,
+    record_id: str,
+    old_review: str,
+    new_review: str,
+    person: str,
+    via: str | None,
+    today: datetime.date,
+) -> list[str]:
+    """Carry an "accepted as written" decision over a move, as the approval is carried: only where
+    it covered the record's text before the move (docs/SPEC.md §5.2, §5.6)."""
+    vault = load(root)
+    rebound = []
+    for issue in vault.records.values():
+        if not isinstance(issue, Issue) or (issue.accepted or {}).get(record_id) != old_review:
+            continue
+
+        def change(data: CommentedMap, old: Any, issue_id: str = issue.id) -> None:
+            data["accepted"][record_id] = new_review
+            data["revision"] = old.revision + 1
+            data["history"].append(
+                history_event(
+                    old.revision + 1,
+                    today,
+                    person,
+                    "revised",
+                    f"acceptance of {record_id} carried over: its values moved into slots and "
+                    "the meaning is unchanged",
+                    change_class="editorial",
+                    via=via,
+                )
+            )
+
+        edit(vault, issue.id, change)
+        rebound.append(issue.id)
+    return rebound
