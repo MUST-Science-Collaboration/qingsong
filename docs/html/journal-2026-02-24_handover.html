@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handover Note: 2026-02-24 Session · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#1-summary-of-progress">1. Summary of Progress</a></li>
+<li class="level-2"><a href="#2-key-architectural-decisions">2. Key Architectural Decisions</a></li>
+<li class="level-2"><a href="#3-current-state-of-the-workspace">3. Current State of the Workspace</a></li>
+<li class="level-2"><a href="#4-immediate-next-steps-week-2-plan">4. Immediate Next Steps (Week 2 Plan)</a></li>
+<li class="level-2"><a href="#suggested-next-prompt-1st-prompt-for-next-window">Suggested Next Prompt (1st Prompt for Next Window)</a></li>
+</ol></aside>
+<main>
+<h1 id="handover-note-2026-02-24-session">Handover Note: 2026-02-24 Session</h1>
+<h2 id="1-summary-of-progress">1. Summary of Progress</h2>
+<p>This session focused on establishing a professional engineering foundation for the <code>qingsong</code> project.</p>
+<ul>
+<li><strong>Environment Migration</strong>: Successfully migrated the project from a standard <code>pip</code> setup to <code>uv</code>. Fixed a broken <code>.venv</code> and synchronized all dependencies (<code>doorstop</code>, <code>pydantic</code>, <code>streamlit</code>, etc.).</li>
+<li><strong>Core Refactor</strong>:
+<ul>
+<li><strong>Staging Logic</strong>: Fixed the <code>QingsongCore.create_item</code> method. It now correctly holds new items in-memory until an explicit <code>.flush()</code> is called, preventing accidental disk writes.</li>
+<li><strong>Persistence Layer</strong>: Updated <code>flush()</code> to handle directory creation and Doorstop document initialization (<code>.doorstop.yml</code>) automatically.</li>
+<li><strong>Strict Validation</strong>: Added a <code>model_validator</code> to Pydantic models to verify <code>owner</code>, <code>system_path</code>, and <code>l3</code> codes against the project's metadata files at instantiation.</li>
+</ul>
+</li>
+<li><strong>Documentation</strong>:
+<ul>
+<li>Created <code>docs/SPEC.md</code> (Architecture Source of Truth).</li>
+<li>Created <code>docs/PLAN.md</code> (4-Week Roadmap).</li>
+<li>Created <code>docs/TODO.md</code> (Task Tracking).</li>
+<li>Created <code>docs/lessons.md</code> (Design Rationale).</li>
+</ul>
+</li>
+<li><strong>Skill Creation</strong>: Developed and installed the <code>qingsong-doorstop</code> workspace skill to provide future agents with domain-specific knowledge of the MUST project's requirement ID patterns and link types.</li>
+<li><strong>Git State</strong>: All changes committed to a new feature branch: <code>feature/foundation</code>.</li>
+</ul>
+<h2 id="2-key-architectural-decisions">2. Key Architectural Decisions</h2>
+<ul>
+<li><strong>Wrap vs. Reinvent</strong>: Confirmed the strategy to use Doorstop for the <strong>Storage Layer</strong> while <code>qingsong</code> provides the <strong>Intelligence Layer</strong> (Schemas, Validation, SQLite Cache).</li>
+<li><strong>L3 Flexibility</strong>: Decided to allow L3 sub-assemblies to be first-class Doorstop documents (nested folders) to support MUST's conceptual design complexity.</li>
+<li><strong>Source of Truth</strong>: YAML files remain the primary source of truth; SQLite is a derived cache for high-performance querying.</li>
+</ul>
+<h2 id="3-current-state-of-the-workspace">3. Current State of the Workspace</h2>
+<ul>
+<li><strong>Branch</strong>: <code>feature/foundation</code></li>
+<li><strong>Environment</strong>: <code>uv</code> managed <code>.venv</code> (Python 3.12.7)</li>
+<li><strong>Metadata</strong>: Fixed <code>meta/people.yaml</code> to include Project Managers.</li>
+<li><strong>Skill</strong>: <code>qingsong-doorstop</code> installed and ready for use.</li>
+</ul>
+<h2 id="4-immediate-next-steps-week-2-plan">4. Immediate Next Steps (Week 2 Plan)</h2>
+<ul>
+<li>[ ] Implement support for deep <code>L1/L2/L3</code> folder structures in the core API and <code>doorstop_io</code>.</li>
+<li>[ ] Develop circular dependency detection for the <code>derives_from</code> and <code>implements</code> link types.</li>
+<li>[ ] Enhance the <code>qingsong validate</code> command to check for referential integrity of links.</li>
+</ul>
+<hr />
+<h2 id="suggested-next-prompt-1st-prompt-for-next-window">Suggested Next Prompt (1st Prompt for Next Window)</h2>
+<blockquote>
+<p>&quot;I am picking up the <code>qingsong</code> project development. We are currently in Week 2 (Robustness) of the plan. Please start by implementing the <strong>Flexible L3 Hierarchy</strong> logic in <code>tools/qingsong/doorstop_io.py</code> and <code>tools/qingsong/core.py</code> to allow items to be stored in nested <code>L1/L2/L3</code> directories as first-class Doorstop documents, as discussed in the <code>docs/SPEC.md</code>.&quot;</p>
+</blockquote>
+
+</main>
+</div>
+<footer>Generated from <code>docs/journal/2026-02-24_handover.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

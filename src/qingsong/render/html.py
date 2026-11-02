@@ -600,4 +600,5 @@ def change_summaries(vault: Vault) -> "dict[str, ChangeSummary | str]":
 
 
 def render_site(vault: Vault, output: Path) -> Path:
+    """Write the static HTML site into `output` (replaced) and return the path of its index page."""
     return Site(vault, output).build()

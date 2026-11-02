@@ -151,3 +151,17 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
 - **Run the page's own script, not a copy of its logic.** Running `review.js` in Node against a rendered page,
   then applying the downloaded file, tested the format the page actually writes, quotes and Chinese text
   included.
+
+## 13. Documentation review (2026-11-03)
+
+- **A specification drifts quietly.** Read against the code, it still listed `qingsong serve`, which
+  the decision against a local server had made moot, and `qingsong import docx`, which was never built.
+  It also had a rule catalogue mixing built and planned rules, a module map from before half the modules
+  existed, and a rendering example that contradicted its own rule. Generated references (commands, rules,
+  modules) cannot drift. The handwritten parts need a review against the code at each milestone.
+- **Run the examples you document.** Writing the how-to on a copy of the demo found a false positive (a
+  preposition after a slot read as a relation) and a check the specification promised but the code
+  lacks (a requirement left out of its document).
+- **A test that mixes the real date with a fixed one is a time bomb.** It passed the day it was written
+  and failed the next, because history dates must not go backwards. Every call in a test takes the
+  fixed date.

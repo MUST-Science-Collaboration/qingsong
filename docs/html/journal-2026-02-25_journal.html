@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026-02-25_journal · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#progress">Progress</a></li>
+<li class="level-2"><a href="#lessons-learned">Lessons Learned</a></li>
+<li class="level-2"><a href="#key-issues">Key Issues</a></li>
+</ol></aside>
+<main>
+<hr />
+<p>date: 2026-02-25
+repo: qingsong
+branch: main
+tags:</p>
+<ul>
+<li>journal</li>
+<li>hierarchy</li>
+<li>validation</li>
+<li>doorstop</li>
+</ul>
+<hr />
+<h2 id="progress">Progress</h2>
+<ul>
+<li>Implemented Flexible L3 Hierarchy support in <code>doorstop_io.py</code> and <code>core.py</code>, allowing items to be stored in nested <code>L1/L2/L3</code> directories.</li>
+<li>Updated Pydantic models in <code>models/common.py</code> to support 6-part ID formats (e.g., <code>MUST-FPS-FID-CAL-REQ-001</code>) and flexible segment naming.</li>
+<li>Refactored <code>validate.py</code> to support multi-part ID validation and ensure consistency with <code>system_path</code> and <code>l3</code> attributes.</li>
+<li>Fixed <code>UnboundLocalError</code> in <code>QingsongCore.validate_item</code> caused by local import shadowing.</li>
+<li>Successfully verified L3 item creation, flushing to disk, and validation with test scripts.</li>
+<li>Merged <code>feature/flexible-l3-hierarchy</code> into <code>main</code> and marked corresponding tasks as complete in <code>PLAN.md</code> and <code>TODO.md</code>.</li>
+</ul>
+<h2 id="lessons-learned">Lessons Learned</h2>
+<ul>
+<li>Pydantic's <code>model_validator</code> with <code>mode=&quot;after&quot;</code> is a powerful way to enforce project-specific ID patterns across the hierarchy.</li>
+<li>Local imports within methods can shadow global imports and cause <code>UnboundLocalError</code> if not handled carefully during refactoring.</li>
+<li>Inferring metadata (like <code>l3</code> and <code>system_path</code>) from the folder structure simplifies the YAML storage and maintains a &quot;Single Source of Truth&quot; in the directory hierarchy.</li>
+</ul>
+<h2 id="key-issues">Key Issues</h2>
+<ul>
+<li>Implement circular dependency detection for links between items (Week 2 task).</li>
+<li>Add unit tests for the validator to reach &gt;80% coverage.</li>
+<li>Next action: Move to Week 2 &quot;Robustness&quot; objective, specifically link graph validation.</li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>docs/journal/2026-02-25_journal.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

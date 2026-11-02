@@ -178,7 +178,7 @@ def test_renumber_only_before_main(demo_repository):
     with pytest.raises(OperationError, match="permanent"):
         operations.renumber(root, "INS-DET-REQ-001", "INS-DET-REQ-005", "alice", today=day)
     record = operations.new_requirement(
-        root, "INS-DET", "Gain", "The gain shall be stable.", "alice"
+        root, "INS-DET", "Gain", "The gain shall be stable.", "alice", today=day
     )
     edit_yaml(
         requirement_file(root, "INS-OPT-REQ-001"),

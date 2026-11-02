@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>qingsong 青松 · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a class="here" href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#what-it-does">What it does</a></li>
+<li class="level-2"><a href="#documentation">Documentation</a></li>
+<li class="level-2"><a href="#commands">Commands</a></li>
+<li class="level-2"><a href="#development">Development</a></li>
+<li class="level-2"><a href="#name">Name</a></li>
+<li class="level-2"><a href="#license">License</a></li>
+</ol></aside>
+<main>
+<h1 id="qingsong-青松">qingsong 青松</h1>
+<p>qingsong keeps a project's requirements as <strong>engineering records</strong>: small text files in a git repository, checked for consistency on every change, and rendered as the documents people read (HTML first, Word for formal distribution).</p>
+<p>It is being rebuilt for the MUltiplexed Survey Telescope (MUST). The project's own records live in a separate, private repository; this repository holds only the engine and fictional examples.</p>
+<blockquote>
+<p><strong>Status: rebuild in progress (version 0.2.0.dev0).</strong></p>
+<ul>
+<li>Done:
+<ul>
+<li>the core engine: records, IDs, change recording and checks, including consistency of values;</li>
+<li>value slots, and moving numbers from prose into slots without changing the meaning;</li>
+<li>the HTML site, with the review page, decisions files and the changes since each release;</li>
+<li>Word output, and releases prepared on a branch and tagged after the merge;</li>
+<li>JSON export, and CI for record repositories.</li>
+</ul>
+</li>
+<li>Next: slot moves proposed on the review page, and a check that every requirement is in its document. Later: interfaces in the site, verification, waivers and baselines.</li>
+<li>The earlier version 0.1 is preserved under the git tag <code>legacy-0.1</code>.</li>
+</ul>
+</blockquote>
+<h2 id="what-it-does">What it does</h2>
+<ul>
+<li><strong>Permanent identifiers.</strong> A requirement such as <code>INS-DET-REQ-012</code> keeps its ID for life; it is never renumbered or reused. Earlier or vendor numbers are kept as aliases.</li>
+<li><strong>Rules for change.</strong> Editorial changes, value changes and changes of intent are distinguished; obsolete requirements are withdrawn, never deleted; dependent requirements are flagged when a parent changes.</li>
+<li><strong>Levels from science to components.</strong> Science, survey, system, element, subsystem and component requirements, linked by flow-down.</li>
+<li><strong>Maturity on separate axes.</strong> How settled a requirement is, whether it is in force, how certain each value is, and how far verification has progressed.</li>
+<li><strong>Continuous checks.</strong> Every change is checked for structure, flow-down, units, conflicting values and unrecorded edits.</li>
+<li><strong>Two languages.</strong> English is the reference; the main content is also kept in Chinese.</li>
+<li><strong>Generated documents.</strong> A static HTML site for reading and tracing requirements, and Word files for formal releases.</li>
+<li><strong>Review.</strong> What the checks find is raised as labelled issues and highlighted in the HTML documents. Fixes are proposed with word-level differences in both languages and decided by an approver from one review page.</li>
+</ul>
+<h2 id="documentation">Documentation</h2>
+<p>Open <a href="../index.html">docs/index.html</a> in a browser for all of it, or read the Markdown:</p>
+<ul>
+<li><a href="howto.html">How to use qingsong</a>: concepts, rules, workflow and worked examples, for people and agents;</li>
+<li><a href="api.html">API reference</a>: how the code is organised, and every command, check rule and module;</li>
+<li><a href="spec.html">Specification</a>: the design and the accepted decisions.</li>
+</ul>
+<h2 id="commands">Commands</h2>
+<pre><code class="language-bash">qingsong check                                  # run every rule
+qingsong new requirement --namespace INS-DET …  # allocate the next ID
+qingsong new decision --file draft.yaml --by PERSON   # also issue, interface, condition, source…
+qingsong adopt FILE --summary … --by PERSON     # take in a record file written by hand
+qingsong revise ID --class editorial --summary … --by PERSON   # record a change
+qingsong slot ID --file slots.yaml --by PERSON  # move numbers from the statement into slots
+qingsong approve ID --to agreed --by PERSON --ref …
+qingsong confirm CHILD PARENT --by PERSON       # clear a suspect link after review
+qingsong issue raise --from-checks --by PERSON  # one issue per untracked finding
+qingsong issue propose ISS-0001 --file fix.yaml --by PERSON
+qingsong issue accept ISS-0001 --proposal 1 --by APPROVER
+qingsong issue apply decisions.yaml           # decisions saved from the review page, all or none
+qingsong render html site                       # open site/index.html, then site/review.html
+qingsong render docx DOC out.docx --version 1.2
+qingsong release changes DOC                    # what changed since the last tagged release
+qingsong release prepare DOC 1.2 --by APPROVER --summary-en … --summary-zh …   # on a branch
+qingsong release tag DOC 1.2                    # after the merge; tags the commit that brought it in
+qingsong render docx DOC out.docx --release 1.2 # the issued copy, from the release tag
+qingsong export json --output record.json       # all records and an index of value slots
+</code></pre>
+<p><code>qingsong --help</code> lists all commands; every command accepts <code>--json</code>. A fictional demo vault is in <a href="../../examples/demo">examples/demo</a>.</p>
+<h2 id="development">Development</h2>
+<pre><code class="language-bash">uv sync                      # create the environment
+uv run pytest                # run the tests
+uv run pre-commit install    # lint and format on commit
+uv run qingsong --version
+uv run python tools/build_docs.py   # rebuild the HTML docs and the generated API reference
+</code></pre>
+<h2 id="name">Name</h2>
+<p>Named after the astronomer Yu Ching-Sung (余青松, Yu Qingsong), a Tsinghua alumnus.</p>
+<h2 id="license">License</h2>
+<p>See <a href="../../LICENSE">LICENSE</a>.</p>
+
+</main>
+</div>
+<footer>Generated from <code>README.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

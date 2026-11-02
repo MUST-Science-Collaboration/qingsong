@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qingsong Development Lessons · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a class="here" href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#1-hierarchy--storage-2026-02-25">1. Hierarchy &amp; Storage (2026-02-25)</a></li>
+<li class="level-3"><a href="#flexible-l3-folders">Flexible L3 Folders</a></li>
+<li class="level-3"><a href="#flexible-id-validation">Flexible ID Validation</a></li>
+<li class="level-2"><a href="#3-project-portability-2026-02-26">3. Project Portability (2026-02-26)</a></li>
+<li class="level-3"><a href="#dynamic-root-context">Dynamic Root Context</a></li>
+<li class="level-2"><a href="#4-ui-architecture-2026-02-27">4. UI Architecture (2026-02-27)</a></li>
+<li class="level-3"><a href="#multi-page-dashboard">Multi-Page Dashboard</a></li>
+<li class="level-2"><a href="#5-analytical-intelligence-2026-02-27">5. Analytical Intelligence (2026-02-27)</a></li>
+<li class="level-3"><a href="#transitive-impact-tracing">Transitive Impact Tracing</a></li>
+<li class="level-2"><a href="#6-review-of-the-february-build-2026-11-01">6. Review of the February build (2026-11-01)</a></li>
+<li class="level-2"><a href="#7-phase-0-2026-11-01">7. Phase 0 (2026-11-01)</a></li>
+<li class="level-2"><a href="#8-overnight-run-2026-11-02">8. Overnight run (2026-11-02)</a></li>
+<li class="level-2"><a href="#9-review-items-and-the-word-prompt-2026-11-02">9. Review items and the Word prompt (2026-11-02)</a></li>
+<li class="level-2"><a href="#10-releases-2026-11-02">10. Releases (2026-11-02)</a></li>
+<li class="level-2"><a href="#11-moving-numbers-into-slots-2026-11-02">11. Moving numbers into slots (2026-11-02)</a></li>
+<li class="level-2"><a href="#12-decisions-files-2026-11-02">12. Decisions files (2026-11-02)</a></li>
+<li class="level-2"><a href="#13-documentation-review-2026-11-03">13. Documentation review (2026-11-03)</a></li>
+</ol></aside>
+<main>
+<h1 id="qingsong-development-lessons">Qingsong Development Lessons</h1>
+<h2 id="1-hierarchy--storage-2026-02-25">1. Hierarchy &amp; Storage (2026-02-25)</h2>
+<h3 id="flexible-l3-folders">Flexible L3 Folders</h3>
+<p><strong>Decision</strong>: Allow L3 task codes (e.g., <code>FID-AIT</code>) to be used as sub-directories under <code>L1/L2</code> in the Doorstop storage.
+<strong>Rationale</strong>: Complex systems like MUST require more than two levels of organization. Treating L3 folders as first-class Doorstop documents allows for cleaner separation of files and localized <code>.doorstop.yml</code> configuration (including custom prefixes).
+<strong>Implementation</strong>:</p>
+<ul>
+<li><code>_infer_hierarchy_context</code> in <code>doorstop_io.py</code> now extracts both <code>system_path</code> (L1/L2) and <code>l3</code> from the file path.</li>
+<li><code>QingsongCore.create_item</code> and <code>flush()</code> were updated to respect this nested structure.</li>
+</ul>
+<h3 id="flexible-id-validation">Flexible ID Validation</h3>
+<p><strong>Decision</strong>: Relaxed the <code>id_full</code> regex and validation to support 5 or 6-part IDs.
+<strong>Rationale</strong>: Standard Doorstop IDs are typically 4-5 parts. By supporting 6 parts (<code>MUST-L1-L2-L3-TYPE-NNN</code>), we accommodate systems where L3 provides its own naming scope.
+<strong>Implementation</strong>:</p>
+<ul>
+<li>Updated Pydantic <code>BaseItem</code> regex.</li>
+<li>Updated <code>validate_id_format</code> to check consistency between ID segments and item attributes (<code>system_path</code>, <code>l3</code>).</li>
+</ul>
+<h2 id="3-project-portability-2026-02-26">3. Project Portability (2026-02-26)</h2>
+<h3 id="dynamic-root-context">Dynamic Root Context</h3>
+<p><strong>Decision</strong>: Use an environment variable (<code>QINGSONG_ROOT</code>) to bridge the gap between CLI arguments and deep Pydantic validation.
+<strong>Rationale</strong>: Pydantic's <code>model_validator</code> methods are often called in isolated contexts where CLI-level state isn't available. A standardized env var ensures all layers of the engine resolve metadata paths consistently.
+<strong>Implementation</strong>: <code>get_project_root</code> checks <code>QINGSONG_ROOT</code> before falling back to auto-discovery.</p>
+<h2 id="4-ui-architecture-2026-02-27">4. UI Architecture (2026-02-27)</h2>
+<h3 id="multi-page-dashboard">Multi-Page Dashboard</h3>
+<p><strong>Decision</strong>: Transition from a single <code>app_streamlit.py</code> to a <code>pages/</code> directory structure.
+<strong>Rationale</strong>: As features like Impact Analysis and Traceability grew, a single-page layout became cluttered. A multi-page approach improves focus and allows for deeper interactive components (like the Item Editor) without side effects on other views.</p>
+<h2 id="5-analytical-intelligence-2026-02-27">5. Analytical Intelligence (2026-02-27)</h2>
+<h3 id="transitive-impact-tracing">Transitive Impact Tracing</h3>
+<p><strong>Decision</strong>: Implement bi-directional recursive traversal for impact analysis.
+<strong>Rationale</strong>: Simple link checking only shows the first level of impact. True system engineering requires seeing the &quot;end-to-end&quot; ripple effect of a change across the parent/child requirement chain.</p>
+<h2 id="6-review-of-the-february-build-2026-11-01">6. Review of the February build (2026-11-01)</h2>
+<p>The full review is in the conversation of 2026-11-01; the rebuild plan is in the private record repository. These lessons apply to the rebuild.</p>
+<ul>
+<li><strong>&quot;Done&quot; means verified, not implemented.</strong>
+<ul>
+<li>Twelve phases were marked Done in four days, yet <code>main</code> failed its own <code>qingsong validate</code>: <code>related_to</code> links declared bidirectional were reported as a cycle.</li>
+<li>CI hid test failures with <code>|| echo &quot;No tests yet&quot;</code>.</li>
+<li>From now on, a task is done only when its acceptance check has run and passed.</li>
+</ul>
+</li>
+<li><strong>Tests must never touch a real vault.</strong>
+<ul>
+<li>The suite wrote items into <code>doorstop/REQ/FPS/FID/</code>. Items 003–012 there are test leftovers.</li>
+<li>A global environment variable (<code>QINGSONG_ROOT</code>) leaked between tests and made them depend on run order.</li>
+<li>Use only <code>tmp_path</code> fixtures and pass the root explicitly; no global state.</li>
+</ul>
+</li>
+<li><strong>A location stored twice will drift.</strong>
+<ul>
+<li>Folder and <code>system_path</code>/<code>l3</code> attributes both encoded where an item lives, and <code>migrate</code> produced duplicate items.</li>
+<li>A path must be a pure function of the immutable ID.</li>
+</ul>
+</li>
+<li><strong>A validator that skips is not a validator.</strong>
+<ul>
+<li>Unreadable items became warnings and were dropped.</li>
+<li>Duplicate IDs overwrote each other silently.</li>
+<li>Missing fields received silent defaults.</li>
+<li>A Pydantic validator swallowed its own errors.</li>
+</ul>
+</li>
+<li><strong>Don't carry dependencies you don't use.</strong> Doorstop was a dependency that nothing imported, and the tree was not Doorstop-valid.</li>
+<li><strong>Confidential content does not belong in a public repository.</strong> <code>origin</code> is public. Team names, emails and the FPS schedule were removed from its history on 2026-11-01, and MUST content now lives in the private record repository.</li>
+</ul>
+<h2 id="7-phase-0-2026-11-01">7. Phase 0 (2026-11-01)</h2>
+<ul>
+<li><strong>Check what a cited document is before building on a summary of it.</strong> A research summary called a project workbook (a work breakdown) a requirements document. The draft plan mapped a requirement level onto it until the file itself was checked. Open the source, or its extraction, before placing a document in the specification tree.</li>
+<li><strong>Independent review before building.</strong> A reviewer given the files, not the author's conclusions, found 24 problems in the first specification draft. The most serious were suspect links triggered by editorial changes, approvals not tied to the approved content, and ID collisions between branches. Review every specification change this way before implementation.</li>
+</ul>
+<h2 id="8-overnight-run-2026-11-02">8. Overnight run (2026-11-02)</h2>
+<ul>
+<li><strong>Verify that a write survives a read.</strong> YAML line folding silently collapsed repeated spaces and broke a stamp.
+It was found only while importing the first real document. Every write is now parsed back and its stamp
+compared before the file is replaced.</li>
+<li><strong>Run the oldest supported Python before pushing.</strong> A backslash inside an f-string expression is valid only from
+Python 3.12. Ruff caught it, but only after <code>target-version</code> checks ran on the whole tree.</li>
+<li><strong>Independent reviewers find what automated checks cannot.</strong>
+<ul>
+<li>The transcription check confirmed every paragraph verbatim. Only the independent reviewer saw English bullets
+duplicated inside the Chinese text, wrong verification methods, and bracketed words that were not tracked.</li>
+<li>The renderer review found script injection through embedded JSON, and ordinary text (&quot;$5&quot;, &quot;~45 m&quot;) read as
+markup.</li>
+<li>Plan a review for every new layer that people will read.</li>
+</ul>
+</li>
+<li><strong>A project's own conventions beat generic syntax.</strong> In MUST documents any bracketed text marks a provisional
+value (&quot;[five]&quot;), not only bracketed numbers.</li>
+<li><strong>Never use <code>git stash -u</code> on a working tree with untracked work.</strong> It briefly removes the untracked files.
+Copy the files to a scratch folder instead.</li>
+</ul>
+<h2 id="9-review-items-and-the-word-prompt-2026-11-02">9. Review items and the Word prompt (2026-11-02)</h2>
+<ul>
+<li><strong>A field added to a schema must default to <code>None</code>, not to an empty list.</strong> The stamp hashes the record's
+dump without <code>None</code> values, so a new <code>proposals: []</code> default changed the stamp of every existing issue and
+made them all &quot;unrecorded&quot;. Fields added later are optional and absent until used.</li>
+<li><strong>A mapping keyed by language is not necessarily text.</strong> Hashes stored per language (<code>base</code>, <code>accepted</code>)
+had the same type as bilingual text, so the language checks read them as prose and reported &quot;empty text&quot;.
+They now have their own type.</li>
+<li><strong>Word's &quot;fields that may refer to other files&quot; prompt comes from <code>updateFields</code>.</strong> Both v1.1 and the
+generated file asked Word to update every field on opening. A written-out table of contents avoids it;
+page numbers then come from one field update in Word.</li>
+<li><strong>Keep content and traceability apart in severities.</strong> Approving the fibre requirements turned 23
+&quot;no parent&quot; warnings into errors, although approval concerns the requirement's content. Traceability is
+now required at baseline, and tracked by an issue until then.</li>
+<li><strong>Group review items by the decision they need.</strong> 24 wording findings became three issues: seven
+statements with one rewording proposal, one vague statement, and fifteen compound procedures with a
+keep-as-written proposal. One decision per issue is easier to review than 24 near-identical cards.</li>
+</ul>
+<h2 id="10-releases-2026-11-02">10. Releases (2026-11-02)</h2>
+<ul>
+<li>
+<p><strong>Review a workflow design against how git is used, not only against the code.</strong> The first release design tagged
+HEAD after the merge. An independent review pointed out that with a squash merge followed by another merge, HEAD
+holds later, unreviewed changes. The tag now goes on the commit of the main branch's first-parent history that
+first contains the release entry, and the gate runs on that commit.</p>
+</li>
+<li>
+<p><strong>Dry-run a new gate on the real record before declaring it done.</strong> The release gate, run on a copy of the record,
+found that the pilot document's figure captions had never been marked as reviewed translations: the bilingual check had
+covered requirements only.</p>
+</li>
+<li>
+<p><strong>Check the data a feature needs before building on it.</strong> The consistency rules and the export's value index read
+value slots, but the pilot record keeps every number in prose. The engine works; the record has to catch up.</p>
+</li>
+<li>
+<p><strong>An independent code review found seven defects that 130 passing tests did not.</strong> The worst:</p>
+<ul>
+<li>an open-ended limit (<code>&lt; 10</code>) carried its &quot;open&quot; flag onto the infinite end, so <code>≤ 5</code> did not count as
+inside <code>&lt; 10</code>;</li>
+<li><code>--until</code> at a release compared that release with itself;</li>
+<li>reordering a document was reported as &quot;no changes&quot;.</li>
+</ul>
+<p>Each now has a regression test. Interval code needs tests at every combination of open, closed and infinite
+ends.</p>
+</li>
+<li>
+<p><strong>CI has no git identity.</strong> Five release tests passed locally and failed on every CI runner: <code>git tag -a</code> and
+merge commits need a committer, which macOS derives from the host and a Linux runner does not. Reproduce CI
+locally with <code>GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.useConfigOnly GIT_CONFIG_VALUE_0=true</code>; test repositories set their own local identity.</p>
+</li>
+</ul>
+<h2 id="11-moving-numbers-into-slots-2026-11-02">11. Moving numbers into slots (2026-11-02)</h2>
+<ul>
+<li>
+<p><strong>A proof by comparison is only as good as its normalisation.</strong> The first version of the slot move lower-cased
+everything, so &quot;5 Mm&quot; matched a slot in mm. It also removed spaces before reading thousands separators, so
+&quot;5, 100 mm&quot; matched 5100. And a unit-repeat rule without a boundary read &quot;140 m ± 2 mm&quot; as &quot;140 ± 2 mm&quot;.
+An independent reviewer built each case. Normalise only what is known to be formatting, keep units exactly,
+and test every named difference against a near miss.</p>
+</li>
+<li>
+<p><strong>Guard every re-binding the same way.</strong> The approval was re-bound only if it was current, but the
+translation hash was re-bound unconditionally, which marked a stale translation current. Anything that carries
+a review forward must check that the review was valid before.</p>
+</li>
+<li>
+<p><strong>Prefer the renderer over a second parser.</strong> The design review replaced a planned literal grammar with &quot;the
+slot must read the same&quot;. There is one rule for both writing and reading values, and one less parser to
+get wrong.</p>
+</li>
+<li>
+<p><strong>Run a new operation on the real record before calling it done.</strong> The first real slot moves found three gaps that
+the demo did not:</p>
+<ul>
+<li>&quot;longer than&quot; passed the neighbour check, so any comparative now counts;</li>
+<li>the closing <code>~</code> of a subscript (&quot;n~d~ ≥ 20&quot;) was read as &quot;approximately&quot;;</li>
+<li>an &quot;accepted as written&quot; decision did not survive a move that kept the meaning.</li>
+</ul>
+<p>Each was fixed with a test before the record was changed.</p>
+</li>
+</ul>
+<h2 id="12-decisions-files-2026-11-02">12. Decisions files (2026-11-02)</h2>
+<ul>
+<li><strong>Record what was read when it was read.</strong> Marks on the review page outlive a re-rendered page. Taking a
+proposal's hash when the file is saved would vouch for a version the reviewer may never have seen. The hash is
+taken when the proposal is marked, and a mark whose proposal has changed since is dropped on loading.</li>
+<li><strong>Check everything before writing anything, then still be ready to undo.</strong> The decisions file checks every
+decision first and reports all problems at once. It also restores every file if a step fails later, because
+the checks repeat only part of what the operations enforce.</li>
+<li><strong>Run the page's own script, not a copy of its logic.</strong> Running <code>review.js</code> in Node against a rendered page,
+then applying the downloaded file, tested the format the page actually writes, quotes and Chinese text
+included.</li>
+</ul>
+<h2 id="13-documentation-review-2026-11-03">13. Documentation review (2026-11-03)</h2>
+<ul>
+<li><strong>A specification drifts quietly.</strong> Read against the code, it still listed <code>qingsong serve</code>, which
+the decision against a local server had made moot, and <code>qingsong import docx</code>, which was never built.
+It also had a rule catalogue mixing built and planned rules, a module map from before half the modules
+existed, and a rendering example that contradicted its own rule. Generated references (commands, rules,
+modules) cannot drift. The handwritten parts need a review against the code at each milestone.</li>
+<li><strong>Run the examples you document.</strong> Writing the how-to on a copy of the demo found a false positive (a
+preposition after a slot read as a relation) and a check the specification promised but the code
+lacks (a requirement left out of its document).</li>
+<li><strong>A test that mixes the real date with a fixed one is a time bomb.</strong> It passed the day it was written
+and failed the next, because history dates must not go backwards. Every call in a test takes the
+fixed date.</li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>docs/lessons.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to use qingsong · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a class="here" href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#1-the-idea">1. The idea</a></li>
+<li class="level-2"><a href="#2-concepts">2. Concepts</a></li>
+<li class="level-3"><a href="#the-vault">The vault</a></li>
+<li class="level-3"><a href="#records-and-ids">Records and IDs</a></li>
+<li class="level-3"><a href="#levels-namespaces-and-flow-down">Levels, namespaces and flow-down</a></li>
+<li class="level-3"><a href="#values-live-in-slots">Values live in slots</a></li>
+<li class="level-3"><a href="#four-separate-kinds-of-status">Four separate kinds of status</a></li>
+<li class="level-3"><a href="#kinds-of-change">Kinds of change</a></li>
+<li class="level-3"><a href="#two-languages">Two languages</a></li>
+<li class="level-3"><a href="#issues-proposals-and-decisions">Issues, proposals and decisions</a></li>
+<li class="level-3"><a href="#documents-and-releases">Documents and releases</a></li>
+<li class="level-2"><a href="#3-the-rules">3. The rules</a></li>
+<li class="level-2"><a href="#4-setting-up">4. Setting up</a></li>
+<li class="level-2"><a href="#5-the-everyday-workflow">5. The everyday workflow</a></li>
+<li class="level-2"><a href="#6-worked-examples">6. Worked examples</a></li>
+<li class="level-3"><a href="#61-write-a-new-requirement">6.1 Write a new requirement</a></li>
+<li class="level-3"><a href="#62-read-and-fix-a-finding">6.2 Read and fix a finding</a></li>
+<li class="level-3"><a href="#63-keep-the-translation-current">6.3 Keep the translation current</a></li>
+<li class="level-3"><a href="#64-approve-a-requirement">6.4 Approve a requirement</a></li>
+<li class="level-3"><a href="#65-change-a-value">6.5 Change a value</a></li>
+<li class="level-3"><a href="#66-move-a-number-from-the-prose-into-a-slot">6.6 Move a number from the prose into a slot</a></li>
+<li class="level-3"><a href="#67-supersede-or-withdraw">6.7 Supersede or withdraw</a></li>
+<li class="level-3"><a href="#68-review-issues-proposals-and-decisions">6.8 Review: issues, proposals and decisions</a></li>
+<li class="level-3"><a href="#69-put-a-requirement-in-a-document">6.9 Put a requirement in a document</a></li>
+<li class="level-3"><a href="#610-release-a-document">6.10 Release a document</a></li>
+<li class="level-3"><a href="#611-read-share-and-analyse">6.11 Read, share and analyse</a></li>
+<li class="level-2"><a href="#7-for-agents">7. For agents</a></li>
+<li class="level-2"><a href="#8-troubleshooting">8. Troubleshooting</a></li>
+<li class="level-2"><a href="#9-where-next">9. Where next</a></li>
+</ol></aside>
+<main>
+<h1 id="how-to-use-qingsong">How to use qingsong</h1>
+<p>This guide is for everyone who works on a project's requirements with qingsong: the scientists and
+engineers who write and approve them, and the AI agents who do most of the editing. It explains the
+ideas, the rules and the everyday workflow, then walks through the common tasks with real commands
+and their real output.</p>
+<p>The examples use the fictional DEMO project that ships with qingsong (<code>examples/demo</code>). Its detector
+subsystem is <code>INS-DET</code>; <code>alice</code> is an approver and <code>bob</code> is not. Commands are run inside the vault
+folder. <code>--by</code> names the person in <code>people.yaml</code> responsible for a change. An agent working for that
+person adds <code>--via</code> and its own name.</p>
+<h2 id="1-the-idea">1. The idea</h2>
+<ul>
+<li><strong>The record is the reference.</strong> Each requirement, quantity, issue, decision and document
+definition is a small YAML file in a git repository, the <strong>vault</strong>. Documents, the HTML site and
+Word files, are generated from it and never edited by hand. A Word file is a snapshot.</li>
+<li><strong>Every change is recorded.</strong> When a file changes, a qingsong command records the change: it
+raises the record's revision, appends a history event, and writes a stamp, a hash of the content.
+A change made without recording it is caught.</li>
+<li><strong>Every change is checked.</strong> <code>qingsong check</code> runs more than forty rules: structure, flow-down, units,
+conflicting values, translations, approvals and unrecorded edits.</li>
+<li><strong>People decide, agents prepare.</strong> Agents draft requirements and propose fixes. Approvers, listed
+in <code>people.yaml</code>, approve requirements, decide on proposals, release documents and permit merges.</li>
+</ul>
+<h2 id="2-concepts">2. Concepts</h2>
+<h3 id="the-vault">The vault</h3>
+<pre><code>qingsong.toml        project code, languages, levels
+people.yaml          people, their languages, and who approves
+glossary.yaml        acronyms, terms and symbols in both languages
+tree/                the product tree: one file per top-level system
+quantities/          named physical quantities, e.g. detector.read_noise
+requirements/INS/    requirements of the INS system, one file each
+issues/ decisions/   review items and recorded decisions
+documents/           document definitions: outline, front matter, releases
+figures/ sources/    figure records with their images; cited external documents
+reviews/             decisions files saved from the review page
+</code></pre>
+<h3 id="records-and-ids">Records and IDs</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Record</th>
+<th>ID example</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requirement</td>
+<td><code>INS-DET-REQ-002</code></td>
+<td>one &quot;shall&quot; statement, values, rationale, flow-down links, verification</td>
+</tr>
+<tr>
+<td>Quantity</td>
+<td><code>detector.read_noise</code></td>
+<td>a named quantity with its dimension and canonical unit</td>
+</tr>
+<tr>
+<td>Issue</td>
+<td><code>ISS-0001</code></td>
+<td>an open question, TBD/TBC value or check finding, with proposed fixes</td>
+</tr>
+<tr>
+<td>Decision</td>
+<td><code>DEC-0001</code></td>
+<td>who decided what, when and why</td>
+</tr>
+<tr>
+<td>Document</td>
+<td><code>DEMO-INS-DET-RD</code></td>
+<td>the outline of a generated document and its releases</td>
+</tr>
+<tr>
+<td>Figure, source, condition, interface, verification, waiver</td>
+<td><code>INS-DET-FIG-001</code>, <code>SRC-…</code>, …</td>
+<td>see the <a href="spec.html#53-other-record-types">specification</a></td>
+</tr>
+</tbody>
+</table></div>
+<p>An ID is <strong>permanent</strong> once its record reaches the main branch. It is never changed, reused or
+deleted. A record that is no longer wanted is <em>withdrawn</em>, or <em>superseded</em> by a successor; it stays in
+the vault. Earlier numbers, such as a row number in an old Word document or a vendor's number, are kept
+as <strong>aliases</strong>.</p>
+<h3 id="levels-namespaces-and-flow-down">Levels, namespaces and flow-down</h3>
+<p>Requirements have a <strong>level</strong>: <code>science</code>, <code>survey</code>, <code>system</code>, <code>element</code>, <code>subsystem</code> or <code>component</code>.
+The ID's prefix, its <strong>namespace</strong>, says where the requirement was issued: <code>DEMO-SRV</code> for the
+project's survey requirements, <code>INS-SYS</code> for the instrument's own requirements, <code>INS-DET</code> for the
+detector subsystem.</p>
+<p>A requirement <strong>derives from</strong> a parent at a higher level. The link stores the parent's normative
+revision, so that when the parent's meaning changes the link becomes <strong>suspect</strong> until someone
+reviews the child. A requirement below <code>science</code> without a parent must cite a decision that justifies
+it. Otherwise it is flagged as <strong>TBJ</strong>, &quot;to be justified&quot;.</p>
+<h3 id="values-live-in-slots">Values live in slots</h3>
+<p>Numbers that matter are kept in <strong>value slots</strong>, not in the prose. Both languages then show the same
+number, and checks can compare values across requirements:</p>
+<pre><code class="language-yaml">statement:
+  en: The detector gain shall vary by {gain_variation} during one night.
+  zh: 探测器增益在一夜内的变化应为{gain_variation}。
+values:
+  gain_variation:
+    quantity: detector.gain_variation
+    relation: lt              # eq, le, lt, ge, gt, range or approx
+    value: 0.5
+    unit: percent
+    certainty: firm           # firm, provisional, tbc or tbd
+</code></pre>
+<p>This renders as &quot;The detector gain shall vary by &lt; 0.5 % during one night.&quot; A provisional value is
+shown with its value and unit in brackets, as in &quot;≥ [90 %]&quot;. Provisional, TBC and TBD values must be tracked by an open issue.
+A slot may also carry a <code>goal</code> on the better side of its limit, a <code>tolerance</code>, or a <code>condition</code>.</p>
+<p>A requirement with at least one slot is <strong>quantitative</strong>. One without slots is <strong>qualitative</strong>, which
+is fine as long as it is verifiable. Numbers that only give context, such as dates and standard
+numbers, may stay in the prose.</p>
+<h3 id="four-separate-kinds-of-status">Four separate kinds of status</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Axis</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Maturity</td>
+<td><code>concept</code>, <code>draft</code>, <code>agreed</code>, <code>baselined</code></td>
+<td>how settled the requirement is</td>
+</tr>
+<tr>
+<td>Lifecycle</td>
+<td><code>current</code>, <code>superseded</code>, <code>withdrawn</code></td>
+<td>whether it is in force</td>
+</tr>
+<tr>
+<td>Certainty, per value</td>
+<td><code>firm</code>, <code>provisional</code>, <code>tbc</code>, <code>tbd</code></td>
+<td>how settled each number is</td>
+</tr>
+<tr>
+<td>Verification status</td>
+<td><code>planned</code>, <code>predicted</code>, <code>compliant</code>, …</td>
+<td>how far evidence shows compliance</td>
+</tr>
+</tbody>
+</table></div>
+<p>A <code>concept</code> may be incomplete and in one language. A <code>draft</code> is a verifiable statement in both
+languages. An <code>agreed</code> requirement carries an approver's approval of its current meaning.</p>
+<h3 id="kinds-of-change">Kinds of change</h3>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Class</th>
+<th>For example</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>editorial</code></td>
+<td>wording, punctuation, translation, rationale</td>
+<td>children and approval unaffected, unless the approved wording changed</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>a value, tolerance, unit or condition; the level or verification method</td>
+<td>new normative revision; links from children become suspect; the approval becomes stale</td>
+</tr>
+<tr>
+<td><code>reallocate</code></td>
+<td>a different <code>allocated_to</code> node</td>
+<td>documents affected; same ID</td>
+</tr>
+<tr>
+<td>new intent</td>
+<td>the requirement asks for something different</td>
+<td>a new requirement; <code>qingsong supersede</code> the old one</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="two-languages">Two languages</h3>
+<p>English is the reference language, and the title, statement, rationale and verification criteria
+also exist in Chinese from <code>draft</code> upward. <code>text_origin</code> records which language a requirement was
+written in. For each translated field, qingsong tracks whether the translation was written by an agent
+(<code>machine</code>) or checked by a person (<code>reviewed</code>). Editing the original makes the translation stale. A
+document can only be released when everything in it has a reviewed, current translation.</p>
+<h3 id="issues-proposals-and-decisions">Issues, proposals and decisions</h3>
+<p>An <strong>issue</strong> is a review item: a TBD value, a wording problem found by a check, a question. It carries
+a label, an owner and <strong>proposals</strong>, which are fixes with the exact new text in both languages, or a
+proposal to keep the text as written. An approver accepts or rejects proposals, usually on the HTML
+<strong>review page</strong>, which saves the decisions as a file for <code>qingsong issue apply</code>.</p>
+<h3 id="documents-and-releases">Documents and releases</h3>
+<p>A <strong>document</strong> record lists its sections and the requirements and figures in each. qingsong generates
+it as an HTML page and as a Word file. A <strong>release</strong> is prepared on a branch, merged, and then tagged
+in git (<code>release/&lt;DOC&gt;/&lt;version&gt;</code>). The issued Word copy of any release can be rebuilt from its tag.</p>
+<h2 id="3-the-rules">3. The rules</h2>
+<ol>
+<li><strong>Never work on <code>main</code>.</strong> Every change starts on a branch and reaches <code>main</code> by a merge that an
+approver permits.</li>
+<li><strong>Record every change.</strong> After editing a file, run <code>qingsong revise</code> (or the command that made
+the change). Never edit <code>revision</code>, <code>normative_revision</code>, <code>normative_hash</code>, <code>history</code>, <code>stamp</code> or
+<code>approval</code> by hand.</li>
+<li><strong>No errors on commit.</strong> Run <code>qingsong check</code> after every change and before every commit.</li>
+<li><strong>IDs are permanent.</strong> Never rename, renumber or delete a record that is on <code>main</code>; supersede or
+withdraw it.</li>
+<li><strong>One &quot;shall&quot; per requirement, and no vague words.</strong> &quot;Adequate&quot;, &quot;as far as possible&quot; and the like
+are flagged (<code>content.writing</code>).</li>
+<li><strong>Numbers that matter go in slots.</strong> Every non-firm value is tracked by an open issue.</li>
+<li><strong>Both languages from <code>draft</code> on.</strong> Respect the language a requirement was written in: never
+regenerate the original from its translation.</li>
+<li><strong>People decide.</strong> Only approvers approve, accept or reject proposals, and release. Agents run
+these commands only on an approver's explicit instruction, and apply an approver's decisions file
+unchanged.</li>
+</ol>
+<h2 id="4-setting-up">4. Setting up</h2>
+<p><strong>Install.</strong> qingsong needs Python 3.11 or newer and <a href="https://docs.astral.sh/uv/">uv</a>. In the vault
+repository:</p>
+<pre><code class="language-bash">uv add &quot;qingsong @ git+https://github.com/MUST-Science-Collaboration/qingsong&quot;
+uv run qingsong --version
+</code></pre>
+<p>To develop the engine and a vault side by side, point the dependency at a local checkout instead:
+<code>qingsong = { path = &quot;../qingsong&quot;, editable = true }</code> under <code>[tool.uv.sources]</code>.</p>
+<p><strong>Create a vault.</strong></p>
+<pre><code class="language-bash">qingsong init my-vault --code DEMO --name &quot;Demo Survey Telescope&quot;
+</code></pre>
+<p>This writes <code>qingsong.toml</code>, <code>people.yaml</code>, <code>glossary.yaml</code> and the root tree file <code>tree/DEMO.yaml</code>.
+Record folders appear as records are added. Then list the people:</p>
+<pre><code class="language-yaml">people:
+  alice:
+    name: Alice Example
+    organization: Demo Observatory
+    github: alice-example
+    languages: [en, zh]
+    approver: true
+</code></pre>
+<p><strong>Check on every commit.</strong> Add a hook to the vault's <code>.pre-commit-config.yaml</code>, and run the same check
+in CI against the main branch (<code>qingsong check --against origin/main</code>):</p>
+<pre><code class="language-yaml">  - repo: local
+    hooks:
+      - id: qingsong_check
+        name: qingsong check
+        entry: uv run --frozen qingsong check
+        language: system
+        pass_filenames: false
+        always_run: true
+</code></pre>
+<h2 id="5-the-everyday-workflow">5. The everyday workflow</h2>
+<ol>
+<li><strong>Branch:</strong> <code>git switch -c feature/gain-stability</code>.</li>
+<li><strong>Edit:</strong> create a record with <code>qingsong new</code>, or change a record's YAML file.</li>
+<li><strong>Record:</strong> <code>qingsong revise ID --class … --summary … --by …</code>.</li>
+<li><strong>Check:</strong> <code>qingsong check</code>. Fix every error; a warning is either fixed or tracked by an issue.</li>
+<li><strong>Commit</strong>, and ask an approver to review the branch. The HTML site's changes and review pages
+show what changed.</li>
+<li><strong>Approve and merge:</strong> the approver approves the requirements (<code>qingsong approve</code>) and permits the
+merge.</li>
+<li><strong>Release</strong> a document when it is ready (§6.10).</li>
+</ol>
+<h2 id="6-worked-examples">6. Worked examples</h2>
+<h3 id="61-write-a-new-requirement">6.1 Write a new requirement</h3>
+<p>Allocate the next ID in the namespace. qingsong writes a <code>concept</code> requirement:</p>
+<pre><code class="language-console">$ qingsong new requirement --namespace INS-DET --title &quot;Gain stability&quot; \
+    --statement &quot;The detector gain shall vary by less than 0.5 % during one night.&quot; --by alice
+created INS-DET-REQ-002 (revision 1)
+</code></pre>
+<p>The value needs a quantity. Write <code>quantities/detector.gain_variation.yaml</code> and take it in with
+<code>adopt</code>, which adds the revision, history and stamp:</p>
+<pre><code class="language-yaml">id: detector.gain_variation
+type: quantity
+title: {en: Detector gain variation, zh: 探测器增益变化}
+dimension: &quot;[]&quot;
+unit: percent
+lifecycle: current
+</code></pre>
+<pre><code class="language-console">$ qingsong adopt quantities/detector.gain_variation.yaml --event created \
+    --summary &quot;quantity for the gain stability requirement&quot; --by alice
+adopted detector.gain_variation (revision 1)
+</code></pre>
+<p>Now complete the requirement in its file: the Chinese title and statement, the value slot (as in §2),
+the rationale, the parent link and the verification:</p>
+<pre><code class="language-yaml">rationale:
+  en: Flat fields are taken once per night; a stable gain keeps them valid until the next set.
+  zh: 平场每夜拍摄一次；增益稳定可使其在下一组平场之前保持有效。
+derives_from:
+  - {id: INS-SYS-REQ-001, normative_revision: 1}
+verification:
+  methods: [test]
+  criteria:
+    en: Gain measured from flat fields at the start and end of three nights.
+    zh: 在三个夜晚的开始和结束时由平场测量增益。
+</code></pre>
+<p>Record it. The values changed, so the class is <code>value</code>. <code>--to-draft</code> raises it from <code>concept</code> to
+<code>draft</code>, and <code>--translation updated</code> records that the Chinese was written by an agent:</p>
+<pre><code class="language-console">$ qingsong revise INS-DET-REQ-002 --class value --to-draft --translation updated \
+    --summary &quot;first full draft: value in a slot, Chinese, rationale and verification&quot; \
+    --by alice --via demo-agent
+revised INS-DET-REQ-002 (revision 2)
+</code></pre>
+<p>Then add it to its document (§6.9), check, and commit.</p>
+<h3 id="62-read-and-fix-a-finding">6.2 Read and fix a finding</h3>
+<p>Each finding names the rule, the record, what is wrong, and a fix. Editing a file without recording
+the change gives:</p>
+<pre><code class="language-console">$ qingsong check
+ERROR   change.unrecorded                  DEMO-INS-DET-RD: content changed since the last recorded change
+        fix: qingsong revise DEMO-INS-DET-RD --class editorial|value|reallocate --summary …
+1 errors, 0 warnings, 0 notes
+</code></pre>
+<p><code>qingsong revise</code> refuses the wrong class. Recording a changed value as <code>editorial</code> gives
+<code>error: values, level or verification methods changed: this is a 'value' change, not editorial</code>.</p>
+<p>Severities:</p>
+<ul>
+<li><strong>Errors</strong> block a commit.</li>
+<li><strong>Warnings</strong> must be fixed, or tracked by an issue (§6.8). A tracked warning names its issue.</li>
+<li><strong>Notes</strong> are information.</li>
+</ul>
+<h3 id="63-keep-the-translation-current">6.3 Keep the translation current</h3>
+<p>Changing the English text makes its translation stale:</p>
+<pre><code class="language-console">WARNING change.translation                 INS-DET-REQ-002: statement: the en text changed after the translation was made
+        fix: update the other language, then revise with --translation updated|reviewed
+</code></pre>
+<p>Update the Chinese if needed, then record who wrote or checked it. <code>updated</code> means an agent wrote it;
+<code>reviewed</code> means a person who reads both languages checked it:</p>
+<pre><code class="language-console">$ qingsong revise INS-DET-REQ-002 --class editorial --translation reviewed \
+    --summary &quot;Chinese statement checked against the new English&quot; --by alice
+revised INS-DET-REQ-002 (revision 4)
+</code></pre>
+<h3 id="64-approve-a-requirement">6.4 Approve a requirement</h3>
+<p>An approver approves the current meaning and wording. <code>--ref</code> says where the decision was made:</p>
+<pre><code class="language-console">$ qingsong approve INS-DET-REQ-002 --to agreed --by alice --ref &quot;design review 2026-11-03&quot;
+approved INS-DET-REQ-002 (revision 5)
+</code></pre>
+<p><code>approve --to draft</code> reopens an agreed requirement. Agents run <code>approve</code> only when an approver
+tells them to.</p>
+<h3 id="65-change-a-value">6.5 Change a value</h3>
+<p>Edit the value in the file, then record a <code>value</code> change with a summary that states the reason:</p>
+<pre><code class="language-console">$ qingsong revise INS-SYS-REQ-001 --class value \
+    --summary &quot;Throughput raised to 45 % after the coating study (DEC-0001).&quot; --by alice
+revised INS-SYS-REQ-001 (revision 3)
+$ qingsong check
+ERROR   change.approval                    INS-SYS-REQ-001: approval covers normative revision 1, the requirement is at 2
+        fix: approve again, or reopen as draft
+ERROR   change.suspect_link                INS-DET-REQ-002: INS-SYS-REQ-001 changed (normative revision 1 → 2) since this link was confirmed
+        fix: review, then qingsong confirm INS-DET-REQ-002 INS-SYS-REQ-001
+WARNING change.suspect_link                INS-OPT-REQ-001: INS-SYS-REQ-001 changed (normative revision 1 → 2) since this link was confirmed
+        fix: review, then qingsong confirm INS-OPT-REQ-001 INS-SYS-REQ-001
+2 errors, 1 warnings, 0 notes
+</code></pre>
+<p>The approval no longer covers the new meaning, and every child must be reviewed against the new
+value. A suspect link is an error for an agreed child and a warning for a draft one. After review:</p>
+<pre><code class="language-console">$ qingsong approve INS-SYS-REQ-001 --to agreed --by alice --ref &quot;design review 2026-11-03&quot;
+$ qingsong confirm INS-DET-REQ-002 INS-SYS-REQ-001 --by alice
+</code></pre>
+<p>A baselined requirement also needs <code>--decision DEC-…</code>.</p>
+<h3 id="66-move-a-number-from-the-prose-into-a-slot">6.6 Move a number from the prose into a slot</h3>
+<p>Requirements imported from Word documents often carry their numbers in the text. <code>qingsong slot</code>
+moves them into slots without changing the meaning. It checks that the slot renders the same words it
+replaces, so the approval stays valid. Write the slots, with <code>replaces</code> giving the exact text in each
+language. A relation word such as &quot;no more than&quot; belongs to the replaced text:</p>
+<pre><code class="language-yaml">mass:
+  quantity: detector.mass
+  relation: le
+  value: 120
+  unit: kg
+  certainty: firm
+  replaces:
+    en: no more than 120 kg
+</code></pre>
+<pre><code class="language-console">$ qingsong slot INS-DET-REQ-003 --file slots.yaml --by alice --dry-run
+would move values of INS-DET-REQ-003:
+  en before: The detector assembly shall weigh no more than 120 kg.
+  en after:  The detector assembly shall weigh {mass}.
+</code></pre>
+<p>Run it again without <code>--dry-run</code> to write. When the move would change what the sentence says, it is
+refused with the reason. Changing what is required is an ordinary <code>value</code> revision (§6.5).</p>
+<h3 id="67-supersede-or-withdraw">6.7 Supersede or withdraw</h3>
+<p>When a requirement must ask for something different, write a new one and supersede the old:</p>
+<pre><code class="language-console">$ qingsong supersede INS-DET-REQ-001 --with INS-DET-REQ-004 --summary &quot;split by readout mode&quot; --by alice
+</code></pre>
+<p>Repeat <code>--with</code> for a split. A requirement that is no longer needed is withdrawn:
+<code>qingsong withdraw ID --reason … --by …</code>. Both need <code>--decision DEC-…</code> for an agreed or baselined
+requirement. Links to the old record must then point to its successor (<code>structure.lifecycle</code>).</p>
+<h3 id="68-review-issues-proposals-and-decisions">6.8 Review: issues, proposals and decisions</h3>
+<p><strong>Raise issues</strong> for warnings that nothing tracks yet. Each gets a label and lists its records:</p>
+<pre><code class="language-console">$ qingsong issue raise --from-checks --by alice
+</code></pre>
+<p>Use <code>--group</code> for one issue per rule. To raise one by hand, use <code>--kind question --title … --description … --record ID</code>.</p>
+<p><strong>Propose a fix.</strong> Anyone in <code>people.yaml</code> may propose. The file gives the new text in both languages:</p>
+<pre><code class="language-yaml">summary: {en: State how the read noise is combined, zh: 说明读出噪声的合并方式}
+change_class: editorial
+changes:
+  - record: INS-DET-REQ-001
+    field: notes
+    text:
+      en: Measured at the operating temperature in the slow readout mode, as the median over all amplifiers.
+      zh: 在工作温度下以慢读出模式测量，取所有放大器的中位数。
+</code></pre>
+<pre><code class="language-console">$ qingsong issue propose ISS-0001 --file proposal.yaml --by bob
+proposed in ISS-0001 (revision 3)
+</code></pre>
+<p><code>--keep --summary …</code> proposes keeping the text as written.</p>
+<p><strong>Decide on the review page.</strong> Run <code>qingsong render html site</code> and open <code>site/review.html</code>. It shows
+each issue with its label and records, and each proposal as a word-level difference in both languages.</p>
+<ol>
+<li>Mark proposals Accept or Reject, with a note if you like.</li>
+<li>Choose your name under &quot;You are&quot;.</li>
+<li>Press <strong>Save decisions</strong>. The page downloads a decisions file, such as
+<code>decisions_DEMO_2026-11-03_alice.yaml</code>.</li>
+</ol>
+<p><strong>Apply the file</strong>, yourself or through an agent:</p>
+<pre><code class="language-console">$ qingsong issue apply ~/Downloads/decisions_DEMO_2026-11-03_alice.yaml
+</code></pre>
+<p>It checks every decision before writing anything, and applies all of them or none. It refuses a
+proposal that changed after you read it. On <code>main</code>, it starts the branch <code>review/&lt;date&gt;-&lt;person&gt;</code>. It
+keeps the file in <code>reviews/</code>. It commits nothing: commit and merge as usual.</p>
+<p>From the command line, <code>qingsong issue accept ISS --proposal N</code> and
+<code>qingsong issue reject ISS --proposal N --reason …</code> do the same one at a time. Accepting a proposal
+applies its text, records the revision and closes the issue.</p>
+<h3 id="69-put-a-requirement-in-a-document">6.9 Put a requirement in a document</h3>
+<p>Add a <code>requirement</code> block to the right section of the document's <code>outline</code> and record the change:</p>
+<pre><code class="language-yaml">      blocks:
+        - requirement: INS-DET-REQ-001
+        - requirement: INS-DET-REQ-002
+</code></pre>
+<pre><code class="language-console">$ qingsong revise DEMO-INS-DET-RD --class editorial --summary &quot;outline: add INS-DET-REQ-002&quot; --by alice
+</code></pre>
+<p>No check yet reminds you of a requirement that is in no document, so add new requirements as you
+create them. Refer to other records in text with <code>[[ID]]</code>, and to a section with <code>[[DOC#key]]</code>;
+qingsong numbers figures and sections itself.</p>
+<h3 id="610-release-a-document">6.10 Release a document</h3>
+<ol>
+<li>
+<p><strong>Prepare on a branch.</strong> An approver gives the summary in both languages:</p>
+<pre><code class="language-console">$ qingsong release prepare DEMO-INS-DET-RD 1.1 --by alice \
+    --summary-en &quot;Adds gain stability (INS-DET-REQ-002).&quot; \
+    --summary-zh &quot;增加增益稳定性需求（INS-DET-REQ-002）。&quot;
+prepared DEMO-INS-DET-RD 1.1 (revision 3); after the merge run qingsong release tag DEMO-INS-DET-RD 1.1
+</code></pre>
+<p>It refuses while the document has errors, or while anything in it lacks a reviewed translation.
+It prints the changes since the previous release.</p>
+</li>
+<li>
+<p><strong>Merge</strong> the branch, with the approver's permission.</p>
+</li>
+<li>
+<p><strong>Tag</strong> on <code>main</code>. The tag marks the commit that brought the release in, whatever followed it:</p>
+<pre><code class="language-console">$ qingsong release tag DEMO-INS-DET-RD 1.1
+tagged dc5343c14479 as release/DEMO-INS-DET-RD/1.1; publish it with: git push origin release/DEMO-INS-DET-RD/1.1
+</code></pre>
+<p>Pushing the tag is a separate step, with permission.</p>
+</li>
+<li>
+<p><strong>Issue the copy.</strong> <code>qingsong render docx DEMO-INS-DET-RD issued.docx --release 1.1</code> renders the
+document as it was at the tag. <code>qingsong release changes DEMO-INS-DET-RD</code> lists what changed since
+the latest release. The HTML site shows the same as &quot;Changes since v1.1&quot;.</p>
+</li>
+</ol>
+<h3 id="611-read-share-and-analyse">6.11 Read, share and analyse</h3>
+<ul>
+<li><code>qingsong render html site</code>: the static site. Open <code>site/index.html</code>. It works offline, so it can
+be shared as a folder or a CI artifact.</li>
+<li><code>qingsong show ID</code>, <code>qingsong list --type requirement --node INS-DET</code>, <code>qingsong find TEXT</code>: look
+things up from the terminal.</li>
+<li><code>qingsong export json --output record.json</code>: every record and an index of all values with their
+intervals, for analysis code. <code>--release DOC/VERSION</code> exports the numbers behind an issued document.</li>
+</ul>
+<h2 id="7-for-agents">7. For agents</h2>
+<p><strong>Before you start.</strong></p>
+<ul>
+<li>Read the vault's <code>AGENTS.md</code>.</li>
+<li>Work on a branch. Find the vault root (<code>qingsong.toml</code>), or pass <code>--vault</code>.</li>
+</ul>
+<p><strong>For every change.</strong></p>
+<ul>
+<li>Edit the file, record it with the right class, and run <code>qingsong check</code>. Pass <code>--via</code> with your
+name, and <code>--by</code> with the person you work for.</li>
+<li>Use <code>--json</code> to read results. <code>qingsong check --json</code> gives
+<code>{&quot;errors&quot;, &quot;warnings&quot;, &quot;tracked&quot;, &quot;findings&quot;: [{&quot;rule&quot;, &quot;severity&quot;, &quot;message&quot;, &quot;record&quot;, &quot;file&quot;, &quot;fix&quot;, &quot;issue&quot;}]}</code>.</li>
+<li><strong>Exit codes.</strong> <code>check</code> exits with 1 when there is an error. Any command exits with 2 when it refuses,
+printing <code>{&quot;error&quot;: &quot;…&quot;}</code> with <code>--json</code>.</li>
+<li><strong>Quoting.</strong> In YAML, quote a text that starts with <code>[</code> or <code>{</code>, for example <code>zh: &quot;[[ID]]的…&quot;</code>.
+Otherwise YAML reads it as a list or a mapping.</li>
+</ul>
+<p><strong>Never, unless an approver tells you to:</strong></p>
+<ul>
+<li>approve;</li>
+<li>accept, reject or close a proposal;</li>
+<li>prepare or tag a release;</li>
+<li>merge, push, or delete a branch.</li>
+</ul>
+<p><strong>Never:</strong></p>
+<ul>
+<li>edit the recorded fields by hand;</li>
+<li>reuse or renumber an ID that is on <code>main</code>;</li>
+<li>regenerate a requirement's original-language text from its translation.</li>
+</ul>
+<p><strong>When an approver hands you a decisions file:</strong></p>
+<ul>
+<li>apply it unchanged with <code>qingsong issue apply FILE --via AGENT</code>;</li>
+<li>commit the changes together with the copy kept in <code>reviews/</code>;</li>
+<li>if it is refused, report the listed problems; do not work around them.</li>
+</ul>
+<p><strong>When a command refuses,</strong> read its message: it names the fix. Report anything you cannot resolve,
+rather than editing around the check.</p>
+<h2 id="8-troubleshooting">8. Troubleshooting</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>content changed since the last recorded change</code></td>
+<td>a file was edited without recording it</td>
+<td><code>qingsong revise ID --class … --summary …</code></td>
+</tr>
+<tr>
+<td><code>this is a 'value' change, not editorial</code></td>
+<td>values, level or verification method changed</td>
+<td>record it as <code>--class value</code></td>
+</tr>
+<tr>
+<td><code>approval covers normative revision 1, the requirement is at 2</code></td>
+<td>the meaning changed after approval</td>
+<td>approve again, or reopen as draft</td>
+</tr>
+<tr>
+<td><code>… changed … since this link was confirmed</code></td>
+<td>a parent's meaning changed</td>
+<td>review the child, then <code>qingsong confirm CHILD PARENT</code></td>
+</tr>
+<tr>
+<td><code>the en text changed after the translation was made</code></td>
+<td>the translation is stale</td>
+<td>update it, then <code>revise --translation updated</code> or <code>reviewed</code></td>
+</tr>
+<tr>
+<td><code>no parent and no justifying decision: to be justified (TBJ)</code></td>
+<td>a requirement has no parent</td>
+<td>add <code>derives_from</code>, or <code>justified_by</code> with a decision</td>
+</tr>
+<tr>
+<td><code>… is not valid YAML …; quote texts that start with [ or {</code></td>
+<td>YAML read a text as a list or mapping</td>
+<td>put the text in quotes</td>
+</tr>
+<tr>
+<td><code>… is out of date …; propose again</code></td>
+<td>the text changed after the proposal was made</td>
+<td>write a new proposal</td>
+</tr>
+<tr>
+<td><code>… has changed since the review page was made</code></td>
+<td>a proposal changed after you read it</td>
+<td>render the page again and decide again</td>
+</tr>
+<tr>
+<td><code>… is not an approver (people.yaml)</code></td>
+<td>only approvers may do this</td>
+<td>ask an approver</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="9-where-next">9. Where next</h2>
+<ul>
+<li><a href="api.html">API reference</a>: every command and check rule, and the code for those who change qingsong.</li>
+<li><a href="spec.html">Specification</a>: the full design and the decisions behind it.</li>
+<li><a href="agents.html">Contributor rules</a>: the rules for changing qingsong itself.</li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>docs/howto.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

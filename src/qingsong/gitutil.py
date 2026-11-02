@@ -47,11 +47,13 @@ class GitError(Exception):
 
 
 def commit_of(root: Path, ref: str) -> str | None:
+    """The commit a reference points to, or None if it does not exist."""
     result = run_git(root, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
     return result.stdout.strip() if result.returncode == 0 else None
 
 
 def head_commit(root: Path) -> str | None:
+    """The commit checked out, or None outside a git repository."""
     return commit_of(root, "HEAD") if is_repository(root) else None
 
 

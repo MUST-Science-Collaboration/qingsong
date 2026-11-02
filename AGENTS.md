@@ -26,4 +26,11 @@ Standing rules for human and agent contributors. The architecture and accepted d
 ## Tests
 
 - Tests build synthetic vaults in temporary directories. They never read or write a real vault, never change the working directory globally, and never set environment variables outside a test's own scope.
+- Pass a fixed `today` to every operation a test calls. A test that mixes a fixed date with the real date fails on another day.
 - Every check rule has a fixture that triggers it. Failures are never masked in CI.
+
+## Documentation
+
+- The Markdown files are the sources: `README.md`, `AGENTS.md` and `docs/*.md`. Never edit the HTML in `docs/html/` or `docs/index.html`, or the generated part of `docs/api.md`.
+- After changing a document, a docstring, a command or a check rule, run `uv run python tools/build_docs.py` and commit the result. `tests/test_docs.py` fails while anything generated is out of date.
+- Keep `docs/howto.md` true: run every example in it on a copy of the demo vault after changing a command it shows.

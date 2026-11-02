@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qingsong Development TODO · qingsong</title>
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top"><a class="brand" href="../index.html">qingsong<span>青松</span></a>
+<nav><a href="readme.html">Overview</a>
+<a href="howto.html">How to use qingsong</a>
+<a href="api.html">API reference</a>
+<a href="spec.html">Specification</a>
+<a href="agents.html">Contributor rules</a>
+<a href="todo.html">Task list</a>
+<a href="lessons.html">Lessons</a></nav></header>
+<div class="layout">
+<aside class="contents"><h2>On this page</h2><ol>
+<li class="level-2"><a href="#planning--foundation-phase-1-completed">Planning &amp; Foundation (Phase 1 Completed)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-2-current">Implementation Backlog (Phase 2 Current)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-3--4">Implementation Backlog (Phase 3 &amp; 4)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-5-completed">Implementation Backlog (Phase 5 Completed)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-6-current">Implementation Backlog (Phase 6 Current)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-7-current">Implementation Backlog (Phase 7 Current)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-10-completed">Implementation Backlog (Phase 10 Completed)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-11-completed">Implementation Backlog (Phase 11 Completed)</a></li>
+<li class="level-2"><a href="#implementation-backlog-phase-12-completed">Implementation Backlog (Phase 12 Completed)</a></li>
+<li class="level-2"><a href="#current-session-slice-plan-enhanced-ui">Current Session Slice Plan (Enhanced UI)</a></li>
+<li class="level-2"><a href="#review-notes">Review Notes</a></li>
+</ol></aside>
+<main>
+<h1 id="qingsong-development-todo">Qingsong Development TODO</h1>
+<h2 id="planning--foundation-phase-1-completed">Planning &amp; Foundation (Phase 1 Completed)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1-001</td>
+<td>Environment Standardization</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>uv</code> migration and fixed <code>.venv</code> synced.</td>
+</tr>
+<tr>
+<td>P1-002</td>
+<td>Architectural Specification</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>SPEC.md</code>, <code>PLAN.md</code>, <code>TODO.md</code>, <code>lessons.md</code>.</td>
+</tr>
+<tr>
+<td>P1-003</td>
+<td>Core API Refactoring</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Staging/Persistence logic (<code>create_item</code>, <code>flush()</code>).</td>
+</tr>
+<tr>
+<td>P1-004</td>
+<td>Strict Metadata Validation</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Strict validation against <code>meta/</code> via Pydantic.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-2-current">Implementation Backlog (Phase 2 Current)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P2-001</td>
+<td>Flexible L3 Hierarchy</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Support nested <code>L1/L2/L3</code> folder structures.</td>
+</tr>
+<tr>
+<td>P2-002</td>
+<td>Link Graph Validation</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Implement circular dependency detection.</td>
+</tr>
+<tr>
+<td>P2-003</td>
+<td>Resilient I/O Refactor</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Improve <code>doorstop_io</code> for more resilient I/O.</td>
+</tr>
+<tr>
+<td>P2-004</td>
+<td>Comprehensive Unit Testing</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Achieve &gt;60% coverage for core and validation.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-3--4">Implementation Backlog (Phase 3 &amp; 4)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P3-001</td>
+<td>Advanced Search CLI</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Implement <code>qingsong find</code> command.</td>
+</tr>
+<tr>
+<td>P3-002</td>
+<td>Migration Utility</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Build <code>qingsong migrate</code> for refactoring.</td>
+</tr>
+<tr>
+<td>P3-003</td>
+<td>Multi-format Export</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Improve Markdown/PDF/CSV formatting.</td>
+</tr>
+<tr>
+<td>P4-001</td>
+<td>Traceability Matrix</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Implement automated UTM/DTM generation.</td>
+</tr>
+<tr>
+<td>P4-002</td>
+<td>Verification Tracking</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Implement verification status roll-ups.</td>
+</tr>
+<tr>
+<td>P4-003</td>
+<td>Production Hardening</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Final docs and &gt;80% test coverage.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-5-completed">Implementation Backlog (Phase 5 Completed)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P5-001</td>
+<td>CLI Root Parameter</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Allow <code>--root</code> argument for Vault selection.</td>
+</tr>
+<tr>
+<td>P5-002</td>
+<td>Path Context Refactor</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Refactor Core to eliminate hardcoded globals.</td>
+</tr>
+<tr>
+<td>P5-003</td>
+<td>Project Scaffolding</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Build <code>qingsong init</code> command.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-6-current">Implementation Backlog (Phase 6 Current)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P6-001</td>
+<td>UI Architecture Refactor</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Multi-page layout and <code>QINGSONG_ROOT</code> support.</td>
+</tr>
+<tr>
+<td>P6-002</td>
+<td>Verification &amp; Traceability</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>UI views for <code>get_verification_summary</code> and <code>get_traceability_matrix</code>.</td>
+</tr>
+<tr>
+<td>P6-003</td>
+<td>Advanced Search &amp; Graph</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>FTS5 integration and HTML graph embedding.</td>
+</tr>
+<tr>
+<td>P6-004</td>
+<td>Interactive Editor (Draft)</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Web forms for <code>create_item</code> and <code>flush</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-7-current">Implementation Backlog (Phase 7 Current)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P7-001</td>
+<td>Placeholder Detection</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>has_placeholders</code> property in BaseItem.</td>
+</tr>
+<tr>
+<td>P7-002</td>
+<td>CLI TBD Filter</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>qingsong find --tbd</code> filter.</td>
+</tr>
+<tr>
+<td>P7-003</td>
+<td>UI Stability Dashboard</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>&quot;Stability Watchlist&quot; on main dashboard.</td>
+</tr>
+<tr>
+<td>P7-004</td>
+<td>UI Visual Highlighting</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Warning icons and TBD filter in Explorer.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-10-completed">Implementation Backlog (Phase 10 Completed)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P10-001</td>
+<td>Impact Logic</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Recursive traversal for transitive dependencies.</td>
+</tr>
+<tr>
+<td>P10-002</td>
+<td>Impact CLI</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>qingsong impact</code> command.</td>
+</tr>
+<tr>
+<td>P10-003</td>
+<td>Impact UI</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>&quot;Impact Explorer&quot; in WebUI item details.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-11-completed">Implementation Backlog (Phase 11 Completed)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P11-001</td>
+<td>Gap Detection Logic</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Logic for root/leaf orphans and unverified items.</td>
+</tr>
+<tr>
+<td>P11-002</td>
+<td>Coverage Analytics</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Traceability and verification percentage metrics.</td>
+</tr>
+<tr>
+<td>P11-003</td>
+<td>Reporting CLI</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td><code>qingsong report</code> command group.</td>
+</tr>
+<tr>
+<td>P11-004</td>
+<td>UI Insights Page</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>New &quot;Insights&quot; page in WebUI.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="implementation-backlog-phase-12-completed">Implementation Backlog (Phase 12 Completed)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Task</th>
+<th>Owner</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P12-001</td>
+<td>Direct Item Editing</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Web forms for updating item content.</td>
+</tr>
+<tr>
+<td>P12-002</td>
+<td>In-Place Linking</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Tool for adding/removing links in UI.</td>
+</tr>
+<tr>
+<td>P12-003</td>
+<td>Interactive Migrations</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>UI form for <code>migrate_item</code>.</td>
+</tr>
+<tr>
+<td>P12-004</td>
+<td>UX Polish</td>
+<td>agent</td>
+<td>[x] Done</td>
+<td>Styling, colors, and quick-actions.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="current-session-slice-plan-enhanced-ui">Current Session Slice Plan (Enhanced UI)</h2>
+<div class="table-wrap"><table class="table">
+<thead>
+<tr>
+<th>Step</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[x] S1</td>
+<td>Done</td>
+<td>Add &quot;Edit Mode&quot; toggle and form to <code>1_Items.py</code>.</td>
+</tr>
+<tr>
+<td>[x] S2</td>
+<td>Done</td>
+<td>Implement link management UI in item details.</td>
+</tr>
+<tr>
+<td>[x] S3</td>
+<td>Done</td>
+<td>Add &quot;Migrate Item&quot; expander to item details.</td>
+</tr>
+<tr>
+<td>[x] S4</td>
+<td>Done</td>
+<td>Add &quot;Quick Links&quot; to Dashboard for common tasks.</td>
+</tr>
+<tr>
+<td>[x] S5</td>
+<td>Done</td>
+<td>Verify all interactive flows in browser.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="review-notes">Review Notes</h2>
+<ul>
+<li>2026-02-24: Phase 1 documentation and environment baseline established.</li>
+<li>2026-02-24: Refactored Core API for staging logic.</li>
+<li>2026-02-25: Phase 2 initiated. Completed Flexible L3 Hierarchy (P2-001) implementation and validation.</li>
+<li>2026-02-25: Transitioned <code>PLAN.md</code> and <code>TODO.md</code> to professional &quot;Phase&quot; and &quot;ID&quot; tracking system.</li>
+<li>2026-02-25: Completed Phase 2 (P2-002, P2-003, P2-004). Implemented circular dependency detection, resilient I/O, and achieved 60% test coverage.</li>
+<li>2026-02-26: Completed Phase 3 (P3-001, P3-002, P3-003). Implemented <code>find</code>, <code>migrate</code> commands and enhanced export capabilities.</li>
+<li>2026-02-26: Completed Phase 4 (P4-001, P4-002, P4-003). Implemented traceability matrices, verification tracking, and achieved 83% non-UI test coverage.</li>
+<li>2026-02-26: Completed Phase 5 (P5-001, P5-002, P5-003). Refactored core to support dynamic project roots and implemented <code>qingsong init</code> for multi-vault support.</li>
+<li>2026-02-26: Completed Phase 6 (P6-001, P6-002, P6-003, P6-004). Redesigned WebUI into a multi-page dashboard with advanced insights and interactive item creation.</li>
+<li>2026-02-27: Completed Phase 7 (P7-001, P7-002, P7-003, P7-004). Implemented TBD/TBC placeholder tracking and integrated it into the CLI and WebUI.</li>
+<li>2026-02-27: Completed Phase 8 (P8-001, P8-002, P8-003, P8-004). Implemented PDF export engine and formal document templates, and updated pre-commit hooks for CI/CD automation.</li>
+<li>2026-02-27: Completed Phase 9 (P9-001, P9-002, P9-003, P9-004). Implemented design discussions, enhanced FTS5 search with snippets, and added collaborator management to the WebUI.</li>
+<li>2026-02-27: Completed Phase 10 (P10-001, P10-002, P10-003). Implemented recursive impact analysis in core, CLI, and WebUI.</li>
+<li>2026-02-27: Completed Phase 11 (P11-001, P11-002, P11-003, P11-004). Implemented orphan detection and coverage reporting in core, CLI, and a new WebUI &quot;Insights&quot; page.</li>
+<li>2026-02-27: Completed Phase 12 (P12-001, P12-002, P12-003, P12-004). Enhanced WebUI with in-place editing, link management, interactive migrations, and dashboard quick-actions.</li>
+</ul>
+
+</main>
+</div>
+<footer>Generated from <code>docs/journal/2026-02_legacy_todo.md</code> by <code>tools/build_docs.py</code>. Edit the Markdown file,
+then rebuild; this page is overwritten.</footer>
+</body>
+</html>

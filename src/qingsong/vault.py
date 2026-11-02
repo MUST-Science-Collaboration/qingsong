@@ -90,6 +90,7 @@ class Vault:
 
 
 def find_root(start: Path | None = None) -> Path:
+    """The nearest folder, from `start` upward, that holds qingsong.toml."""
     current = (start or Path.cwd()).resolve()
     for candidate in [current, *current.parents]:
         if (candidate / config_name).is_file():
@@ -127,6 +128,8 @@ def describe_validation_error(error: ValidationError) -> str:
 
 
 def load(root: Path) -> Vault:
+    """Load a whole vault strictly. Nothing is defaulted; every unreadable file or schema violation
+    becomes a load finding, reported by the check."""
     vault = Vault(root=root)
     load_config(vault)
     load_tree(vault)
