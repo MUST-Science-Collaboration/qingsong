@@ -1,11 +1,15 @@
 """The Word renderer writes a valid package with numbered, bilingual content."""
 
+import datetime
 import re
 import zipfile
 
 import docx
+from conftest import edit_yaml
+from docx.oxml.ns import qn
 
-from qingsong.render.word import check_package, render_docx
+from qingsong.render.html import render_site
+from qingsong.render.word import change_record_limit, check_package, display_width, render_docx
 from qingsong.vault import load
 
 
@@ -57,3 +61,82 @@ def test_table_of_contents_is_filled_without_an_update_prompt(demo, tmp_path):
     )
     with zipfile.ZipFile(prompted) as package:
         assert "updateFields" in package.read("word/settings.xml").decode("utf-8")
+
+
+def add_releases(demo, long_summary: dict) -> None:
+    def change(data):
+        data["releases"].append(
+            {
+                "version": "1.1",
+                "date": datetime.date(2026, 2, 1),
+                "summary": long_summary,
+                "note": {"en": "Reviewed by the detector group."},
+                "by": "alice",
+                "made_with_qingsong": True,
+            }
+        )
+        data["releases"].append(
+            {
+                "version": "1.2",
+                "date": datetime.date(2026, 3, 1),
+                "summary": {"en": "Correct a figure", "zh": "更正一幅图"},
+                "by": "Carol Example (before the record)",
+                "made_with_qingsong": True,
+            }
+        )
+
+    edit_yaml(demo / "documents" / "DEMO-INS-DET-RD.yaml", change)
+
+
+def test_change_record_has_fixed_columns_names_and_an_appendix(demo, tmp_path):
+    """Columns keep their widths, people show by name, and an explanation too long for its cell
+    is printed in Appendix A and cited in the table."""
+    long_summary = {
+        "en": "Raise the read-noise limit after the detector tests. " * 5,
+        "zh": "根据探测器测试结果放宽读出噪声限值。" * 5,
+    }
+    assert display_width(long_summary["en"]) <= change_record_limit
+    assert display_width(long_summary["zh"] + long_summary["en"]) > change_record_limit
+    add_releases(demo, {language: text.strip() for language, text in long_summary.items()})
+    output = render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx", version="1.2")
+    assert check_package(output) == []
+    word = docx.Document(str(output))
+
+    table = word.tables[0]
+    rows = [[cell.text for cell in row.cells] for row in table.rows]
+    assert rows[1] == ["v1.0", "2026/01/15", "首次发布（Word） (First issue (Word))", ""]
+    assert rows[2] == ["v1.1", "2026/02/01", "详见附录A.1 (See Appendix A.1)", "Alice Example"]
+    assert rows[3] == [
+        "v1.2",
+        "2026/03/01",
+        "更正一幅图 (Correct a figure)",
+        "Carol Example (before the record)",
+    ]
+    widths = [cell.width.twips for cell in table.rows[1].cells]
+    assert widths == [column.width.twips for column in table.columns]
+    assert widths[2] > widths[3] > widths[1] > widths[0]
+    assert table._tbl.tblPr.find(qn("w:tblLayout")).get(qn("w:type")) == "fixed"
+
+    texts = [paragraph.text for paragraph in word.paragraphs]
+    appendix = texts.index("Appendix A. Document Change Records (附录A 文件修订记录)")
+    assert appendix > texts.index("2. Performance (性能)")
+    assert texts[appendix + 1] == "A.1 v1.1 (2026/02/01)"
+    assert long_summary["en"].strip() in texts[appendix:]
+    assert long_summary["zh"].strip() in texts[appendix:]
+    assert "Reviewed by the detector group." in texts[appendix:]
+    toc = texts.index("TABLE OF CONTENTS")
+    assert "Appendix A. Document Change Records (附录A 文件修订记录)" in texts[toc : toc + 12]
+
+
+def test_short_change_records_need_no_appendix(demo, tmp_path):
+    output = render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx")
+    texts = [paragraph.text for paragraph in docx.Document(str(output)).paragraphs]
+    assert not any(text.startswith("Appendix A") for text in texts)
+
+
+def test_html_change_record_shows_names(demo, tmp_path):
+    add_releases(demo, {"en": "Raise the read-noise limit", "zh": "放宽读出噪声限值"})
+    site = render_site(load(demo), tmp_path / "site").parent
+    page = (site / "documents" / "DEMO-INS-DET-RD.html").read_text(encoding="utf-8")
+    assert "<td>Alice Example</td>" in page
+    assert "<td>alice</td>" not in page

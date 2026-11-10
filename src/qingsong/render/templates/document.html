@@ -48,10 +48,10 @@
 <details class="front"><summary>Change record, responsibilities, acronyms and references</summary>
   <h3>Change record</h3>
   <table class="list"><tr><th>Version</th><th>Date</th><th>Changes</th><th>By</th><th>Made with</th></tr>
-  {% for release in document.releases %}<tr><td>v{{ release.version }}</td><td>{{ release.date }}</td><td>{{ site.text(release.summary, prefix, document, block=False) }}{% if release.note %}<div class="small">{{ site.text(release.note, prefix, document, block=False) }}</div>{% endif %}</td><td>{{ release.by or "" }}</td><td>{{ "qingsong" if release.made_with_qingsong else "Word" }}</td></tr>{% endfor %}
+  {% for release in document.releases %}<tr><td>v{{ release.version }}</td><td>{{ release.date }}</td><td>{{ site.text(release.summary, prefix, document, block=False) }}{% if release.note %}<div class="small">{{ site.text(release.note, prefix, document, block=False) }}</div>{% endif %}</td><td>{{ vault.person_name(release.by) if release.by else "" }}</td><td>{{ "qingsong" if release.made_with_qingsong else "Word" }}</td></tr>{% endfor %}
   </table>
   <h3>Responsibilities</h3>
-  <table class="list">{% for role in document.front.roles %}<tr><td>{{ site.text(role.role, prefix, document, block=False) }}</td><td>{{ vault.people.people[role.person].name if role.person in vault.people.people else role.person }}</td></tr>{% endfor %}</table>
+  <table class="list">{% for role in document.front.roles %}<tr><td>{{ site.text(role.role, prefix, document, block=False) }}</td><td>{{ vault.person_name(role.person) }}</td></tr>{% endfor %}</table>
   {% if document.front.acronyms %}<h3>Acronyms</h3>
   <table class="list">{% for key in document.front.acronyms %}{% set entry = vault.glossary.terms.get(key) %}{% if entry %}<tr><th>{{ entry.text or key }}</th><td>{{ site.text(entry.expansion, prefix, document, block=False) }}</td></tr>{% endif %}{% endfor %}</table>{% endif %}
   {% if document.front.reference_documents %}<h3>Reference documents</h3>

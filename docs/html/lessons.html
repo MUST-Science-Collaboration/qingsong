@@ -34,6 +34,7 @@
 <li class="level-2"><a href="#11-moving-numbers-into-slots-2026-11-02">11. Moving numbers into slots (2026-11-02)</a></li>
 <li class="level-2"><a href="#12-decisions-files-2026-11-02">12. Decisions files (2026-11-02)</a></li>
 <li class="level-2"><a href="#13-documentation-review-2026-11-03">13. Documentation review (2026-11-03)</a></li>
+<li class="level-2"><a href="#14-word-copies-of-a-release-2026-11-10">14. Word copies of a release (2026-11-10)</a></li>
 </ol></aside>
 <main>
 <h1 id="qingsong-development-lessons">Qingsong Development Lessons</h1>
@@ -239,6 +240,35 @@ fixed date.</li>
 <code>__dict__</code>, so the field tables vanished, and it prints <code>Optional[X]</code> as <code>X | None</code>. The builder now
 uses <code>inspect.get_annotations</code> and writes <code>X | None</code> everywhere. Compare the output on every
 supported version before pushing.</li>
+</ul>
+<h2 id="14-word-copies-of-a-release-2026-11-10">14. Word copies of a release (2026-11-10)</h2>
+<ul>
+<li>
+<p><strong>Read the issued pages, not only the package check.</strong> The Word copy of a real release passed every
+test and the package check, yet its change record was hard to read:</p>
+<ul>
+<li>the columns shared the width equally;</li>
+<li>two long bilingual entries took most of a page each;</li>
+<li>&quot;Changed by&quot; showed a person ID instead of the name.</li>
+</ul>
+<p>Render the PDF's pages to images and read them before a copy is issued. The change record now has
+fixed column widths and names from the people file. An entry too long for its cell goes to Appendix A,
+cited in its row.</p>
+</li>
+<li>
+<p><strong>The PDF route decides the fonts and where the document goes.</strong> A PDF saved through Word's
+scripting interface was made by Microsoft's online service, the &quot;Best for electronic distribution&quot;
+export. That service replaced the document's fonts with Cambria and a Traditional Chinese font. The
+substitute's lines were taller than the document grid's pitch, so every Chinese line took two grid
+lines, which looked like double spacing. The same export also sent the document off the machine.
+With the document's own fonts each line fits one grid line. Make PDFs in Word with &quot;Best for
+printing&quot;, and check every PDF with <code>pdfinfo</code> (a local export names Quartz as producer) and
+<code>pdffonts</code> before it is delivered.</p>
+</li>
+<li>
+<p><strong>Show names in documents people read.</strong> IDs belong in the record and its history. Documents for
+readers resolve them through the people file, as the responsibilities table already did.</p>
+</li>
 </ul>
 
 </main>
