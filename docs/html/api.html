@@ -3616,6 +3616,10 @@ except empty lists and absent optional values.</p>
 <li><code>namespaces(self) -&gt; dict[str, str]</code>
 Requirement namespace → node reference it belongs to.</li>
 <li><code>is_approver(self, person: str) -&gt; bool</code></li>
+<li><code>person_name(self, person: str) -&gt; str</code>
+The name of a person ID from the people file, for documents that people read. Text that
+is not a person ID, such as the names in a change record from before the record, is
+returned as it is.</li>
 </ul>
 <p><strong>Functions</strong></p>
 <h4 id="find_root"><code>find_root</code></h4>
@@ -5240,8 +5244,9 @@ The readable text of a section's own blocks, for a before/after difference.</li>
 <p>The layout follows the MUST requirement documents: cover, change record, responsibilities, table of
 contents, acronyms, reference documents, publications, then numbered sections with bilingual
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
-captions in both languages, and tables. A reference document (<code>templates/reference.docx</code> in the vault)
-supplies the styles; its body is discarded.</p>
+captions in both languages, and tables. A change-record explanation too long for its cell is printed
+in Appendix A at the end and cited in the table. A reference document (<code>templates/reference.docx</code> in
+the vault) supplies the styles; its body is discarded.</p>
 <p><strong>Classes</strong></p>
 <h4 id="class-wordrenderer">class <code>WordRenderer</code></h4>
 <ul>
@@ -5261,8 +5266,16 @@ that holds them, also when that is another document.</li>
 Each language's paragraphs in turn; list items become bullets one level deeper (numbered
 items keep their number as text).</li>
 <li><code>bilingual_title(self, value: dict) -&gt; str</code></li>
-<li><code>table(   self,   header: list[str],   rows: list[list[str]],   languages: list[str] | None = None, )</code></li>
+<li><code>text_width(self)</code></li>
+<li><code>table(   self,   header: list[str],   rows: list[list[str]],   languages: list[str] | None = None,   widths: tuple[float, ...] | None = None, )</code>
+A table with a repeated header row. <code>widths</code> are the columns' shares of the text width,
+kept fixed in Word; without them the columns share the width equally.</li>
+<li><code>fix_widths(self, table, widths: tuple[float, ...]) -&gt; None</code></li>
 <li><code>cover(self) -&gt; None</code></li>
+<li><code>change_record(self) -&gt; None</code>
+One row per release. An explanation longer than <code>change_record_limit</code> is cited in its
+row and printed in Appendix A (<code>change_record_details</code>).</li>
+<li><code>change_record_details(self) -&gt; None</code></li>
 <li><code>front_matter(self) -&gt; None</code></li>
 <li><code>table_of_contents(self) -&gt; None</code>
 A paragraph that marks where the table of contents goes; <code>fill_table_of_contents</code>
@@ -5287,6 +5300,10 @@ release tag (docs/SPEC.md §5.5).</li>
 <li><code>render(self, output: Path) -&gt; Path</code></li>
 </ul>
 <p><strong>Functions</strong></p>
+<h4 id="explanation"><code>explanation</code></h4>
+<pre><code class="language-python">def explanation(release: Release) -&gt; str
+</code></pre>
+<p>The change-record text of a release: the summary in both languages, then the note.</p>
 <h4 id="check_package"><code>check_package</code></h4>
 <pre><code class="language-python">def check_package(path: Path) -&gt; list[str]
 </code></pre>
@@ -5294,6 +5311,7 @@ release tag (docs/SPEC.md §5.5).</li>
 non-integer table widths.</p>
 <p><strong>Helpers</strong></p>
 <ul>
+<li><code>display_width(text: str) -&gt; int</code></li>
 <li><code>render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None, update_fields_on_open: bool = False, tag: str | None = None) -&gt; Path</code></li>
 </ul>
 <h3 id="qingsongexport"><code>qingsong.export</code></h3>

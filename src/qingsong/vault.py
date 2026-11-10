@@ -88,6 +88,14 @@ class Vault:
             self.people and person in self.people.people and self.people.people[person].approver
         )
 
+    def person_name(self, person: str) -> str:
+        """The name of a person ID from the people file, for documents that people read. Text that
+        is not a person ID, such as the names in a change record from before the record, is
+        returned as it is."""
+        if self.people and person in self.people.people:
+            return self.people.people[person].name
+        return person
+
 
 def find_root(start: Path | None = None) -> Path:
     """The nearest folder, from `start` upward, that holds qingsong.toml."""

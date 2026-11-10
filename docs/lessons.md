@@ -170,3 +170,25 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   `__dict__`, so the field tables vanished, and it prints `Optional[X]` as `X | None`. The builder now
   uses `inspect.get_annotations` and writes `X | None` everywhere. Compare the output on every
   supported version before pushing.
+
+## 14. Word copies of a release (2026-11-10)
+
+- **Read the issued pages, not only the package check.** The Word copy of a real release passed every
+  test and the package check, yet its change record was hard to read:
+  - the columns shared the width equally;
+  - two long bilingual entries took most of a page each;
+  - "Changed by" showed a person ID instead of the name.
+
+  Render the PDF's pages to images and read them before a copy is issued. The change record now has
+  fixed column widths and names from the people file. An entry too long for its cell goes to Appendix A,
+  cited in its row.
+- **The PDF route decides the fonts and where the document goes.** A PDF saved through Word's
+  scripting interface was made by Microsoft's online service, the "Best for electronic distribution"
+  export. That service replaced the document's fonts with Cambria and a Traditional Chinese font. The
+  substitute's lines were taller than the document grid's pitch, so every Chinese line took two grid
+  lines, which looked like double spacing. The same export also sent the document off the machine.
+  With the document's own fonts each line fits one grid line. Make PDFs in Word with "Best for
+  printing", and check every PDF with `pdfinfo` (a local export names Quartz as producer) and
+  `pdffonts` before it is delivered.
+- **Show names in documents people read.** IDs belong in the record and its history. Documents for
+  readers resolve them through the people file, as the responsibilities table already did.

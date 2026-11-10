@@ -3,11 +3,13 @@
 The layout follows the MUST requirement documents: cover, change record, responsibilities, table of
 contents, acronyms, reference documents, publications, then numbered sections with bilingual
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
-captions in both languages, and tables. A reference document (`templates/reference.docx` in the vault)
-supplies the styles; its body is discarded."""
+captions in both languages, and tables. A change-record explanation too long for its cell is printed
+in Appendix A at the end and cited in the table. A reference document (`templates/reference.docx` in
+the vault) supplies the styles; its body is discarded."""
 
 import datetime
 import re
+import unicodedata
 import zipfile
 from pathlib import Path
 
@@ -16,11 +18,11 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Emu, Pt, Twips
 
 from qingsong.render.model import documents_of, number_document
 from qingsong.render.text import parse_blocks, substitute_slots, token_pattern
-from qingsong.schema import Block, Document, Figure, Requirement
+from qingsong.schema import Block, Document, Figure, Release, Requirement
 from qingsong.vault import Vault
 
 settings_after_update = {
@@ -57,6 +59,27 @@ part_labels = [
     ("suggestions", "建议 (Suggestions)"),
 ]
 verification_label = "验收方式 (Verification)"
+change_record_widths = (0.10, 0.14, 0.52, 0.24)
+change_record_limit = 300
+"""The longest change-record explanation printed in the table, in display columns (a Chinese
+character counts as two). About six lines of the explanation column. A longer one goes to Appendix A."""
+
+
+def display_width(text: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(character) in "WF" else 1 for character in text)
+
+
+def explanation(release: Release) -> str:
+    """The change-record text of a release: the summary in both languages, then the note."""
+    summary = release.summary
+    text = (
+        f"{summary['zh']} ({summary['en']})"
+        if "zh" in summary and "en" in summary
+        else summary.get("en") or summary.get("zh", "")
+    )
+    if release.note:
+        text += "\n" + next(iter(release.note.values()))
+    return text
 
 
 class WordRenderer:
@@ -75,6 +98,7 @@ class WordRenderer:
         self.tag = tag
         self.update_fields_on_open = update_fields_on_open
         self.contents_entries: list[tuple[int, str, str]] = []
+        self.change_details: list[tuple[str, Release]] = []
         self.document = document
         self.numbering = number_document(document)
         self.numberings = {record.id: number_document(record) for record in documents_of(vault)}
@@ -282,7 +306,19 @@ class WordRenderer:
         return f"{english} ({chinese})" if english and chinese else english or chinese
 
     # tables ---------------------------------------------------------------------------------
-    def table(self, header: list[str], rows: list[list[str]], languages: list[str] | None = None):
+    def text_width(self):
+        section = self.word.sections[-1]
+        return Emu(section.page_width - section.left_margin - section.right_margin)
+
+    def table(
+        self,
+        header: list[str],
+        rows: list[list[str]],
+        languages: list[str] | None = None,
+        widths: tuple[float, ...] | None = None,
+    ):
+        """A table with a repeated header row. `widths` are the columns' shares of the text width,
+        kept fixed in Word; without them the columns share the width equally."""
         table = self.word.add_table(rows=1, cols=len(header))
         if "Table" in {style.name for style in self.word.styles}:
             table.style = self.word.styles["Table"]
@@ -305,8 +341,22 @@ class WordRenderer:
                 self.runs(cell.paragraphs[0], parts[0], language)
                 for extra in parts[1:]:
                     self.runs(cell.add_paragraph(), extra, "zh")
+        if widths:
+            self.fix_widths(table, widths)
         self.word.add_paragraph()
         return table
+
+    def fix_widths(self, table, widths: tuple[float, ...]) -> None:
+        columns = [Twips(int(self.text_width().twips * share)) for share in widths]
+        table.autofit = False
+        width = table._tbl.tblPr.find(qn("w:tblW"))
+        width.set(qn("w:w"), str(sum(column.twips for column in columns)))
+        width.set(qn("w:type"), "dxa")
+        for column, size in zip(table.columns, columns, strict=True):
+            column.width = size
+        for row in table.rows:
+            for cell, size in zip(row.cells, columns, strict=True):
+                cell.width = size
 
     # document parts -------------------------------------------------------------------------
     def cover(self) -> None:
@@ -323,31 +373,51 @@ class WordRenderer:
             align=WD_ALIGN_PARAGRAPH.CENTER,
         )
 
-    def front_matter(self) -> None:
-        front = self.document.front
+    def change_record(self) -> None:
+        """One row per release. An explanation longer than `change_record_limit` is cited in its
+        row and printed in Appendix A (`change_record_details`)."""
         self.paragraph("Document Change Records", bold=True)
         rows = []
         for release in self.document.releases:
-            summary = release.summary
-            text = (
-                f"{summary['zh']} ({summary['en']})"
-                if "zh" in summary and "en" in summary
-                else summary.get("en") or summary.get("zh", "")
-            )
-            if release.note:
-                text += "\n" + next(iter(release.note.values()))
+            text = explanation(release)
+            if display_width(text) > change_record_limit:
+                number = f"A.{len(self.change_details) + 1}"
+                self.change_details.append((number, release))
+                text = f"详见附录{number} (See Appendix {number})"
             rows.append(
-                [f"v{release.version}", release.date.strftime("%Y/%m/%d"), text, release.by or ""]
+                [
+                    f"v{release.version}",
+                    release.date.strftime("%Y/%m/%d"),
+                    text,
+                    self.vault.person_name(release.by) if release.by else "",
+                ]
             )
-        self.table(["Version", "Issue Date", "Explanation", "Changed by"], rows)
+        self.table(
+            ["Version", "Issue Date", "Explanation", "Changed by"],
+            rows,
+            widths=change_record_widths,
+        )
+
+    def change_record_details(self) -> None:
+        if not self.change_details:
+            return
+        self.page_break()
+        self.heading("Appendix A. Document Change Records (附录A 文件修订记录)", 1)
+        for number, release in self.change_details:
+            self.heading(f"{number} v{release.version} ({release.date:%Y/%m/%d})", 2)
+            self.localized_paragraphs(release.summary, level=None)
+            self.localized_paragraphs(release.note, level=None)
+
+    def front_matter(self) -> None:
+        front = self.document.front
+        self.change_record()
         self.paragraph("Responsibilities", bold=True)
-        people = self.vault.people.people if self.vault.people else {}
         self.table(
             ["Role", "Name"],
             [
                 [
                     role.role.get("en") or next(iter(role.role.values())),
-                    people[role.person].name if role.person in people else role.person,
+                    self.vault.person_name(role.person),
                 ]
                 for role in front.roles
             ],
@@ -551,8 +621,7 @@ class WordRenderer:
 
     def figure(self, record: Figure) -> None:
         folder = self.vault.files[record.id].parent
-        section = self.word.sections[-1]
-        width = section.page_width - section.left_margin - section.right_margin
+        width = self.text_width()
         embedded = False
         for image in record.files:
             path = folder / image.path
@@ -662,6 +731,7 @@ class WordRenderer:
         self.page_break()
         self.front_matter()
         self.outline(self.document.outline, 1)
+        self.change_record_details()
         self.fill_table_of_contents()
         self.header_and_footer()
         self.properties()

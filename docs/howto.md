@@ -484,6 +484,14 @@ qingsong numbers figures and sections itself.
    document as it was at the tag. `qingsong release changes DEMO-INS-DET-RD` lists what changed since
    the latest release. The HTML site shows the same as "Changes since v1.1".
 
+   In the Word copy, a change-record explanation longer than about six lines of its cell is printed
+   in Appendix A at the end and cited in its row. For a PDF, open the copy in Word on a machine that
+   has the document's fonts, update the table of contents, and choose File > Save As > PDF > "Best
+   for printing". The other option, "Best for electronic distribution", sends the document to
+   Microsoft's online service, which replaces fonts it does not have. A PDF saved through Word's
+   scripting interface came from that service too. `pdffonts FILE.pdf` lists the fonts a PDF
+   embeds.
+
 ### 6.11 Read, share and analyse
 
 - `qingsong render html site`: the static site. Open `site/index.html`. It works offline, so it can

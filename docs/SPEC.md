@@ -737,6 +737,13 @@ GitHub Pages is not used for private vaults: its sites are public unless the hos
 
 A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
 
+The change record (decision of 2026-11-10):
+- Its columns have fixed widths: version 10 %, date 14 %, explanation 52 % and "changed by" 24 % of the text width.
+- "Changed by" shows a person's name from the people file. Text that is not a person ID, such as the names in releases made before qingsong, is shown as written. The HTML document page does the same.
+- An explanation (summary in both languages and note) wider than 300 display columns, with a Chinese character counting as two, is about six lines of its cell. It is printed in full in "Appendix A. Document Change Records" at the end of the document, one numbered subsection per release (A.1, A.2, …), and its row reads "详见附录A.n (See Appendix A.n)". The appendix is listed in the table of contents. The HTML page shows every explanation in its row.
+
+A PDF of the Word copy is made in Word, on a machine with the document's fonts, with "Best for printing". "Best for electronic distribution" sends the document to Microsoft's online service, which replaces fonts it does not have.
+
 ### 12.3 Exchange
 
 - **JSON export** (proposed, 2026-11-02; revised after review). `qingsong export json [--output FILE] [--at REF | --release DOC/V]` writes one file, from the working tree or from an earlier state. It holds:

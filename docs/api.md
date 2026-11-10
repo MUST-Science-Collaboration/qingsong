@@ -1253,6 +1253,10 @@ Vault discovery, strict loading and round-trip saving (docs/SPEC.md §3, §6.1).
 - `namespaces(self) -> dict[str, str]`
   Requirement namespace → node reference it belongs to.
 - `is_approver(self, person: str) -> bool`
+- `person_name(self, person: str) -> str`
+  The name of a person ID from the people file, for documents that people read. Text that
+  is not a person ID, such as the names in a change record from before the record, is
+  returned as it is.
 
 **Functions**
 
@@ -2924,8 +2928,9 @@ Word output (docs/SPEC.md §12.2): a formal document generated from the records.
 The layout follows the MUST requirement documents: cover, change record, responsibilities, table of
 contents, acronyms, reference documents, publications, then numbered sections with bilingual
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
-captions in both languages, and tables. A reference document (`templates/reference.docx` in the vault)
-supplies the styles; its body is discarded.
+captions in both languages, and tables. A change-record explanation too long for its cell is printed
+in Appendix A at the end and cited in the table. A reference document (`templates/reference.docx` in
+the vault) supplies the styles; its body is discarded.
 
 **Classes**
 
@@ -2976,13 +2981,22 @@ supplies the styles; its body is discarded.
   Each language's paragraphs in turn; list items become bullets one level deeper (numbered
   items keep their number as text).
 - `bilingual_title(self, value: dict) -> str`
+- `text_width(self)`
 - `table(
     self,
     header: list[str],
     rows: list[list[str]],
     languages: list[str] | None = None,
+    widths: tuple[float, ...] | None = None,
 )`
+  A table with a repeated header row. `widths` are the columns' shares of the text width,
+  kept fixed in Word; without them the columns share the width equally.
+- `fix_widths(self, table, widths: tuple[float, ...]) -> None`
 - `cover(self) -> None`
+- `change_record(self) -> None`
+  One row per release. An explanation longer than `change_record_limit` is cited in its
+  row and printed in Appendix A (`change_record_details`).
+- `change_record_details(self) -> None`
 - `front_matter(self) -> None`
 - `table_of_contents(self) -> None`
   A paragraph that marks where the table of contents goes; `fill_table_of_contents`
@@ -3008,6 +3022,14 @@ supplies the styles; its body is discarded.
 
 **Functions**
 
+#### `explanation`
+
+```python
+def explanation(release: Release) -> str
+```
+
+The change-record text of a release: the summary in both languages, then the note.
+
 #### `check_package`
 
 ```python
@@ -3019,6 +3041,7 @@ non-integer table widths.
 
 **Helpers**
 
+- `display_width(text: str) -> int`
 - `render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None, update_fields_on_open: bool = False, tag: str | None = None) -> Path`
 
 ### `qingsong.export`
