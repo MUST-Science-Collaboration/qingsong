@@ -2930,13 +2930,23 @@ contents, acronyms, reference documents, publications, then numbered sections wi
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
 captions in both languages, and tables. A change-record explanation too long for its cell is printed
 in Appendix A at the end and cited in the table. A reference document (`templates/reference.docx` in
-the vault) supplies the styles; its body is discarded.
+the vault) supplies the styles. Its body, if not empty, is the cover, and its header and footer are kept;
+fields such as `{title_en}` in them are filled in (`template_fields`).
 
 **Classes**
 
 #### class `WordRenderer`
 
-- `clear_body(self) -> None`
+- `keep_cover(self) -> bool`
+  Keeps the template's body as the cover, with its fields filled, if it holds any text or
+  picture; otherwise empties it. True when a cover was kept.
+- `field_values(self) -> dict[str, str]`
+  The values of the template fields. The date is the release's date when the version is
+  a release of the document, and today otherwise; a copy without a version is a draft.
+- `fill_fields(self, element) -> None`
+  Fills `{field}` in every paragraph under `element`, text boxes included. A paragraph
+  with a field keeps the formatting of its first run. An unknown field is an error, so that a
+  misspelt one never reaches an issued copy.
 - `bullet_numbering(self) -> int | None`
   A numbering instance for bullet lists, based on the template's first bullet definition.
 - `label(self, target: str, key: str | None, language: str) -> str`
@@ -3015,6 +3025,8 @@ the vault) supplies the styles; its body is discarded.
 - `caption_paragraphs(self, caption: dict) -> None`
 - `definitions(self, terms: list[str]) -> None`
 - `header_and_footer(self) -> None`
+  The template's headers and footers, with their fields filled; without them, a header
+  line with the document number, title and version, and a page number in the footer.
 - `properties(self) -> None`
   Document properties: the document number, title, version and, for an issued copy, the
   release tag (docs/SPEC.md §5.5).
@@ -3039,10 +3051,27 @@ def check_package(path: Path) -> list[str]
 Problems that make Word report unreadable content: directory entries in the ZIP package and
 non-integer table widths.
 
+#### `render_docx`
+
+```python
+def render_docx(
+    vault: Vault,
+    document_id: str,
+    output: Path,
+    version: str | None = None,
+    update_fields_on_open: bool = False,
+    tag: str | None = None,
+    template: Path | None = None,
+) -> Path
+```
+
+The Word copy of a document. The template defaults to the vault's
+`templates/reference.docx`; an issued copy passes the current one, since the template is layout,
+like the engine, and not content.
+
 **Helpers**
 
 - `display_width(text: str) -> int`
-- `render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None, update_fields_on_open: bool = False, tag: str | None = None) -> Path`
 
 ### `qingsong.export`
 

@@ -1422,6 +1422,13 @@ decisions:
 <li>reference documents;</li>
 <li>bilingual requirement tables, with an optional alias column.</li>
 </ul>
+<p>The reference style file <code>templates/reference.docx</code> gives the layout (decision of 2026-11-10):</p>
+<ul>
+<li>its styles;</li>
+<li>its body, if it holds any text or picture, as the cover; without one, a plain title page;</li>
+<li>its headers and footers; without them, a header line with the document number, title and version, and a page number in the footer.</li>
+</ul>
+<p>In the cover, headers and footers, the fields <code>{document_id}</code>, <code>{title_en}</code>, <code>{title_zh}</code>, <code>{version}</code> and <code>{date}</code> are filled. The date is the release's date, written &quot;Nov 10, 2026&quot;, and the version of an unreleased copy is &quot;draft&quot;. An unknown field is an error. The template is layout, like the engine: <code>--release</code> reads the records at the tag and the template from the working tree.</p>
 <p>A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.</p>
 <p>The change record (decision of 2026-11-10):</p>
 <ul>

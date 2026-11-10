@@ -5,6 +5,7 @@ import re
 import zipfile
 
 import docx
+import pytest
 from conftest import edit_yaml
 from docx.oxml.ns import qn
 
@@ -140,3 +141,69 @@ def test_html_change_record_shows_names(demo, tmp_path):
     page = (site / "documents" / "DEMO-INS-DET-RD.html").read_text(encoding="utf-8")
     assert "<td>Alice Example</td>" in page
     assert "<td>alice</td>" not in page
+
+
+def write_template(root, cover: list[str], header: list[list[str]], footer: str | None = None):
+    """A reference document with a cover, header paragraphs given as runs, and an optional
+    footer."""
+    template = docx.Document()
+    for line in cover:
+        template.add_paragraph(line)
+    section = template.sections[0]
+    section.header.paragraphs[0].text = ""
+    for index, runs in enumerate(header):
+        paragraph = section.header.paragraphs[0] if index == 0 else section.header.add_paragraph()
+        for run in runs:
+            paragraph.add_run(run)
+    if footer:
+        section.footer.paragraphs[0].text = footer
+    (root / "templates").mkdir(exist_ok=True)
+    template.save(str(root / "templates" / "reference.docx"))
+
+
+def test_template_cover_header_and_footer_are_kept_with_fields_filled(demo, tmp_path):
+    write_template(
+        demo,
+        cover=["{title_zh}", "{title_en}", "{document_id} v{version}"],
+        header=[["Ref.: {document_id}"], ["Ver.: {ver", "sion}"], ["Date: ", "{date}"]],
+        footer="Demo Observatory",
+    )
+    output = render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx", version="1.0")
+    word = docx.Document(str(output))
+    texts = [paragraph.text for paragraph in word.paragraphs]
+    assert texts[:4] == [
+        "探测器需求文档",
+        "Detector Requirements",
+        "DEMO-INS-DET-RD v1.0",
+        "Document Change Records",
+    ]
+    assert not any(text.startswith("Generated from") for text in texts)
+    section = word.sections[0]
+    assert [paragraph.text for paragraph in section.header.paragraphs] == [
+        "Ref.: DEMO-INS-DET-RD",
+        "Ver.: 1.0",
+        "Date: Jan 15, 2026",
+    ]
+    assert [paragraph.text for paragraph in section.footer.paragraphs] == ["Demo Observatory"]
+    with zipfile.ZipFile(output) as package:
+        footers = [name for name in package.namelist() if name.startswith("word/footer")]
+        assert "PAGE" not in "".join(package.read(name).decode("utf-8") for name in footers)
+
+
+def test_a_template_without_cover_or_footer_gets_the_built_in_ones(demo, tmp_path):
+    write_template(demo, cover=[], header=[["{document_id} · {title_en}"]])
+    output = render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx")
+    word = docx.Document(str(output))
+    texts = [paragraph.text for paragraph in word.paragraphs]
+    assert texts[0] == "探测器需求文档"
+    assert any(text.startswith("Generated from") for text in texts[:4])
+    section = word.sections[0]
+    assert section.header.paragraphs[0].text == "DEMO-INS-DET-RD · Detector Requirements"
+    footer = section.footer._element.xml
+    assert "PAGE" in footer
+
+
+def test_an_unknown_template_field_is_an_error(demo, tmp_path):
+    write_template(demo, cover=["{titel_en}"], header=[["{document_id}"]])
+    with pytest.raises(ValueError, match=r"\{titel_en\}"):
+        render_docx(load(demo), "DEMO-INS-DET-RD", tmp_path / "out.docx")

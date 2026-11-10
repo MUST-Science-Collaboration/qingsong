@@ -261,6 +261,10 @@ def test_issued_copy_and_changes_page(demo_repository, tmp_path):
     root = demo_repository
     release.tag_release(root, document_id, "1.0", at="HEAD")
     reword_rationale(root, "Keeps faint spectra sky-limited.", "使暗弱光谱处于天光限。")
+    template = docx.Document()
+    template.add_paragraph("Issued copy of {document_id} v{version}")
+    (root / "templates").mkdir()
+    template.save(str(root / "templates" / "reference.docx"))
 
     runner = CliRunner()
     output = tmp_path / "issued.docx"
@@ -274,6 +278,7 @@ def test_issued_copy_and_changes_page(demo_repository, tmp_path):
     assert properties.comments == "release tag release/DEMO-INS-DET-RD/1.0"
     texts = "\n".join(paragraph.text for paragraph in docx.Document(str(output)).paragraphs)
     assert "Keeps faint spectra" not in texts and "Keeps the faintest spectra" in texts
+    assert texts.startswith("Issued copy of DEMO-INS-DET-RD v1.0\n")
 
     result = runner.invoke(app, ["release", "changes", document_id, "--json", "--vault", str(root)])
     assert result.exit_code == 0, result.output

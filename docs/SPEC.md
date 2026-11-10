@@ -735,6 +735,13 @@ GitHub Pages is not used for private vaults: its sites are public unless the hos
 - reference documents;
 - bilingual requirement tables, with an optional alias column.
 
+The reference style file `templates/reference.docx` gives the layout (decision of 2026-11-10):
+- its styles;
+- its body, if it holds any text or picture, as the cover; without one, a plain title page;
+- its headers and footers; without them, a header line with the document number, title and version, and a page number in the footer.
+
+In the cover, headers and footers, the fields `{document_id}`, `{title_en}`, `{title_zh}`, `{version}` and `{date}` are filled. The date is the release's date, written "Nov 10, 2026", and the version of an unreleased copy is "draft". An unknown field is an error. The template is layout, like the engine: `--release` reads the records at the tag and the template from the working tree.
+
 A Word copy shows the current text only, without revision marks; changes between releases are read on the HTML changes page (decision of 2026-11-02). The package must open in Word without repair: no ZIP directory entries, integer table widths, fonts covering Chinese.
 
 The change record (decision of 2026-11-10):

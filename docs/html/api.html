@@ -5246,11 +5246,21 @@ contents, acronyms, reference documents, publications, then numbered sections wi
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
 captions in both languages, and tables. A change-record explanation too long for its cell is printed
 in Appendix A at the end and cited in the table. A reference document (<code>templates/reference.docx</code> in
-the vault) supplies the styles; its body is discarded.</p>
+the vault) supplies the styles. Its body, if not empty, is the cover, and its header and footer are kept;
+fields such as <code>{title_en}</code> in them are filled in (<code>template_fields</code>).</p>
 <p><strong>Classes</strong></p>
 <h4 id="class-wordrenderer">class <code>WordRenderer</code></h4>
 <ul>
-<li><code>clear_body(self) -&gt; None</code></li>
+<li><code>keep_cover(self) -&gt; bool</code>
+Keeps the template's body as the cover, with its fields filled, if it holds any text or
+picture; otherwise empties it. True when a cover was kept.</li>
+<li><code>field_values(self) -&gt; dict[str, str]</code>
+The values of the template fields. The date is the release's date when the version is
+a release of the document, and today otherwise; a copy without a version is a draft.</li>
+<li><code>fill_fields(self, element) -&gt; None</code>
+Fills <code>{field}</code> in every paragraph under <code>element</code>, text boxes included. A paragraph
+with a field keeps the formatting of its first run. An unknown field is an error, so that a
+misspelt one never reaches an issued copy.</li>
 <li><code>bullet_numbering(self) -&gt; int | None</code>
 A numbering instance for bullet lists, based on the template's first bullet definition.</li>
 <li><code>label(self, target: str, key: str | None, language: str) -&gt; str</code>
@@ -5293,7 +5303,9 @@ document opens. Page numbers appear when the field is updated (F9, or Update Fie
 <li><code>figure(self, record: Figure) -&gt; None</code></li>
 <li><code>caption_paragraphs(self, caption: dict) -&gt; None</code></li>
 <li><code>definitions(self, terms: list[str]) -&gt; None</code></li>
-<li><code>header_and_footer(self) -&gt; None</code></li>
+<li><code>header_and_footer(self) -&gt; None</code>
+The template's headers and footers, with their fields filled; without them, a header
+line with the document number, title and version, and a page number in the footer.</li>
 <li><code>properties(self) -&gt; None</code>
 Document properties: the document number, title, version and, for an issued copy, the
 release tag (docs/SPEC.md §5.5).</li>
@@ -5309,10 +5321,23 @@ release tag (docs/SPEC.md §5.5).</li>
 </code></pre>
 <p>Problems that make Word report unreadable content: directory entries in the ZIP package and
 non-integer table widths.</p>
+<h4 id="render_docx"><code>render_docx</code></h4>
+<pre><code class="language-python">def render_docx(
+    vault: Vault,
+    document_id: str,
+    output: Path,
+    version: str | None = None,
+    update_fields_on_open: bool = False,
+    tag: str | None = None,
+    template: Path | None = None,
+) -&gt; Path
+</code></pre>
+<p>The Word copy of a document. The template defaults to the vault's
+<code>templates/reference.docx</code>; an issued copy passes the current one, since the template is layout,
+like the engine, and not content.</p>
 <p><strong>Helpers</strong></p>
 <ul>
 <li><code>display_width(text: str) -&gt; int</code></li>
-<li><code>render_docx(vault: Vault, document_id: str, output: Path, version: str | None = None, update_fields_on_open: bool = False, tag: str | None = None) -&gt; Path</code></li>
 </ul>
 <h3 id="qingsongexport"><code>qingsong.export</code></h3>
 <p>Source: <a href="../../src/qingsong/export.py"><code>src/qingsong/export.py</code></a></p>
