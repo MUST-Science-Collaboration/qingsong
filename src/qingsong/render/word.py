@@ -5,7 +5,8 @@ contents, acronyms, reference documents, publications, then numbered sections wi
 requirement entries (requirement, rationale, notes, suggestions, verification), figures with numbered
 captions in both languages, and tables. A change-record explanation too long for its cell is printed
 in Appendix A at the end and cited in the table. A reference document (`templates/reference.docx` in
-the vault) supplies the styles; its body is discarded."""
+the vault) supplies the styles. Its body, if not empty, is the cover, and its header and footer are kept;
+fields such as `{title_en}` in them are filled in (`template_fields`)."""
 
 import datetime
 import re
@@ -59,6 +60,9 @@ part_labels = [
     ("suggestions", "建议 (Suggestions)"),
 ]
 verification_label = "验收方式 (Verification)"
+template_fields = ("document_id", "title_en", "title_zh", "version", "date")
+field_pattern = re.compile(r"\{([a-z_]+)\}")
+month_names = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 change_record_widths = (0.10, 0.14, 0.52, 0.24)
 change_record_limit = 300
 """The longest change-record explanation printed in the table, in display columns (a Chinese
@@ -108,15 +112,69 @@ class WordRenderer:
         self.word = (
             docx.Document(str(template)) if template and template.exists() else docx.Document()
         )
-        self.clear_body()
+        self.has_cover = self.keep_cover()
         self.bullet_number = self.bullet_numbering()
 
     # set-up ---------------------------------------------------------------------------------
-    def clear_body(self) -> None:
+    def keep_cover(self) -> bool:
+        """Keeps the template's body as the cover, with its fields filled, if it holds any text or
+        picture; otherwise empties it. True when a cover was kept."""
         body = self.word.element.body
-        for child in list(body):
-            if child.tag != qn("w:sectPr"):
+        content = [child for child in body if child.tag != qn("w:sectPr")]
+        has_cover = any(
+            (element.text or "").strip() if element.tag == qn("w:t") else True
+            for child in content
+            for element in child.iter(qn("w:t"), qn("w:drawing"), qn("w:pict"))
+        )
+        for child in content:
+            if has_cover:
+                self.fill_fields(child)
+            else:
                 body.remove(child)
+        return has_cover
+
+    def field_values(self) -> dict[str, str]:
+        """The values of the template fields. The date is the release's date when the version is
+        a release of the document, and today otherwise; a copy without a version is a draft."""
+        release = next(
+            (entry for entry in self.document.releases if entry.version == self.version), None
+        )
+        date = release.date if release else datetime.date.today()
+        return {
+            "document_id": self.document.id,
+            "title_en": self.document.title.get("en", ""),
+            "title_zh": self.document.title.get("zh", ""),
+            "version": self.version or "draft",
+            "date": f"{month_names[date.month - 1]} {date.day}, {date.year}",
+        }
+
+    def fill_fields(self, element) -> None:
+        """Fills `{field}` in every paragraph under `element`, text boxes included. A paragraph
+        with a field keeps the formatting of its first run. An unknown field is an error, so that a
+        misspelt one never reaches an issued copy."""
+        values = self.field_values()
+        for paragraph in element.iter(qn("w:p")):
+            texts = [
+                text
+                for text in paragraph.iter(qn("w:t"))
+                if next(text.iterancestors(qn("w:p"))) is paragraph
+            ]
+            joined = "".join(text.text or "" for text in texts)
+            names = field_pattern.findall(joined)
+            if not names:
+                continue
+            unknown = sorted(set(names) - set(values))
+            if unknown:
+                raise ValueError(
+                    "template: unknown field "
+                    + ", ".join(f"{{{name}}}" for name in unknown)
+                    + "; the fields are "
+                    + ", ".join(f"{{{name}}}" for name in template_fields)
+                )
+            texts[0].text = field_pattern.sub(lambda match: values[match.group(1)], joined)
+            texts[0].set(qn("xml:space"), "preserve")
+            for text in texts[1:]:
+                text.text = ""
 
     def bullet_numbering(self) -> int | None:
         """A numbering instance for bullet lists, based on the template's first bullet definition."""
@@ -687,35 +745,54 @@ class WordRenderer:
             self.table(["Term", "Definition", "中文"], rows, languages=["en", "en", "zh"])
 
     def header_and_footer(self) -> None:
+        """The template's headers and footers, with their fields filled; without them, a header
+        line with the document number, title and version, and a page number in the footer."""
         section = self.word.sections[0]
-        header = (
-            section.header.paragraphs[0]
-            if section.header.paragraphs
-            else section.header.add_paragraph()
-        )
-        header.text = ""
-        title = self.document.title.get("en", self.document.id)
-        self.add_run(
-            header,
-            f"{self.document.id} · {title}" + (f" · Ver. {self.version}" if self.version else ""),
-        )
-        footer = (
-            section.footer.paragraphs[0]
-            if section.footer.paragraphs
-            else section.footer.add_paragraph()
-        )
-        footer.text = ""
-        footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = footer.add_run()
-        for kind, text in (("begin", None), (None, "PAGE"), ("end", None)):
-            if kind:
-                element = OxmlElement("w:fldChar")
-                element.set(qn("w:fldCharType"), kind)
-            else:
-                element = OxmlElement("w:instrText")
-                element.set(qn("xml:space"), "preserve")
-                element.text = text
-            run._r.append(element)
+        parts = [
+            part
+            for part in (
+                section.header,
+                section.first_page_header,
+                section.even_page_header,
+                section.footer,
+                section.first_page_footer,
+                section.even_page_footer,
+            )
+            if not part.is_linked_to_previous
+        ]
+        for part in parts:
+            self.fill_fields(part._element)
+        if section.header.is_linked_to_previous:
+            header = (
+                section.header.paragraphs[0]
+                if section.header.paragraphs
+                else section.header.add_paragraph()
+            )
+            header.text = ""
+            title = self.document.title.get("en", self.document.id)
+            self.add_run(
+                header,
+                f"{self.document.id} · {title}"
+                + (f" · Ver. {self.version}" if self.version else ""),
+            )
+        if section.footer.is_linked_to_previous:
+            footer = (
+                section.footer.paragraphs[0]
+                if section.footer.paragraphs
+                else section.footer.add_paragraph()
+            )
+            footer.text = ""
+            footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = footer.add_run()
+            for kind, field in (("begin", None), (None, "PAGE"), ("end", None)):
+                if kind:
+                    element = OxmlElement("w:fldChar")
+                    element.set(qn("w:fldCharType"), kind)
+                else:
+                    element = OxmlElement("w:instrText")
+                    element.set(qn("xml:space"), "preserve")
+                    element.text = field
+                run._r.append(element)
 
     def properties(self) -> None:
         """Document properties: the document number, title, version and, for an issued copy, the
@@ -727,8 +804,9 @@ class WordRenderer:
         properties.comments = f"release tag {self.tag}" if self.tag else ""
 
     def render(self, output: Path) -> Path:
-        self.cover()
-        self.page_break()
+        if not self.has_cover:
+            self.cover()
+            self.page_break()
         self.front_matter()
         self.outline(self.document.outline, 1)
         self.change_record_details()
@@ -764,11 +842,15 @@ def render_docx(
     version: str | None = None,
     update_fields_on_open: bool = False,
     tag: str | None = None,
+    template: Path | None = None,
 ) -> Path:
+    """The Word copy of a document. The template defaults to the vault's
+    `templates/reference.docx`; an issued copy passes the current one, since the template is layout,
+    like the engine, and not content."""
     document = vault.records.get(document_id)
     if not isinstance(document, Document):
         raise ValueError(f"no document {document_id}")
-    template = vault.root / "templates" / "reference.docx"
+    template = template or vault.root / "templates" / "reference.docx"
     fonts = (vault.config.documents or {}) if vault.config else {}
     renderer = WordRenderer(
         vault,

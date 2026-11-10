@@ -498,6 +498,10 @@ tagged dc5343c14479 as release/DEMO-INS-DET-RD/1.1; publish it with: git push or
 <p><strong>Issue the copy.</strong> <code>qingsong render docx DEMO-INS-DET-RD issued.docx --release 1.1</code> renders the
 document as it was at the tag. <code>qingsong release changes DEMO-INS-DET-RD</code> lists what changed since
 the latest release. The HTML site shows the same as &quot;Changes since v1.1&quot;.</p>
+<p>The layout comes from the vault's <code>templates/reference.docx</code>: its styles, its body as the cover,
+and its header and footer, with <code>{document_id}</code>, <code>{title_en}</code>, <code>{title_zh}</code>, <code>{version}</code> and
+<code>{date}</code> filled in. <code>--release</code> takes the template from the working tree, so a layout fix also
+applies to a copy re-issued from an older tag.</p>
 <p>In the Word copy, a change-record explanation longer than about six lines of its cell is printed
 in Appendix A at the end and cited in its row. For a PDF, open the copy in Word on a machine that
 has the document's fonts, update the table of contents, and choose File &gt; Save As &gt; PDF &gt; &quot;Best

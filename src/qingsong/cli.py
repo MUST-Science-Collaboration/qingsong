@@ -836,7 +836,8 @@ def render_word(
 ) -> None:
     """Generate a Word document from the records (styles from templates/reference.docx).
 
-    The table of contents lists every heading; page numbers appear when it is updated in Word."""
+    The table of contents lists every heading; page numbers appear when it is updated in Word. With
+    --release, the records are read at the release tag and the template from the working tree."""
     from qingsong import gitutil
     from qingsong.release import tag_name
     from qingsong.render.word import render_docx
@@ -853,7 +854,8 @@ def render_word(
             )
         else:
             tag = tag_name(document, release_version)
-            with vault_at(vault_root(vault), tag) as issued:
+            root = vault_root(vault)
+            with vault_at(root, tag) as issued:
                 written = render_docx(
                     issued,
                     document,
@@ -861,6 +863,7 @@ def render_word(
                     version=version or release_version,
                     update_fields_on_open=update_fields,
                     tag=tag,
+                    template=root / "templates" / "reference.docx",
                 )
     except (ValueError, gitutil.GitError) as error:
         fail(error, as_json)

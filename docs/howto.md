@@ -484,6 +484,11 @@ qingsong numbers figures and sections itself.
    document as it was at the tag. `qingsong release changes DEMO-INS-DET-RD` lists what changed since
    the latest release. The HTML site shows the same as "Changes since v1.1".
 
+   The layout comes from the vault's `templates/reference.docx`: its styles, its body as the cover,
+   and its header and footer, with `{document_id}`, `{title_en}`, `{title_zh}`, `{version}` and
+   `{date}` filled in. `--release` takes the template from the working tree, so a layout fix also
+   applies to a copy re-issued from an older tag.
+
    In the Word copy, a change-record explanation longer than about six lines of its cell is printed
    in Appendix A at the end and cited in its row. For a PDF, open the copy in Word on a machine that
    has the document's fonts, update the table of contents, and choose File > Save As > PDF > "Best

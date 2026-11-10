@@ -192,3 +192,10 @@ The full review is in the conversation of 2026-11-01; the rebuild plan is in the
   `pdffonts` before it is delivered.
 - **Show names in documents people read.** IDs belong in the record and its history. Documents for
   readers resolve them through the people file, as the responsibilities table already did.
+- **Compare the generated copy with the last issued one, page by page.** The generated copy dropped
+  the cover with the project logo, the running header table and the footer image of the issued
+  copy. The reference document had kept those parts, but the renderer discarded its body and
+  overwrote its header with a plain line. The template's body is now the cover and its header and
+  footer are kept, with fields for the document number, titles, version and date. Even the first
+  rebuild of the template pointed the header at an older logo, which only a look at the rendered
+  page showed.
